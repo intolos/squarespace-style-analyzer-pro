@@ -260,7 +260,16 @@ var MobileLighthouseAnalyzer = (function() {
       var rects = [];
       for (var i = 0; i < elements.length; i++) {
         var el = elements[i];
-        var rect = el.getBoundingClientRect();
+
+        // CRITICAL: Use getClientRects() instead of getBoundingClientRect()
+        // Lighthouse checks ALL client rects and passes if ANY rect meets size requirement
+        var clientRects = el.getClientRects();
+
+        // Skip if no client rects (element not rendered)
+        if (clientRects.length === 0) continue;
+
+        // Use the first client rect for visibility checks (or could use bounding rect)
+        var rect = clientRects[0];
 
         // Skip invisible elements (0 dimensions)
         if (rect.width === 0 || rect.height === 0) continue;
@@ -314,10 +323,25 @@ var MobileLighthouseAnalyzer = (function() {
           elementId += '@' + Math.round(rect.left) + ',' + Math.round(rect.top);
         }
 
+        // Store ALL client rects for size checking (Lighthouse approach)
+        // Also store the primary rect for overlap checking
+        var allClientRects = [];
+        for (var k = 0; k < clientRects.length; k++) {
+          allClientRects.push({
+            width: clientRects[k].width,
+            height: clientRects[k].height,
+            left: clientRects[k].left,
+            top: clientRects[k].top,
+            right: clientRects[k].right,
+            bottom: clientRects[k].bottom
+          });
+        }
+
         rects.push({
           el: el,
           element: elementId,
-          width: rect.width,
+          clientRects: allClientRects,  // Store all client rects for size check
+          width: rect.width,   // Primary rect for overlap checks
           height: rect.height,
           left: rect.left,
           top: rect.top,
@@ -335,14 +359,34 @@ var MobileLighthouseAnalyzer = (function() {
       for (var i = 0; i < rects.length; i++) {
         var rect = rects[i];
 
-        // Check 1: Size requirement
-        if (rect.width < minSize || rect.height < minSize) {
+        // Check 1: Size requirement (Lighthouse approach)
+        // Only flag as too small if ALL client rects are below minimum size
+        // If ANY client rect meets the size requirement, the target passes
+        var allRectsBelowMinimum = true;
+        for (var k = 0; k < rect.clientRects.length; k++) {
+          var cr = rect.clientRects[k];
+          if (cr.width >= minSize && cr.height >= minSize) {
+            allRectsBelowMinimum = false;
+            break;
+          }
+        }
+
+        if (allRectsBelowMinimum) {
+          // Find the largest rect to report (Lighthouse does this for display)
+          var largestRect = rect.clientRects[0];
+          for (var k = 1; k < rect.clientRects.length; k++) {
+            var cr = rect.clientRects[k];
+            if (cr.width * cr.height > largestRect.width * largestRect.height) {
+              largestRect = cr;
+            }
+          }
+
           issues.push({
             type: 'size',
             element: rect.element,
             text: rect.text,
-            width: Math.round(rect.width),
-            height: Math.round(rect.height),
+            width: Math.round(largestRect.width),
+            height: Math.round(largestRect.height),
             minRequired: minSize
           });
         }
