@@ -195,7 +195,6 @@ var MobileLighthouseAnalyzer = (function() {
       var minSize = ${minSize};
       var fingerSize = ${fingerSize};
       var maxOverlapRatio = ${maxOverlapRatio};
-      var fingerPadding = fingerSize / 2; // 24px padding (half of 48px)
 
       // Helper: Get overlap area between two rectangles (Lighthouse rect-helpers.js)
       function getRectOverlapArea(rect1, rect2) {
@@ -211,16 +210,28 @@ var MobileLighthouseAnalyzer = (function() {
         return overlapWidth * overlapHeight;
       }
 
-      // Helper: Get padded bounding rect (Lighthouse approach)
-      function getPaddedRect(rect, padding) {
+      // Helper: Create 48x48px finger rectangle centered on target center point (Lighthouse approach)
+      function getFingerRect(rect) {
+        var centerX = rect.left + rect.width / 2;
+        var centerY = rect.top + rect.height / 2;
+        var halfFinger = fingerSize / 2; // 24px
+
         return {
-          left: rect.left - padding,
-          right: rect.right + padding,
-          top: rect.top - padding,
-          bottom: rect.bottom + padding,
-          width: rect.width + (padding * 2),
-          height: rect.height + (padding * 2)
+          left: centerX - halfFinger,
+          right: centerX + halfFinger,
+          top: centerY - halfFinger,
+          bottom: centerY + halfFinger,
+          width: fingerSize,
+          height: fingerSize
         };
+      }
+
+      // Helper: Check if one rectangle completely contains another (Lighthouse containment check)
+      function isContained(inner, outer) {
+        return inner.left >= outer.left &&
+               inner.right <= outer.right &&
+               inner.top >= outer.top &&
+               inner.bottom <= outer.bottom;
       }
 
       // Helper: Check if element is actually visible using elementFromPoint
@@ -286,16 +297,9 @@ var MobileLighthouseAnalyzer = (function() {
           if (!hasImage && !hasBackgroundImage) continue;
         }
 
-        // Skip nested interactive elements (Lighthouse filters these out)
-        var isNested = false;
-        for (var j = 0; j < rects.length; j++) {
-          var parent = rects[j].el;
-          if (parent.contains(el)) {
-            isNested = true;
-            break;
-          }
-        }
-        if (isNested) continue;
+        // NOTE: Do NOT filter out nested interactive elements here
+        // Lighthouse INCLUDES nested elements but then IGNORES their overlap during containment check
+        // This allows proper detection of intentionally nested targets (e.g., delete button in a card)
 
         var elementId = el.tagName;
         if (el.id) {
@@ -354,23 +358,24 @@ var MobileLighthouseAnalyzer = (function() {
             if (rectUrl === otherUrl) continue;
           }
 
-          // Create padded rectangles (24px buffer = half of 48px finger size)
-          var paddedRect = getPaddedRect(rect, fingerPadding);
-          var paddedOther = getPaddedRect(other, fingerPadding);
+          // CRITICAL: Check for containment (Lighthouse approach)
+          // If one target completely contains another, ignore the overlap (intentional nesting)
+          if (isContained(rect, other) || isContained(other, rect)) {
+            continue;
+          }
 
-          // Calculate overlap area
-          var overlapArea = getRectOverlapArea(paddedRect, paddedOther);
+          // Create 48x48px finger rectangles centered on each target's center
+          var fingerRect = getFingerRect(rect);
+          var fingerOther = getFingerRect(other);
+
+          // Calculate overlap area between finger rectangles
+          var overlapArea = getRectOverlapArea(fingerRect, fingerOther);
 
           if (overlapArea > 0) {
-            // Calculate overlap ratio using finger-size area (Lighthouse approach)
-            // Use the padded rectangle areas, not the actual element areas
+            // Calculate overlap ratio using fixed 48x48px finger area (2304 sq px)
             // This represents "how much of the 48px tap zone overlaps"
-            var paddedRectArea = paddedRect.width * paddedRect.height;
-            var paddedOtherArea = paddedOther.width * paddedOther.height;
-            var targetArea = Math.min(paddedRectArea, paddedOtherArea);
-
-            // Calculate overlap ratio
-            var overlapRatio = overlapArea / targetArea;
+            var fingerArea = fingerSize * fingerSize; // Always 2304 (48 * 48)
+            var overlapRatio = overlapArea / fingerArea;
 
             // Flag if overlap exceeds 25% threshold
             if (overlapRatio > maxOverlapRatio) {
