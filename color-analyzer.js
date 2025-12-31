@@ -169,6 +169,51 @@ const ColorAnalyzer = {
   // CONTEXT / LABEL HELPERS
   // ============================================
 
+  // Determine if element is within navigation, header, or footer
+  getElementLocation: function (element) {
+    let el = element;
+    let depth = 0;
+
+    while (el && depth < 15) {
+      const tagName = el.tagName ? el.tagName.toLowerCase() : '';
+
+      // Check for NAV element
+      if (tagName === 'nav') return 'navigation';
+
+      // Check for HEADER element
+      if (tagName === 'header') return 'header';
+
+      // Check for FOOTER element
+      if (tagName === 'footer') return 'footer';
+
+      // Check for common navigation classes/IDs
+      const className = el.className || '';
+      const id = el.id || '';
+      if (className.toLowerCase().includes('nav') ||
+          id.toLowerCase().includes('nav') ||
+          className.toLowerCase().includes('menu')) {
+        return 'navigation';
+      }
+
+      // Check for header classes/IDs
+      if (className.toLowerCase().includes('header') ||
+          id.toLowerCase().includes('header')) {
+        return 'header';
+      }
+
+      // Check for footer classes/IDs
+      if (className.toLowerCase().includes('footer') ||
+          id.toLowerCase().includes('footer')) {
+        return 'footer';
+      }
+
+      el = el.parentElement;
+      depth++;
+    }
+
+    return 'content'; // Default to content area
+  },
+
   // Helper: detect "ghost" / unlabeled buttons that we want to IGNORE in color analysis
   isGhostButtonForColorAnalysis: function (element) {
     const tag = element.tagName;
@@ -263,6 +308,10 @@ const ColorAnalyzer = {
 
     colorData.colors[hex].count++;
 
+    // Determine element context by checking element and its parents
+    const elementLocation = this.getElementLocation(element);
+
+    // Add property-based categories
     if (
       property === 'background-color' &&
       !colorData.colors[hex].usedAs.includes('background')
@@ -280,6 +329,15 @@ const ColorAnalyzer = {
       colorData.colors[hex].usedAs.push('border');
     }
 
+    // Add location-based categories (navigation, header, footer)
+    if (elementLocation === 'navigation' && !colorData.colors[hex].usedAs.includes('navigation')) {
+      colorData.colors[hex].usedAs.push('navigation');
+    } else if (elementLocation === 'header' && !colorData.colors[hex].usedAs.includes('header')) {
+      colorData.colors[hex].usedAs.push('header');
+    } else if (elementLocation === 'footer' && !colorData.colors[hex].usedAs.includes('footer')) {
+      colorData.colors[hex].usedAs.push('footer');
+    }
+
     colorData.colors[hex].instances.push({
       page: window.location.href,
       pageTitle: document.title || 'Unknown',
@@ -288,6 +346,7 @@ const ColorAnalyzer = {
       section: getSectionInfo(element),
       block: getBlockInfo(element),
       context: this.getElementContext(element),
+      location: elementLocation,
       pairedWith: pairedColor ? this.rgbToHex(pairedColor) : null
     });
   },
@@ -308,6 +367,20 @@ const ColorAnalyzer = {
 
     // Ignore ghost / unlabeled buttons in contrast analysis
     if (this.isGhostButtonForColorAnalysis(element)) return;
+
+    // Only check contrast for elements with DIRECT text content
+    // Skip parent containers that only have inherited text from children
+    let hasDirectText = false;
+    for (let i = 0; i < element.childNodes.length; i++) {
+      const node = element.childNodes[i];
+      if (node.nodeType === 3 && node.textContent.trim().length > 0) {
+        hasDirectText = true;
+        break;
+      }
+    }
+
+    // Skip if no direct text nodes (only contains child elements)
+    if (!hasDirectText) return;
 
     const textHex = this.rgbToHex(textColor);
     if (!textHex) return;

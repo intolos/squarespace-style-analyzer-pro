@@ -244,14 +244,48 @@ var ContentScriptHelpers = (function() {
         continue;
       }
 
-      // Check if element is actually visible
-      if (!ColorAnalyzer.isElementActuallyVisible(element)) {
-        continue;
-      }
-
       try {
         var computed = window.getComputedStyle(element);
         if (!computed) continue;
+
+        // Get bounding rect to check visibility
+        var rect = element.getBoundingClientRect();
+        var hasVisibleDimensions = rect.width > 0 && rect.height > 0;
+
+        // Check basic computed style visibility
+        var isDisplayed = computed.display !== 'none';
+        var isVisible = computed.visibility !== 'hidden';
+        var hasOpacity = parseFloat(computed.opacity) > 0;
+
+        // Element is considered visible if it has dimensions and basic visibility
+        var isElementVisible = hasVisibleDimensions && isDisplayed && isVisible && hasOpacity;
+
+        // Special handling for footer elements - be more lenient with visibility checks
+        var isInFooter = false;
+        var parent = element;
+        var depth = 0;
+        while (parent && depth < 10) {
+          var parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
+          var parentClass = parent.className || '';
+          var parentId = parent.id || '';
+          if (parentTag === 'footer' ||
+              parentClass.toLowerCase().includes('footer') ||
+              parentId.toLowerCase().includes('footer')) {
+            isInFooter = true;
+            break;
+          }
+          parent = parent.parentElement;
+          depth++;
+        }
+
+        // For footer elements, check if they're on the page even if off-screen
+        if (isInFooter && hasVisibleDimensions && isDisplayed && isVisible) {
+          isElementVisible = true;
+        }
+
+        if (!isElementVisible) {
+          continue;
+        }
 
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;

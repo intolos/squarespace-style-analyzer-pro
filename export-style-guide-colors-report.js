@@ -173,23 +173,83 @@ class ExportStyleGuideColorsReport {
     });
   }
   
-  // Generate color swatch table
+  // Generate color swatch table grouped by category
   static generateColorSwatchTable(colors, colorData) {
-    const colorEntries = Object.entries(colors).sort((a, b) => b[1].count - a[1].count);
-    
-    let html = '<div class="color-swatch-grid">';
-    
+    const colorEntries = Object.entries(colors);
+
+    // Group colors by their usage categories
+    const categoryGroups = {
+      navigation: { title: '🧭 Navigation Colors', colors: [] },
+      header: { title: '📍 Header Colors', colors: [] },
+      footer: { title: '📌 Footer Colors', colors: [] },
+      text: { title: '📝 Text Colors', colors: [] },
+      background: { title: '🎨 Background Colors', colors: [] },
+      border: { title: '🔲 Border Colors', colors: [] }
+    };
+
+    // Categorize each color
     colorEntries.forEach(([color, data]) => {
+      const usedAs = data.usedAs || [];
+
+      // Add to category groups (a color can belong to multiple groups)
+      if (usedAs.includes('navigation')) {
+        categoryGroups.navigation.colors.push([color, data]);
+      }
+      if (usedAs.includes('header')) {
+        categoryGroups.header.colors.push([color, data]);
+      }
+      if (usedAs.includes('footer')) {
+        categoryGroups.footer.colors.push([color, data]);
+      }
+      if (usedAs.includes('text')) {
+        categoryGroups.text.colors.push([color, data]);
+      }
+      if (usedAs.includes('background')) {
+        categoryGroups.background.colors.push([color, data]);
+      }
+      if (usedAs.includes('border')) {
+        categoryGroups.border.colors.push([color, data]);
+      }
+    });
+
+    let html = '';
+
+    // Generate sections for each category that has colors
+    Object.values(categoryGroups).forEach(group => {
+      if (group.colors.length === 0) return;
+
+      // Sort colors by usage count
+      group.colors.sort((a, b) => b[1].count - a[1].count);
+
       html += `
-        <div class="color-swatch">
-          <div class="swatch" style="background-color: ${color};" title="${color} - ${data.count} uses"></div>
-          <div class="swatch-label">${color}</div>
-          <div class="swatch-count">${data.count} uses</div>
+        <div class="color-category-section">
+          <h3 style="font-size: 1.3rem; margin: 25px 0 15px 0; color: #2d3748;">${group.title} (${group.colors.length})</h3>
+          <div class="color-swatch-grid">
+      `;
+
+      group.colors.forEach(([color, data]) => {
+        // Get sample locations
+        const sampleLocations = data.instances.slice(0, 3);
+        const locationText = sampleLocations.map(inst => inst.context).join(', ');
+
+        html += `
+          <div class="color-swatch">
+            <div class="swatch" style="background-color: ${color};" title="${color} - ${data.count} uses"></div>
+            <div class="swatch-label">${color}</div>
+            <div class="swatch-count">${data.count} use${data.count > 1 ? 's' : ''}</div>
+            <div class="swatch-locations" style="font-size: 0.7rem; color: #718096; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${locationText}">
+              ${locationText.length > 30 ? locationText.substring(0, 30) + '...' : locationText}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
         </div>
       `;
     });
-    
-    html += '</div>';
+
     return html;
   }
 
