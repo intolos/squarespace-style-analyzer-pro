@@ -21,7 +21,7 @@ var MobileLighthouseAnalyzer = (function() {
   var MOBILE_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36';
   
   var LIGHTHOUSE_THRESHOLDS = {
-    minTapTargetSize: 48,      // Lighthouse uses 48x48px minimum
+    minTapTargetSize: 24,      // Lighthouse v12+ uses axe-core target-size: 24x24px minimum (WCAG 2.2 Level AA)
     minTapTargetSpacing: 8,     // Lighthouse uses 8px minimum spacing
     minFontSize: 12,            // Lighthouse minimum legible font size
     recommendedFontSize: 16     // Recommended for mobile readability
