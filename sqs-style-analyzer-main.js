@@ -102,6 +102,10 @@
     ContentScriptAnalyzers.analyzeLinks(results, navigationName, colorTracker, results.colorData);
     ContentScriptAnalyzers.analyzeImages(results, navigationName);
 
+    // Scan all page colors to capture any colors missed by element-specific analyzers
+    // This ensures we capture section backgrounds, navigation colors, decorative elements, etc.
+    ContentScriptHelpers.scanAllPageColors(results.colorData);
+
     // Finalize color palette
     results.colorPalette = ContentScriptHelpers.finalizeColorPalette(colorTracker);
 

@@ -216,6 +216,94 @@ var ContentScriptHelpers = (function() {
   }
 
   // ============================================
+  // COMPREHENSIVE COLOR SCANNER
+  // ============================================
+
+  /**
+   * Scans ALL visible elements on the page to capture colors that might be missed
+   * by element-specific analyzers (buttons, headings, paragraphs, links).
+   * This ensures we capture:
+   * - Section/container backgrounds
+   * - Navigation element colors
+   * - Decorative element colors
+   * - Any other styled elements
+   */
+  function scanAllPageColors(colorData) {
+    if (!colorData) return;
+
+    // Get ALL elements on the page
+    var allElements = document.querySelectorAll('*');
+
+    for (var i = 0; i < allElements.length; i++) {
+      var element = allElements[i];
+
+      // Skip script, style, noscript, and other non-visual elements
+      var tagName = element.tagName.toLowerCase();
+      if (tagName === 'script' || tagName === 'style' || tagName === 'noscript' ||
+          tagName === 'meta' || tagName === 'link' || tagName === 'head') {
+        continue;
+      }
+
+      // Check if element is actually visible
+      if (!ColorAnalyzer.isElementActuallyVisible(element)) {
+        continue;
+      }
+
+      try {
+        var computed = window.getComputedStyle(element);
+        if (!computed) continue;
+
+        var bgColor = computed.backgroundColor;
+        var textColor = computed.color;
+        var borderColor = computed.borderColor;
+
+        // Track background color (ColorAnalyzer.trackColor handles its own deduplication)
+        if (bgColor && !ColorAnalyzer.isTransparentColor(bgColor)) {
+          ColorAnalyzer.trackColor(
+            bgColor,
+            element,
+            'background-color',
+            textColor,
+            colorData,
+            getSectionInfo,
+            getBlockInfo
+          );
+        }
+
+        // Track text color (only for elements with actual text content)
+        var hasText = element.textContent && element.textContent.trim().length > 0;
+        if (hasText && textColor && !ColorAnalyzer.isTransparentColor(textColor)) {
+          ColorAnalyzer.trackColor(
+            textColor,
+            element,
+            'color',
+            bgColor,
+            colorData,
+            getSectionInfo,
+            getBlockInfo
+          );
+        }
+
+        // Track border color
+        if (borderColor && !ColorAnalyzer.isTransparentColor(borderColor)) {
+          ColorAnalyzer.trackColor(
+            borderColor,
+            element,
+            'border-color',
+            null,
+            colorData,
+            getSectionInfo,
+            getBlockInfo
+          );
+        }
+      } catch (e) {
+        // Skip elements that cause errors
+        continue;
+      }
+    }
+  }
+
+  // ============================================
   // PUBLIC API
   // ============================================
 
@@ -228,7 +316,8 @@ var ContentScriptHelpers = (function() {
     getSectionInfo: getSectionInfo,
     getBlockInfo: getBlockInfo,
     getStyleDefinition: getStyleDefinition,
-    extractFontSize: extractFontSize
+    extractFontSize: extractFontSize,
+    scanAllPageColors: scanAllPageColors
   };
 
 })();
