@@ -85,7 +85,7 @@ var MobileResultsConverter = (function() {
           block: 'interactive-element',
           details: {
             actual: issue.width + 'x' + issue.height + 'px',
-            recommended: '≥' + issue.minRequired + 'x' + issue.minRequired + 'px (Lighthouse standard)',
+            recommended: '≥' + issue.minRequired + 'x' + issue.minRequired + 'px (WCAG 2.2 Level AA - Lighthouse v12+ uses axe-core target-size)',
             width: issue.width,
             height: issue.height
           }
