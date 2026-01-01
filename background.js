@@ -34,14 +34,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       try {
         const tabId = request.tabId;
         const mobileOnly = request.mobileOnly || false;
-        
-        // Step 1: Run Lighthouse-quality mobile analysis
-        console.log('Step 1: Running Lighthouse mobile checks...');
-        const tab = await chrome.tabs.get(tabId);
-				const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, tab.url);
-        console.log('Lighthouse results:', lighthouseResults);
-        
+
         if (mobileOnly) {
+          // Mobile-only mode: Just run mobile checks
+          console.log('Step 1: Running mobile-only checks...');
+          const tab = await chrome.tabs.get(tabId);
+          const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, tab.url);
+          console.log('Lighthouse results:', lighthouseResults);
           // Mobile-only: Skip design analysis, only return mobile issues
           console.log('Mobile-only mode: Skipping design analysis');
           
@@ -115,22 +114,28 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           console.log('  - mobileIssues:', mobileOnlyData.mobileIssues.issues.length, 'issues');
           sendResponse({ success: true, data: mobileOnlyData });
         } else {
-          // Step 2: Run standard design analysis (still in mobile viewport)
-          console.log('Step 2: Running design element analysis...');
+          // Full analysis mode: Desktop analysis FIRST, then mobile checks
+          console.log('Step 1: Running design element analysis in DESKTOP viewport...');
           const designResponse = await chrome.tabs.sendMessage(tabId, { action: 'analyzeStyles' });
-          
+
           if (designResponse && designResponse.success) {
+            // Step 2: NOW run mobile analysis (switches to mobile viewport)
+            console.log('Step 2: Running Lighthouse mobile checks...');
+            const tab = await chrome.tabs.get(tabId);
+            const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, tab.url);
+            console.log('Lighthouse results:', lighthouseResults);
+
             // Step 3: Convert Lighthouse results to extension format
             const pageUrl = designResponse.data.metadata.url;
             const mobileIssues = MobileResultsConverter.convertToMobileIssues(lighthouseResults, pageUrl);
-            
+
             // Step 4: Merge with design analysis results
             designResponse.data.mobileIssues = {
               viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
               issues: mobileIssues
             };
-            
-            console.log('✅ Mobile analysis complete. Found', mobileIssues.length, 'issues');
+
+            console.log('✅ Analysis complete. Mobile issues:', mobileIssues.length);
             console.log('🔍 VERIFICATION: mobileOnly=false, returning data with:');
             console.log('  - headings:', Object.keys(designResponse.data.headings).length, 'types, total locations:', Object.values(designResponse.data.headings).reduce((sum, h) => sum + (h.locations?.length || 0), 0));
             console.log('  - paragraphs:', Object.keys(designResponse.data.paragraphs).length, 'types, total locations:', Object.values(designResponse.data.paragraphs).reduce((sum, p) => sum + (p.locations?.length || 0), 0));
