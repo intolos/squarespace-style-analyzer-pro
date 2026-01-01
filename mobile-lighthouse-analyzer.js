@@ -22,9 +22,8 @@ var MobileLighthouseAnalyzer = (function() {
   
   var LIGHTHOUSE_THRESHOLDS = {
     minTapTargetSize: 24,      // Lighthouse v12+ uses axe-core target-size: 24x24px minimum (WCAG 2.2 Level AA)
-    minTapTargetSpacing: 8,     // Lighthouse uses 8px minimum spacing
-    minFontSize: 12,            // Lighthouse minimum legible font size
-    recommendedFontSize: 16     // Recommended for mobile readability
+    minTapTargetSpacing: 8      // Lighthouse uses 8px minimum spacing
+    // NOTE: Font-size audit was removed in Lighthouse v12+ (no replacement, no WCAG pixel-based requirement)
   };
 
   // ============================================
@@ -67,7 +66,7 @@ var MobileLighthouseAnalyzer = (function() {
       // Step 6: Run all checks
       results.viewport = await checkViewport(tabId);
       results.tapTargets = await checkTapTargets(tabId);
-      results.fontSize = await checkFontSizes(tabId);
+      // Font-size check removed (Lighthouse v12+ removed this audit)
       results.contentWidth = await checkContentWidth(tabId);
       results.imageSizing = await checkImageSizing(tabId);
       
@@ -153,17 +152,31 @@ var MobileLighthouseAnalyzer = (function() {
     return `(function() {
       var meta = document.querySelector('meta[name="viewport"]');
       if (!meta) return { exists: false };
-      
+
       var content = meta.getAttribute('content');
       var hasWidth = /width\\s*=\\s*device-width/i.test(content);
       var hasInitialScale = /initial-scale\\s*=\\s*1/i.test(content);
-      
+
+      // Accessibility checks (Lighthouse v12+ requirements)
+      var blocksZoom = /user-scalable\\s*=\\s*no/i.test(content);
+      var maxScaleValue = null;
+      var limitsZoom = false;
+
+      var maxScaleMatch = content.match(/maximum-scale\\s*=\\s*([0-9.]+)/i);
+      if (maxScaleMatch) {
+        maxScaleValue = parseFloat(maxScaleMatch[1]);
+        limitsZoom = maxScaleValue < 5;
+      }
+
       return {
         exists: true,
         content: content,
         hasWidth: hasWidth,
         hasInitialScale: hasInitialScale,
-        isOptimal: hasWidth && hasInitialScale
+        isOptimal: hasWidth && hasInitialScale,
+        blocksZoom: blocksZoom,
+        limitsZoom: limitsZoom,
+        maxScaleValue: maxScaleValue
       };
     })()`;
   }
@@ -448,158 +461,11 @@ var MobileLighthouseAnalyzer = (function() {
   }
 
   // ============================================
-  // FONT SIZE CHECK (Lighthouse: font-size audit)
+  // FONT SIZE CHECK - REMOVED
   // ============================================
-  
-  async function checkFontSizes(tabId) {
-    var result = await sendDebuggerCommand(
-      tabId,
-      'Runtime.evaluate',
-      {
-        expression: generateFontSizeCheckScript(),
-        returnByValue: true
-      }
-    );
-    
-    return result.result.value;
-  }
-  
-  function generateFontSizeCheckScript() {
-    var minSize = LIGHTHOUSE_THRESHOLDS.minFontSize;
-    var recommendedSize = LIGHTHOUSE_THRESHOLDS.recommendedFontSize;
-
-    return `(function() {
-      var issues = [];
-      var minSize = ${minSize};
-      var recommendedSize = ${recommendedSize};
-
-      // Helper: Check if element is actually visible (matches tap targets approach)
-      function isElementVisible(el, rect) {
-        // Check if offsetParent is null (more reliable than display:none)
-        if (el.offsetParent === null && el.tagName !== 'BODY' && el.tagName !== 'HTML') return false;
-
-        // Test center point to check z-index occlusion
-        var centerX = rect.left + rect.width / 2;
-        var centerY = rect.top + rect.height / 2;
-        var elementAtPoint = document.elementFromPoint(centerX, centerY);
-
-        // Element is visible if it's at the center point or contains the element at center
-        if (elementAtPoint === el || el.contains(elementAtPoint)) return true;
-
-        // Also check if the element at point is contained by our target (for nested cases)
-        if (elementAtPoint && elementAtPoint.contains(el)) return true;
-
-        return false;
-      }
-
-      // Helper: Get CSS rule identifier (approximates Lighthouse's getFontArtifactId)
-      // Groups elements by: font-size value + font-family + element type
-      function getCSSRuleId(el, styles) {
-        var fontSize = styles.fontSize;
-        var fontFamily = styles.fontFamily;
-        var tagName = el.tagName.toLowerCase();
-
-        // Create a unique identifier for this CSS "rule"
-        // Elements with same font-size, font-family, and tag share a CSS rule conceptually
-        return fontSize + '|' + fontFamily + '|' + tagName;
-      }
-
-      // Map to track failing CSS rules (like Lighthouse's failingRules Map)
-      var failingRules = new Map();
-
-      // Get all text-containing elements
-      var textElements = document.querySelectorAll('p, span, li, a, h1, h2, h3, h4, h5, h6, td, th, label, button, div');
-
-      for (var i = 0; i < textElements.length; i++) {
-        var el = textElements[i];
-
-        // Skip if no meaningful text (check direct text nodes only to avoid parent/child duplication)
-        var hasDirectText = false;
-        for (var k = 0; k < el.childNodes.length; k++) {
-          var node = el.childNodes[k];
-          if (node.nodeType === 3 && node.textContent.trim().length >= 3) {
-            hasDirectText = true;
-            break;
-          }
-        }
-        if (!hasDirectText) continue;
-
-        // Skip if element is not visible (0 dimensions)
-        var rect = el.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) continue;
-
-        var styles = window.getComputedStyle(el);
-
-        // Skip hidden elements (check computed styles)
-        if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0') continue;
-
-        // Skip elements with very low opacity (effectively invisible)
-        if (parseFloat(styles.opacity) < 0.01) continue;
-
-        // Skip elements that are positioned off-screen (like skip links)
-        var left = rect.left;
-        var top = rect.top;
-        if (left < -1000 || top < -1000 || left > window.innerWidth + 1000 || top > window.innerHeight + 1000) continue;
-
-        // Skip if not actually visible (z-index occlusion check)
-        if (!isElementVisible(el, rect)) continue;
-
-        var fontSize = parseFloat(styles.fontSize);
-
-        // Skip if font size check doesn't make sense for this element
-        if (isNaN(fontSize)) continue;
-
-        // Only process if font size is problematic
-        if (fontSize < recommendedSize) {
-          // Get CSS rule identifier (groups similar elements)
-          var ruleId = getCSSRuleId(el, styles);
-
-          // Get text content for this element
-          var text = el.textContent.trim();
-          var textLength = text.length;
-
-          // Check if we've already seen this CSS rule
-          var existingRule = failingRules.get(ruleId);
-
-          if (!existingRule) {
-            // First time seeing this rule - create entry
-            var elementId = el.tagName;
-            if (el.id) elementId += '#' + el.id;
-            else if (el.className) elementId += '.' + el.className.split(' ')[0];
-
-            var severity = fontSize < minSize ? 'error' : 'warning';
-            var type = fontSize < minSize ? 'too-small' : 'below-recommended';
-
-            failingRules.set(ruleId, {
-              type: type,
-              severity: severity,
-              element: elementId,
-              fontSize: Math.round(fontSize * 10) / 10,
-              text: text.substring(0, 50),
-              textLength: textLength,
-              minRequired: minSize,
-              recommended: recommendedSize
-            });
-          } else {
-            // Already seen this rule - accumulate text length (Lighthouse approach)
-            existingRule.textLength += textLength;
-
-            // Update the sample text if this element has longer text
-            if (text.length > existingRule.text.length) {
-              existingRule.text = text.substring(0, 50);
-            }
-          }
-        }
-      }
-
-      // Convert Map to array (like Lighthouse's [...failingRules.values()])
-      failingRules.forEach(function(rule) {
-        issues.push(rule);
-      });
-
-      return issues;
-    })()`;
-  }
+  // Font-size audit was removed in Lighthouse v12+ with no replacement.
+  // No WCAG pixel-based font size requirement exists.
+  // Mobile browsers handle zoom, mitigating small text issues.
 
   // ============================================
   // CONTENT WIDTH CHECK (Lighthouse: checks for horizontal scroll)

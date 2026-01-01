@@ -13,13 +13,12 @@ var MobileResultsConverter = (function() {
     
     // Convert viewport issues
     convertViewportIssues(lighthouseResults.viewport, issues, pageUrl);
-    
+
     // Convert tap target issues
     convertTapTargetIssues(lighthouseResults.tapTargets, issues, pageUrl);
-    
-    // Convert font size issues
-    convertFontSizeIssues(lighthouseResults.fontSize, issues, pageUrl);
-    
+
+    // Font size check removed (Lighthouse v12+ removed this audit)
+
     // Convert content width issues
     convertContentWidthIssues(lighthouseResults.contentWidth, issues, pageUrl);
     
@@ -60,6 +59,39 @@ var MobileResultsConverter = (function() {
         details: {
           actual: viewportData.content,
           required: 'width=device-width, initial-scale=1'
+        }
+      });
+    }
+
+    // Accessibility checks (Lighthouse v12+ requirements)
+    if (viewportData.blocksZoom) {
+      issues.push({
+        type: 'viewport-blocks-zoom',
+        severity: 'error',
+        element: 'META',
+        url: pageUrl,
+        navigationName: new URL(pageUrl).pathname,
+        section: 'head',
+        block: 'meta',
+        details: {
+          actual: 'user-scalable=no',
+          required: 'user-scalable=yes or omit (accessibility standard)'
+        }
+      });
+    }
+
+    if (viewportData.limitsZoom) {
+      issues.push({
+        type: 'viewport-limits-zoom',
+        severity: 'error',
+        element: 'META',
+        url: pageUrl,
+        navigationName: new URL(pageUrl).pathname,
+        section: 'head',
+        block: 'meta',
+        details: {
+          actual: 'maximum-scale=' + viewportData.maxScaleValue,
+          required: 'maximum-scale ≥5 or omit (accessibility standard)'
         }
       });
     }
@@ -111,47 +143,10 @@ var MobileResultsConverter = (function() {
   }
 
   // ============================================
-  // FONT SIZE CONVERSION
+  // FONT SIZE CONVERSION - REMOVED
   // ============================================
-  
-  function convertFontSizeIssues(fontSizes, issues, pageUrl) {
-    for (var i = 0; i < fontSizes.length; i++) {
-      var issue = fontSizes[i];
-      
-      if (issue.type === 'too-small') {
-        issues.push({
-          type: 'font-too-small',
-          severity: 'error',
-          element: issue.element,
-          text: issue.text || '',
-          url: pageUrl,
-          navigationName: new URL(pageUrl).pathname,
-          section: 'body',
-          block: 'text-element',
-          details: {
-            actual: issue.fontSize + 'px',
-            required: '≥' + issue.minRequired + 'px (Lighthouse minimum)',
-            recommended: '≥' + issue.recommended + 'px for optimal readability (Lighthouse standard)'
-          }
-        });
-      } else if (issue.type === 'below-recommended') {
-        issues.push({
-          type: 'font-size-warning',
-          severity: 'warning',
-          element: issue.element,
-          text: issue.text || '',
-          url: pageUrl,
-          navigationName: new URL(pageUrl).pathname,
-          section: 'body',
-          block: 'text-element',
-          details: {
-            actual: issue.fontSize + 'px',
-            recommended: '≥' + issue.recommended + 'px for optimal mobile readability (Lighthouse standard)'
-          }
-        });
-      }
-    }
-  }
+  // Font-size audit was removed in Lighthouse v12+ with no replacement.
+  // No WCAG pixel-based font size requirement exists.
 
   // ============================================
   // CONTENT WIDTH CONVERSION
