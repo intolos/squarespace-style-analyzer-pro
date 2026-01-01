@@ -27,8 +27,8 @@ const ExportMobileReport = {
     const labels = {
       'viewport-missing': 'Viewport Meta Tag Missing',
       'viewport-improper': 'Viewport Meta Tag Improper',
-      'font-too-small': 'Font Size Errors (below 12px)',
-      'font-size-warning': 'Font Size Warnings (12-15px)',
+      'viewport-blocks-zoom': 'Viewport Blocks Zoom (Accessibility)',
+      'viewport-limits-zoom': 'Viewport Limits Zoom (Accessibility)',
       'touch-target-too-small': 'Touch Targets Too Small',
       'horizontal-scroll': 'Horizontal Scrolling',
       'non-mobile-element': 'Non-Mobile-Friendly Elements',
@@ -69,10 +69,10 @@ const ExportMobileReport = {
     const allCheckTypes = [
       { type: 'viewport-missing', label: 'Viewport Meta Tag Missing' },
       { type: 'viewport-improper', label: 'Viewport Meta Tag Improper' },
+      { type: 'viewport-blocks-zoom', label: 'Viewport Blocks Zoom (Accessibility)' },
+      { type: 'viewport-limits-zoom', label: 'Viewport Limits Zoom (Accessibility)' },
       { type: 'touch-target-too-small', label: 'Touch Targets Too Small' },
       { type: 'touch-target-spacing', label: 'Touch Target Spacing' },
-      { type: 'font-too-small', label: 'Font Size Errors (below 12px)' },
-      { type: 'font-size-warning', label: 'Font Size Warnings (12-15px)' },
       { type: 'horizontal-scroll', label: 'Horizontal Scrolling' },
       { type: 'content-width', label: 'Content Width Issues' },
       { type: 'image-oversized', label: 'Image Sizing/Optimization' }
