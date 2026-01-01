@@ -232,7 +232,15 @@ var ContentScriptHelpers = (function() {
       // Skip color tracking for icons and social media elements
       var isIcon = isIconOrSocialElement(element);
 
-      if (!isIcon) {
+      // Skip color tracking for non-visible elements (hidden dropdowns, mobile menus, etc.)
+      var rect = element.getBoundingClientRect();
+      var hasVisibleDimensions = rect.width > 0 && rect.height > 0;
+      var isDisplayed = computed.display !== 'none';
+      var isVisible = computed.visibility !== 'hidden';
+      var hasOpacity = parseFloat(computed.opacity) > 0;
+      var isElementVisible = hasVisibleDimensions && isDisplayed && isVisible && hasOpacity;
+
+      if (!isIcon && isElementVisible) {
         // Track colors using ColorAnalyzer
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;
