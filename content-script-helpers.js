@@ -40,6 +40,73 @@ var ContentScriptHelpers = (function() {
   }
 
   // ============================================
+  // ICON & SOCIAL MEDIA DETECTION
+  // ============================================
+
+  function isIconOrSocialElement(element) {
+    if (!element) return false;
+
+    try {
+      // Check element itself and ancestors for social/icon indicators
+      var checkElement = element;
+      var depth = 0;
+      while (checkElement && depth < 3) {
+        var className = checkElement.className || '';
+        var classLower = (typeof className === 'string' ? className : '').toLowerCase();
+
+        // Check for social media indicators
+        if (classLower.includes('social') || classLower.includes('share')) {
+          return true;
+        }
+
+        // Check for icon indicators
+        if (classLower.includes('icon') || classLower.includes('fa-') ||
+            classLower.includes('material-icons') || classLower.includes('glyphicon') ||
+            classLower.includes('feather') || classLower.includes('ionicon')) {
+          return true;
+        }
+
+        checkElement = checkElement.parentElement;
+        depth++;
+      }
+
+      // Check if element is SVG or inside SVG
+      if (element.tagName === 'svg' || element.tagName === 'SVG' ||
+          element.closest('svg') || element.ownerSVGElement) {
+        // Check size - small SVGs (≤32px) are likely icons
+        var rect = element.getBoundingClientRect();
+        if ((rect.width > 0 && rect.width <= 32) || (rect.height > 0 && rect.height <= 32)) {
+          return true;
+        }
+      }
+
+      // Check for very small elements (likely icons)
+      var computed = window.getComputedStyle(element);
+      var width = parseFloat(computed.width);
+      var height = parseFloat(computed.height);
+      if ((width > 0 && width <= 32) && (height > 0 && height <= 32)) {
+        // Additional check: must have some icon-like characteristic
+        var className = element.className || '';
+        var classLower = (typeof className === 'string' ? className : '').toLowerCase();
+        if (classLower.includes('btn') || classLower.includes('button')) {
+          return false; // Small buttons are OK
+        }
+        // If it's just small with no text, likely an icon
+        var hasText = element.textContent && element.textContent.trim().length > 2;
+        if (!hasText) {
+          return true;
+        }
+      }
+
+    } catch (e) {
+      // If we can't determine, don't exclude it
+      return false;
+    }
+
+    return false;
+  }
+
+  // ============================================
   // NAVIGATION NAME DETECTION
   // ============================================
 
@@ -150,24 +217,30 @@ var ContentScriptHelpers = (function() {
     try {
       var computed = window.getComputedStyle(element);
       var styleDef = [];
-      
-      // Track colors using ColorAnalyzer
-      var bgColor = computed.backgroundColor;
-      var textColor = computed.color;
-      var borderColor = computed.borderColor;
-      
-      ColorAnalyzer.trackColor(bgColor, element, 'background-color', textColor, colorData, getSectionInfo, getBlockInfo);
-      ColorAnalyzer.trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo);
-      ColorAnalyzer.trackColor(borderColor, element, 'border-color', null, colorData, getSectionInfo, getBlockInfo);
-      
-      // Track contrast for text elements
-      if (elementType === 'heading' || elementType === 'paragraph' || elementType === 'text' || elementType === 'button') {
-        ColorAnalyzer.trackContrastPair(element, textColor, bgColor, colorData, getSectionInfo, getBlockInfo);
+
+      // Skip color tracking for icons and social media elements
+      var isIcon = isIconOrSocialElement(element);
+
+      if (!isIcon) {
+        // Track colors using ColorAnalyzer
+        var bgColor = computed.backgroundColor;
+        var textColor = computed.color;
+        var borderColor = computed.borderColor;
+
+        ColorAnalyzer.trackColor(bgColor, element, 'background-color', textColor, colorData, getSectionInfo, getBlockInfo);
+        ColorAnalyzer.trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo);
+        ColorAnalyzer.trackColor(borderColor, element, 'border-color', null, colorData, getSectionInfo, getBlockInfo);
+
+        // Track contrast for text elements
+        if (elementType === 'heading' || elementType === 'paragraph' || elementType === 'text' || elementType === 'button') {
+          ColorAnalyzer.trackContrastPair(element, textColor, bgColor, colorData, getSectionInfo, getBlockInfo);
+        }
+
+        // Track in legacy colorTracker too (for backwards compatibility)
+        addColor(colorTracker, computed.backgroundColor, 'backgrounds');
+        addColor(colorTracker, computed.color, 'text');
+        addColor(colorTracker, computed.borderColor, 'borders');
       }
-      
-      addColor(colorTracker, computed.backgroundColor, 'backgrounds');
-      addColor(colorTracker, computed.color, 'text');
-      addColor(colorTracker, computed.borderColor, 'borders');
       
       if (elementType === 'button') {
         styleDef.push('background-color: ' + computed.backgroundColor);
@@ -287,6 +360,11 @@ var ContentScriptHelpers = (function() {
           continue;
         }
 
+        // Skip icons and social media elements
+        if (isIconOrSocialElement(element)) {
+          continue;
+        }
+
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;
         var borderColor = computed.borderColor;
@@ -346,6 +424,7 @@ var ContentScriptHelpers = (function() {
     createColorTracker: createColorTracker,
     addColor: addColor,
     finalizeColorPalette: finalizeColorPalette,
+    isIconOrSocialElement: isIconOrSocialElement,
     getNavigationName: getNavigationName,
     getSectionInfo: getSectionInfo,
     getBlockInfo: getBlockInfo,
