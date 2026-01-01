@@ -115,14 +115,23 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
           sendResponse({ success: true, data: mobileOnlyData });
         } else {
           // Full analysis mode: Desktop analysis FIRST, then mobile checks
+          console.log('=== FULL ANALYSIS MODE ===');
           console.log('Step 1: Running design element analysis in DESKTOP viewport...');
+          console.log('⏱️ Desktop analysis START:', new Date().toISOString());
           const designResponse = await chrome.tabs.sendMessage(tabId, { action: 'analyzeStyles' });
+          console.log('⏱️ Desktop analysis COMPLETE:', new Date().toISOString());
 
           if (designResponse && designResponse.success) {
+            // Log color data captured from desktop
+            const colorCount = Object.keys(designResponse.data.colorData?.colors || {}).length;
+            console.log('📊 Desktop analysis captured', colorCount, 'unique colors');
+
             // Step 2: NOW run mobile analysis (switches to mobile viewport)
-            console.log('Step 2: Running Lighthouse mobile checks...');
+            console.log('Step 2: Running Lighthouse mobile checks (switches to MOBILE viewport)...');
+            console.log('⏱️ Mobile checks START:', new Date().toISOString());
             const tab = await chrome.tabs.get(tabId);
             const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, tab.url);
+            console.log('⏱️ Mobile checks COMPLETE:', new Date().toISOString());
             console.log('Lighthouse results:', lighthouseResults);
 
             // Step 3: Convert Lighthouse results to extension format
@@ -137,6 +146,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
             console.log('✅ Analysis complete. Mobile issues:', mobileIssues.length);
             console.log('🔍 VERIFICATION: mobileOnly=false, returning data with:');
+            console.log('  - colors:', Object.keys(designResponse.data.colorData?.colors || {}).length, 'unique colors');
             console.log('  - headings:', Object.keys(designResponse.data.headings).length, 'types, total locations:', Object.values(designResponse.data.headings).reduce((sum, h) => sum + (h.locations?.length || 0), 0));
             console.log('  - paragraphs:', Object.keys(designResponse.data.paragraphs).length, 'types, total locations:', Object.values(designResponse.data.paragraphs).reduce((sum, p) => sum + (p.locations?.length || 0), 0));
             console.log('  - buttons:', Object.keys(designResponse.data.buttons).length, 'types, total locations:', Object.values(designResponse.data.buttons).reduce((sum, b) => sum + (b.locations?.length || 0), 0));
