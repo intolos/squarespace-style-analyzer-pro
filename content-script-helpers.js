@@ -240,6 +240,14 @@ var ContentScriptHelpers = (function() {
       var hasOpacity = parseFloat(computed.opacity) > 0;
       var isElementVisible = hasVisibleDimensions && isDisplayed && isVisible && hasOpacity;
 
+      // Debug: Log when we skip elements
+      if (isIcon) {
+        console.log('[Color Filter] Skipped icon/social element:', element);
+      }
+      if (!isElementVisible) {
+        console.log('[Color Filter] Skipped hidden element:', element, {hasVisibleDimensions, isDisplayed, isVisible, hasOpacity});
+      }
+
       if (!isIcon && isElementVisible) {
         // Track colors using ColorAnalyzer
         var bgColor = computed.backgroundColor;
