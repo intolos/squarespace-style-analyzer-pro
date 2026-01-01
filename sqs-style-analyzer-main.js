@@ -42,6 +42,7 @@
       links: {
         'in-content': { locations: [] }
       },
+      _processedElements: new Set(), // Track elements already processed for color tracking
       images: [],
       colorPalette: {
         backgrounds: [],

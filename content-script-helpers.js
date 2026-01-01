@@ -240,15 +240,12 @@ var ContentScriptHelpers = (function() {
       var hasOpacity = parseFloat(computed.opacity) > 0;
       var isElementVisible = hasVisibleDimensions && isDisplayed && isVisible && hasOpacity;
 
-      // Debug: Log when we skip elements
-      if (isIcon) {
-        console.log('[Color Filter] Skipped icon/social element:', element);
-      }
-      if (!isElementVisible) {
-        console.log('[Color Filter] Skipped hidden element:', element, {hasVisibleDimensions, isDisplayed, isVisible, hasOpacity});
-      }
-
       if (!isIcon && isElementVisible) {
+        // Mark this element as processed so scanAllPageColors skips it
+        if (colorData._processedElements) {
+          colorData._processedElements.add(element);
+        }
+
         // Track colors using ColorAnalyzer
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;
@@ -384,6 +381,11 @@ var ContentScriptHelpers = (function() {
         }
 
         if (!isElementVisible) {
+          continue;
+        }
+
+        // Skip elements already processed by getStyleDefinition() to avoid duplicate tracking
+        if (colorData._processedElements && colorData._processedElements.has(element)) {
           continue;
         }
 
