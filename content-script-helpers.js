@@ -59,6 +59,13 @@ var ContentScriptHelpers = (function() {
           return true;
         }
 
+        // Check for social sharing service prefixes (ShareThis, AddThis, etc.)
+        if (classLower.includes('st-btn') || classLower.includes('st_btn') ||
+            classLower.includes('sharethis') || classLower.includes('addthis') ||
+            classLower.includes('a2a') || classLower.includes('addtoany')) {
+          return true;
+        }
+
         // Check for icon indicators
         if (classLower.includes('icon') || classLower.includes('fa-') ||
             classLower.includes('material-icons') || classLower.includes('glyphicon') ||
