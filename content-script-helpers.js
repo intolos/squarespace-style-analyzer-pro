@@ -47,29 +47,33 @@ var ContentScriptHelpers = (function() {
     if (!element) return false;
 
     try {
-      // Check element itself and ancestors for social/icon indicators
+      // Universal approach: Check semantic attributes (any framework)
+      var role = element.getAttribute('role');
+      var ariaLabel = element.getAttribute('aria-label');
+
+      // Elements with role="img" are often icons/decorative
+      if (role === 'img') {
+        return true;
+      }
+
+      // Check element itself and ancestors for common patterns
       var checkElement = element;
       var depth = 0;
       while (checkElement && depth < 3) {
         var className = checkElement.className || '';
         var classLower = (typeof className === 'string' ? className : '').toLowerCase();
 
-        // Check for social media indicators
-        if (classLower.includes('social') || classLower.includes('share')) {
+        // Generic icon/social indicators (framework-agnostic)
+        if (classLower.includes('icon') || classLower.includes('social') ||
+            classLower.includes('share') || classLower.includes('badge') ||
+            classLower.includes('avatar')) {
           return true;
         }
 
-        // Check for social sharing service prefixes (ShareThis, AddThis, etc.)
+        // Social sharing services (ShareThis, AddThis, AddToAny, etc.)
         if (classLower.includes('st-btn') || classLower.includes('st_btn') ||
             classLower.includes('sharethis') || classLower.includes('addthis') ||
             classLower.includes('a2a') || classLower.includes('addtoany')) {
-          return true;
-        }
-
-        // Check for icon indicators
-        if (classLower.includes('icon') || classLower.includes('fa-') ||
-            classLower.includes('material-icons') || classLower.includes('glyphicon') ||
-            classLower.includes('feather') || classLower.includes('ionicon')) {
           return true;
         }
 
@@ -77,30 +81,30 @@ var ContentScriptHelpers = (function() {
         depth++;
       }
 
-      // Check if element is SVG or inside SVG
+      // Check if element is SVG or inside SVG (universal - SVGs often used for icons)
       if (element.tagName === 'svg' || element.tagName === 'SVG' ||
           element.closest('svg') || element.ownerSVGElement) {
-        // Check size - small SVGs (≤32px) are likely icons
+        // SVGs ≤64px are typically icons
         var rect = element.getBoundingClientRect();
-        if ((rect.width > 0 && rect.width <= 32) || (rect.height > 0 && rect.height <= 32)) {
+        if ((rect.width > 0 && rect.width <= 64) || (rect.height > 0 && rect.height <= 64)) {
           return true;
         }
       }
 
-      // Check for very small elements (likely icons)
+      // Check for small elements (icons, buttons, badges, decorative elements)
+      // Increased from 32px to 64px to catch more icon buttons and social buttons
       var computed = window.getComputedStyle(element);
       var width = parseFloat(computed.width);
       var height = parseFloat(computed.height);
-      if ((width > 0 && width <= 32) && (height > 0 && height <= 32)) {
-        // Additional check: must have some icon-like characteristic
-        var className = element.className || '';
-        var classLower = (typeof className === 'string' ? className : '').toLowerCase();
-        if (classLower.includes('btn') || classLower.includes('button')) {
-          return false; // Small buttons are OK
-        }
-        // If it's just small with no text, likely an icon
-        var hasText = element.textContent && element.textContent.trim().length > 2;
-        if (!hasText) {
+
+      // Both dimensions must be ≤64px to be considered an icon/decorative element
+      if ((width > 0 && width <= 64) && (height > 0 && height <= 64)) {
+        return true; // Any small element is likely decorative/icon
+      }
+
+      // Check for background-image on small elements (often used for icons/badges)
+      if (computed.backgroundImage && computed.backgroundImage !== 'none') {
+        if ((width > 0 && width <= 64) || (height > 0 && height <= 64)) {
           return true;
         }
       }
