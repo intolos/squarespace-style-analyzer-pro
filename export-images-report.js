@@ -28,15 +28,24 @@ const ExportImagesReport = {
     
     const missingAltByPage = hasMissingAlt ? groupByPage(imagesWithoutAlt) : [];
     const genericNamesByPage = hasGenericNames ? groupByPage(genericImageNames) : [];
-    
-    // Build TOC items
-    const tocItems = [];
-    if (hasMissingAlt) {
-      tocItems.push({ id: 'missing-alt-section', label: `🖼️ Missing Alt Text (${imagesWithoutAlt.length})` });
-    }
-    if (hasGenericNames) {
-      tocItems.push({ id: 'generic-names-section', label: `📁 Generic File Names (${genericImageNames.length})` });
-    }
+
+    // Build TOC items - show ALL check types (like mobile report)
+    const allCheckTypes = [
+      {
+        id: 'missing-alt-section',
+        label: 'Missing Alt Text',
+        count: imagesWithoutAlt.length,
+        hasIssues: hasMissingAlt
+      },
+      {
+        id: 'generic-names-section',
+        label: 'Generic File Names',
+        count: genericImageNames.length,
+        hasIssues: hasGenericNames
+      }
+    ];
+
+    const tocItems = allCheckTypes;
     
     // Determine section navigation
     const getNextSection = (currentId) => {
@@ -99,7 +108,14 @@ const ExportImagesReport = {
       <h2>📋 Table of Contents</h2>
       <ul>
         ${tocItems.map(item => `
-          <li><a href="#${item.id}">${item.label}</a></li>
+          <li>
+            ${item.hasIssues
+              ? `<a href="#${item.id}">🖼️ ${item.label}</a>
+                 <span class="toc-count">${item.count}</span>`
+              : `<span style="color: #718096;">🖼️ ${item.label}</span>
+                 <span style="color: #22c55e; font-weight: bold; margin-left: 8px;">✓ Pass, No Issues Found</span>`
+            }
+          </li>
         `).join('')}
       </ul>
     </div>
