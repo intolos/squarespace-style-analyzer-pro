@@ -62,7 +62,7 @@
     }
 
     .hero h1 {
-      font-size: 3.5rem;
+      font-size: 4rem;
       margin-bottom: 20px;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
       animation: fadeInDown 1s ease;
@@ -767,14 +767,6 @@
   /* Checkmark & X */
   .check { color: #0BAD06; font-size: 1.4rem; font-weight: bold; }
   .x { color: #E7163C; font-size: 1.4rem; font-weight: bold; }
-
-  @media (max-width: 900px) {
-    table.qc-table th, table.qc-table td {
-      padding: 12px;
-      font-size: 0.92rem;
-    }
-    table.qc-table th { font-size: 1.05rem; }
-  }
 	
   	.quality-table {
     table-layout: fixed;
@@ -813,18 +805,69 @@
 	h3 {
 		font-size: 1.7rem !important;
 	}
+	
+	.header-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .header-content {
+    display: flex;
+    flex-direction: row; /* Side-by-side on desktop */
+    align-items: center;
+    text-align: center;
+  }
+
+  .header-logo {
+    height: 5rem;
+    width: auto;
+    margin-right: 15px;
+  }
+
+  .header-title {
+    font-size: 4rem;
+    margin: 0;
+    line-height: 1.1;
+  }
+	
+  @media (max-width: 900px) {
+    table.qc-table th, table.qc-table td {
+      padding: 12px;
+      font-size: 0.92rem;
+    }
+    table.qc-table th { font-size: 1.05rem; }
+    
+    .header-content {
+      flex-direction: column; /* Stack icon on top of text */
+    }
+
+    .header-logo {
+      margin-right: 0;
+      margin-bottom: 10px;
+      height: 4rem; /* Slightly smaller icon */
+    }
+
+    .header-title {
+      font-size: 2.5rem; /* Smaller font for mobile */
+      white-space: normal; /* Allow text to wrap if needed */
+    }
+	}
 
 </style>
 </head>
 <body>
   <div class="hero" id="topofpage">
     <div class="hero-content">
-			<div style="display: flex; justify-content: center; width: 100%;">
-				<div style="display: flex; align-items: center;">
-						<img src="https://intolos.github.io/squarespace-style-analyzer-pro/icon128.png" alt="Squarespace Style Analyzer Pro" style="height: 5rem; width: auto; margin-right: 15px;">
-						<h1><span style="font-size: 4rem; margin: 0; padding: 0;">Squarespace Style Analyzer Pro</span></h1>
+			
+			<div class="header-container">
+				<div class="header-content">
+					<img src="https://intolos.github.io/squarespace-style-analyzer-pro/icon128.png" alt="Squarespace Style Analyzer Pro" class="header-logo">
+					<h1 class="header-title"><span style="font-size: 4rem;">Squarespace Style Analyzer Pro</span></h1>
 				</div>
 			</div>
+			
       <h1 class="rainbow">Professional <strong><em>Design Audit</em></strong> tool for<br />Squarespace websites.</h1>
       <p><span class="text-shadow" style="color:#FFFF00;"><strong><em>Bonus: This extension works on all websites.<br />However, it has over 15 Squarespace-specific factors.</em></strong></span><br /><br />
       Ever wonder if your Squarespace site has consistent styling across all pages?<br />Critical <strong><em>Quality Checks using over 70 Aspects of Design</em></strong> for quality assurance will let you know. Immediately analyze, and compare across all pages, styles of headings, paragraphs, buttons, all typography, and color palette for <strong><em>consistency</em></strong>.  And much more.<br /><br />
