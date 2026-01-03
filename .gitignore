@@ -28,6 +28,10 @@ npm-debug.log*
 # Build outputs (if you have any)
 dist/
 build/
+*.zip
+
+# Test and debug files
+tests/
 
 # Temporary files
 *.tmp
