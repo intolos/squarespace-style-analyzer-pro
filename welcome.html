@@ -697,13 +697,27 @@
     background: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 12px;
-    overflow: hidden;
     font-size: 1rem;
   }
 
-  table.qc-table thead {
+  .qc-table-wrapper {
+    width: 100%;
+  }
+
+  table.qc-table thead th {
     background: #4B68E7;
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Only enable horizontal scrolling on mobile where sticky headers are less critical */
+  @media (max-width: 768px) {
+    .qc-table-wrapper {
+      overflow-x: auto;
+    }
   }
 
   table.qc-table th, 
@@ -958,9 +972,9 @@
 <!-- BEGIN Compare to SEO -->
   <div class="container" style="max-width: 1200px; margin: 0 auto;" id="compareseo">
   <div class="qc-wrapper">
-  <h2 class="qc-title">What’s Unique About Squarespace Style Analyzer Pro?</h2>
+  <h2 class="qc-title">What's Unique About Squarespace Style Analyzer Pro?</h2>
   <h2 class="qc-title">Our Extension Serves a Different Purpose<br />Compared to the Most Popular SEO Extensions</h2>
-<div style="overflow-x: auto; width: 100%;">
+<div class="qc-table-wrapper">
   <table class="qc-table">
   <colgroup>
     <col> <!-- Quality Check -->
@@ -1204,7 +1218,7 @@ In contrast, our report shows a listing of only the images with missing alt text
   <div class="container" style="max-width: 1200px; margin: 0 auto;" id="benefits">
   <div class="qc-wrapper">
   <h2 class="qc-title">Why Do You Need These Quality Checks using<br>Over 70 Aspects of Design?</h2>
-<div style="overflow-x: auto; width: 100%;">
+<div class="qc-table-wrapper">
   <table class="qc-table">
     <thead>
       <tr>
