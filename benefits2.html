@@ -143,7 +143,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 80px 20px;
+      padding: 40px 20px;
     }
 
     .section-title {
@@ -295,6 +295,10 @@
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
+      display: flex;
+			flex-direction: column;
+			align-items: center; /* Centers children horizontally */
+			text-align: center;   /* Keeps text centered inside the h3 */
     }
 
     .try-it-box h3 {
@@ -749,6 +753,11 @@
     font-size: 1.2rem;
     font-weight: 700;
     color: white;
+		position: -webkit-sticky; /* Support for older WebKit browsers */
+		position: sticky;
+		top: 0;                   /* Stick to the very top of the scroll container */
+		z-index: 10;              /* Ensure it stays above table rows */
+
   }
 
   table.qc-table tbody tr:nth-child(even) {
@@ -832,7 +841,7 @@
     line-height: 1.1;
   }
 	
-  @media (max-width: 900px) {
+  @media (max-width: 600px) {
     table.qc-table th, table.qc-table td {
       padding: 12px;
       font-size: 0.92rem;
@@ -1491,7 +1500,7 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
 -->
   
 <!--
-  <div class="testimonials">
+  <div class="testimonials" id="testimonials">
     <div class="container">
       <h2 class="section-title">What Our Users Say</h2>
       <p class="section-subtitle">Trusted by Squarespace professionals worldwide</p>
@@ -1552,8 +1561,8 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
         <ul class="footer-links">
 					<li><a href="#topofpage">Introduction</a></li>
           <li><a href="#features">Features</a></li>
-          <li><a href="#use">Why Would You Use Squarespace Style Analyzer Pro?</a></li>
           <li><a href="#compareseo">Design Audit Compared to SEO Audit</a></li>
+          <li><a href="#use">Why Would You Use Squarespace Style Analyzer Pro?</a></li>
           <li><a href="#benefits">Why Do You Need Over 70 Aspects of Design?</a></li>
           <li><a href="#whydesignaudit">Why Our Design Audit?</a></li>          
           <li><a href="#how">How It Works</a></li>

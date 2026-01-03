@@ -143,7 +143,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 80px 20px;
+      padding: 40px 20px;
     }
 
     .section-title {
@@ -295,6 +295,10 @@
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
+      display: flex;
+			flex-direction: column;
+			align-items: center; /* Centers children horizontally */
+			text-align: center;   /* Keeps text centered inside the h3 */
     }
 
     .try-it-box h3 {
@@ -547,24 +551,6 @@
       border-top: 1px solid #4a5568;
       color: #cbd5e0;
     }
-
-    @media (max-width: 768px) {
-      .hero h1 {
-        font-size: 2.5rem;
-      }
-
-      .hero p {
-        font-size: 1.2rem;
-      }
-
-      .section-title {
-        font-size: 2rem;
-      }
-
-      .pricing-card.featured {
-        transform: scale(1);
-      }
-    }
     
   .rainbow {
 		background: linear-gradient(
@@ -691,23 +677,6 @@
     background: #eef2ff;
   }
 
-  /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .quality-table th,
-    .quality-table td {
-      padding: 14px;
-      font-size: 0.92rem;
-    }
-
-    .quality-table thead th {
-      font-size: 1.1rem;
-    }
-
-    .quality-title {
-      font-size: 1.9rem;
-    }
-  }
-
   .qc-wrapper {
     max-width: 1200px;
     margin: 40px auto;
@@ -832,7 +801,38 @@
     line-height: 1.1;
   }
 	
-  @media (max-width: 900px) {
+	/* Mobile Responsive */
+	@media (max-width: 768px) {
+		.hero h1 {
+			font-size: 2.5rem;
+		}
+
+		.hero p {
+			font-size: 1.2rem;
+		}
+
+		.section-title {
+			font-size: 2rem;
+		}
+
+		.pricing-card.featured {
+			transform: scale(1);
+		}
+
+    .quality-table th,
+    .quality-table td {
+      padding: 14px;
+      font-size: 0.92rem;
+    }
+
+    .quality-table thead th {
+      font-size: 1.1rem;
+    }
+
+    .quality-title {
+      font-size: 1.9rem;
+    }
+
     table.qc-table th, table.qc-table td {
       padding: 12px;
       font-size: 0.92rem;
@@ -1491,7 +1491,7 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
 -->
   
 <!--
-  <div class="testimonials">
+  <div class="testimonials" id="testimonials">
     <div class="container">
       <h2 class="section-title">What Our Users Say</h2>
       <p class="section-subtitle">Trusted by Squarespace professionals worldwide</p>
@@ -1552,8 +1552,8 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
         <ul class="footer-links">
 					<li><a href="#topofpage">Introduction</a></li>
           <li><a href="#features">Features</a></li>
-          <li><a href="#use">Why Would You Use Squarespace Style Analyzer Pro?</a></li>
           <li><a href="#compareseo">Design Audit Compared to SEO Audit</a></li>
+          <li><a href="#use">Why Would You Use Squarespace Style Analyzer Pro?</a></li>
           <li><a href="#benefits">Why Do You Need Over 70 Aspects of Design?</a></li>
           <li><a href="#whydesignaudit">Why Our Design Audit?</a></li>          
           <li><a href="#how">How It Works</a></li>
