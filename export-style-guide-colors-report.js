@@ -8,62 +8,81 @@ class ExportStyleGuideColorsReport {
     const colors = colorData.colors;
     const allColors = Object.keys(colors);
     const totalColors = allColors.length;
-    
+
     let score = 10.0;
     const issues = [];
     const warnings = [];
-    
+    const deductions = []; // Track all score deductions
+
     // 1. Count total colors
     if (totalColors > 50) {
-      score -= 3.0;
+      const deduction = 3.0;
+      score -= deduction;
+      deductions.push({ reason: `Excessive colors: ${totalColors} total (recommend 10-15)`, points: deduction });
       issues.push(`Excessive colors detected: ${totalColors} colors found (professional sites typically use 10-15)`);
     } else if (totalColors > 35) {
-      score -= 2.0;
+      const deduction = 2.0;
+      score -= deduction;
+      deductions.push({ reason: `Too many colors: ${totalColors} total (recommend 10-15)`, points: deduction });
     } else if (totalColors > 25) {
-      score -= 1.0;
+      const deduction = 1.0;
+      score -= deduction;
+      deductions.push({ reason: `High color count: ${totalColors} total (recommend 10-15)`, points: deduction });
     }
-    
+
     // 2. Group similar colors and detect variations
     const colorGroups = this.groupSimilarColors(colors);
     let excessiveVariations = 0;
-    
+
     colorGroups.forEach(group => {
       if (group.variations.length > 8) {
-        score -= 1.5;
+        const deduction = 1.5;
+        score -= deduction;
         excessiveVariations++;
+        deductions.push({ reason: `Color family with ${group.variations.length} variations (consolidate similar shades)`, points: deduction });
         issues.push(`Color family has ${group.variations.length} variations`);
       } else if (group.variations.length > 5) {
-        score -= 1.0;
+        const deduction = 1.0;
+        score -= deduction;
         excessiveVariations++;
+        deductions.push({ reason: `Color family with ${group.variations.length} variations`, points: deduction });
       }
     });
-    
+
     // 3. Detect grays/neutrals
     const grays = this.identifyGrays(allColors);
     if (grays.length > 12) {
-      score -= 1.5;
+      const deduction = 1.5;
+      score -= deduction;
+      deductions.push({ reason: `Too many gray shades: ${grays.length} (recommend 3-5)`, points: deduction });
       issues.push(`Too many gray shades: ${grays.length}`);
     } else if (grays.length > 8) {
-      score -= 1.0;
+      const deduction = 1.0;
+      score -= deduction;
+      deductions.push({ reason: `Many gray shades: ${grays.length} (recommend 3-5)`, points: deduction });
     }
-    
+
     // 4. Detect outliers (colors used 1-2 times)
     const outliers = allColors.filter(color => colors[color].count <= 2);
     if (outliers.length > 10) {
-      score -= 2.0;
-      issues.push(`${outliers.length} one-off colors detected (may be accidental)`);
+      const deduction = 2.0;
+      score -= deduction;
+      deductions.push({ reason: `${outliers.length} outlier colors (may be accidental)`, points: deduction });
+      issues.push(`${outliers.length} outlier colors detected (may be accidental)`);
     } else if (outliers.length > 5) {
-      score -= 1.0;
+      const deduction = 1.0;
+      score -= deduction;
+      deductions.push({ reason: `${outliers.length} outlier colors`, points: deduction });
     }
-    
+
     // 5. Check contrast failures - deduplicate by exact location
     const seenFailures = new Set();
     const contrastFailures = colorData.contrastPairs.filter(pair => {
       if (pair.passes) return false;
-      
+
       // Create unique key for this specific element instance
       const key = pair.page + '|' + pair.section + '|' + pair.block + '|' + pair.location;
-      
+
       if (seenFailures.has(key)) {
         return false;
       }
@@ -71,16 +90,20 @@ class ExportStyleGuideColorsReport {
       return true;
     });
     if (contrastFailures.length > 5) {
-      score -= 1.5;
+      const deduction = 1.5;
+      score -= deduction;
+      deductions.push({ reason: `${contrastFailures.length} WCAG contrast failures`, points: deduction });
       issues.push(`${contrastFailures.length} accessibility contrast failures (WCAG)`);
     } else if (contrastFailures.length > 2) {
-      score -= 0.5;
+      const deduction = 0.5;
+      score -= deduction;
+      deductions.push({ reason: `${contrastFailures.length} WCAG contrast issues`, points: deduction });
       warnings.push(`${contrastFailures.length} accessibility contrast issues`);
     }
-    
+
     // Ensure score is between 0 and 10
     score = Math.max(0, Math.min(10, score));
-    
+
     return {
       score: Math.round(score * 10) / 10,
       totalColors: totalColors,
@@ -89,7 +112,8 @@ class ExportStyleGuideColorsReport {
       outliers: outliers,
       contrastFailures: contrastFailures,
       issues: issues,
-      warnings: warnings
+      warnings: warnings,
+      deductions: deductions // List of all score deductions
     };
   }
   
@@ -173,73 +197,63 @@ class ExportStyleGuideColorsReport {
     });
   }
   
-  // Generate color swatch table grouped by category
-  static generateColorSwatchTable(colors, colorData) {
-    const colorEntries = Object.entries(colors);
-
-    // Group colors by their usage categories
-    const categoryGroups = {
-      navigation: { title: '🧭 Navigation Colors', colors: [] },
-      header: { title: '📍 Header Colors', colors: [] },
-      footer: { title: '📌 Footer Colors', colors: [] },
-      text: { title: '📝 Text Colors', colors: [] },
-      background: { title: '🎨 Background Colors', colors: [] },
-      border: { title: '🔲 Border Colors', colors: [] }
-    };
-
-    // Categorize each color
-    colorEntries.forEach(([color, data]) => {
-      const usedAs = data.usedAs || [];
-
-      // Add to category groups (a color can belong to multiple groups)
-      if (usedAs.includes('navigation')) {
-        categoryGroups.navigation.colors.push([color, data]);
-      }
-      if (usedAs.includes('header')) {
-        categoryGroups.header.colors.push([color, data]);
-      }
-      if (usedAs.includes('footer')) {
-        categoryGroups.footer.colors.push([color, data]);
-      }
-      if (usedAs.includes('text')) {
-        categoryGroups.text.colors.push([color, data]);
-      }
-      if (usedAs.includes('background')) {
-        categoryGroups.background.colors.push([color, data]);
-      }
-      if (usedAs.includes('border')) {
-        categoryGroups.border.colors.push([color, data]);
-      }
-    });
-
+  // Generate color swatch table using DevTools CSS Overview format
+  static generateColorSwatchTable(colors, devToolsSummary) {
     let html = '';
 
-    // Generate sections for each category that has colors
-    Object.values(categoryGroups).forEach(group => {
-      if (group.colors.length === 0) return;
+    // DevTools CSS Overview format - 5 sections
+    const sections = [
+      {
+        id: 'summary',
+        title: '🎨 Summary of All Colors',
+        colors: devToolsSummary.summary.colors,
+        description: 'All unique colors found across the entire site excluding social/sharing icons and images ≤64x64px grouping those as icons'
+      },
+      {
+        id: 'background',
+        title: '🖼️ Background Colors',
+        colors: devToolsSummary.background.colors,
+        description: 'Colors used in background-color CSS property (excluding icons ≤64x64px)'
+      },
+      {
+        id: 'text',
+        title: '📝 Text Colors',
+        colors: devToolsSummary.text.colors,
+        description: 'Colors used in color CSS property for text foreground (excluding icons ≤64x64px)'
+      },
+      {
+        id: 'fill',
+        title: '🎭 Fill Colors',
+        colors: devToolsSummary.fill.colors,
+        description: 'Colors used in SVG fill and stroke properties (excluding icons ≤64x64px)'
+      },
+      {
+        id: 'border',
+        title: '🔲 Border Colors',
+        colors: devToolsSummary.border.colors,
+        description: 'Colors used in border-color CSS property (excluding icons ≤64x64px)'
+      }
+    ];
 
-      // Sort colors by usage count
-      group.colors.sort((a, b) => b[1].count - a[1].count);
+    sections.forEach(section => {
+      if (section.colors.length === 0) return;
 
       html += `
         <div class="color-category-section">
-          <h3 style="font-size: 1.3rem; margin: 25px 0 15px 0; color: #2d3748;">${group.title} (${group.colors.length})</h3>
+          <h3 style="font-size: 1.3rem; margin: 25px 0 15px 0; color: #2d3748;">${section.title} (${section.colors.length})</h3>
+          <p style="font-size: 0.9rem; color: #718096; margin-bottom: 15px;">${section.description}</p>
           <div class="color-swatch-grid">
       `;
 
-      group.colors.forEach(([color, data]) => {
-        // Get sample locations
-        const sampleLocations = data.instances.slice(0, 3);
-        const locationText = sampleLocations.map(inst => inst.context).join(', ');
+      section.colors.forEach(color => {
+        const colorData = colors[color];
+        if (!colorData) return;
 
         html += `
           <div class="color-swatch">
-            <div class="swatch" style="background-color: ${color};" title="${color} - ${data.count} uses"></div>
+            <div class="swatch" style="background-color: ${color};" title="${color} - ${colorData.count} uses"></div>
             <div class="swatch-label">${color}</div>
-            <div class="swatch-count">${data.count} use${data.count > 1 ? 's' : ''}</div>
-            <div class="swatch-locations" style="font-size: 0.7rem; color: #718096; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${locationText}">
-              ${locationText.length > 30 ? locationText.substring(0, 30) + '...' : locationText}
-            </div>
+            <div class="swatch-count">${colorData.count} use${colorData.count > 1 ? 's' : ''}</div>
           </div>
         `;
       });
@@ -707,6 +721,19 @@ class ExportStyleGuideColorsReport {
       <h2 style="color: white; margin: 0 0 20px 0; font-size: 1.9rem;">Color Consistency Score</h2>
       <div class="score-circle">${analysis.score}/10</div>
       <p>The pages analyzed use ${analysis.totalColors} different colors.</p>
+
+      ${analysis.score < 10 && analysis.deductions && analysis.deductions.length > 0 ? `
+      <div style="margin-top: 25px; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 8px; text-align: left;">
+        <h3 style="color: white; margin: 0 0 15px 0; font-size: 1.2rem;">Score Deductions</h3>
+        <ul style="margin: 0; padding-left: 20px; list-style: none;">
+          ${analysis.deductions.map(d => `
+            <li style="color: white; font-size: 1rem; margin-bottom: 8px; line-height: 1.5;">
+              <strong>-${d.points.toFixed(1)}</strong> ${d.reason}
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+      ` : ''}
     </div>
 
     <!-- Score Explanation -->
@@ -720,7 +747,7 @@ class ExportStyleGuideColorsReport {
         <li><strong>Total colors:</strong> -3.0 if &gt;50, -2.0 if &gt;35, -1.0 if &gt;25</li>
         <li><strong>Color variations:</strong> -1.5 per family with &gt;8 variations, -1.0 for &gt;5</li>
         <li><strong>Gray shades:</strong> -1.5 if &gt;12 grays, -1.0 if &gt;8</li>
-        <li><strong>One-off colors:</strong> -2.0 if &gt;10 outliers (used 1-2 times), -1.0 if &gt;5</li>
+        <li><strong>Outlier colors:</strong> -2.0 if &gt;10 outliers (used 1-2 times), -1.0 if &gt;5</li>
         <li><strong>WCAG contrast failures:</strong> -1.5 if &gt;5 failures, -0.5 if &gt;2</li>
       </ul>
     </div>
@@ -748,10 +775,10 @@ class ExportStyleGuideColorsReport {
     </div>
     ` : ''}
 
-    <!-- All Colors with Swatches -->
+    <!-- All Colors with Swatches (DevTools CSS Overview Format) -->
     ${this.generateSectionHeader('all-colors-section', `All Colors Used (${allColors.length} total)`, '🎨', getNextSection('all-colors-section'))}
     <div class="section">
-      ${this.generateColorSwatchTable(colors, data.colorData)}
+      ${this.generateColorSwatchTable(colors, data.devToolsColorSummary)}
     </div>
 
     <!-- Color Groups and Variations -->

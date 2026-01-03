@@ -171,6 +171,38 @@ const ColorAnalyzer = {
 
   // Determine if element is within navigation, header, or footer
   getElementLocation: function (element) {
+    // First check if element is inside a content block/section
+    // These should NOT be counted as header even if inside <header> tag
+    let checkContent = element;
+    let contentDepth = 0;
+    while (checkContent && contentDepth < 10) {
+      const className = checkContent.className || '';
+      const classLower = (typeof className === 'string' ? className : '').toLowerCase();
+
+      // Skip elements that are content blocks or sections (even if inside header tag)
+      if (classLower.includes('sqs-block') ||
+          classLower.includes('section-border') ||
+          classLower.includes('section-background') ||
+          classLower.includes('-content') ||
+          classLower.includes('page-section') ||
+          classLower.includes('hero') ||
+          classLower.includes('banner') ||
+          classLower.includes('page-title') ||
+          classLower.includes('intro')) {
+        return 'content'; // Treat as body content, not header
+      }
+
+      // Skip accessibility elements (usually hidden)
+      if (classLower.includes('skip-link') ||
+          classLower.includes('sr-only') ||
+          classLower.includes('visually-hidden')) {
+        return 'content'; // Don't count as header
+      }
+
+      checkContent = checkContent.parentElement;
+      contentDepth++;
+    }
+
     let el = element;
     let depth = 0;
 
@@ -298,6 +330,21 @@ const ColorAnalyzer = {
     const hex = this.rgbToHex(colorValue);
     if (!hex) return;
 
+    // Add to DevTools CSS Overview format Sets
+    if (colorData.allColors) {
+      colorData.allColors.add(hex);
+
+      if (property === 'background-color' && colorData.backgroundColors) {
+        colorData.backgroundColors.add(hex);
+      } else if (property === 'color' && colorData.textColors) {
+        colorData.textColors.add(hex);
+      } else if ((property === 'fill' || property === 'stroke') && colorData.fillColors) {
+        colorData.fillColors.add(hex);
+      } else if (property === 'border-color' && colorData.borderColors) {
+        colorData.borderColors.add(hex);
+      }
+    }
+
     if (!colorData.colors[hex]) {
       colorData.colors[hex] = {
         count: 0,
@@ -308,10 +355,7 @@ const ColorAnalyzer = {
 
     colorData.colors[hex].count++;
 
-    // Determine element context by checking element and its parents
-    const elementLocation = this.getElementLocation(element);
-
-    // Add property-based categories
+    // Add property-based categories (DevTools CSS Overview format)
     if (
       property === 'background-color' &&
       !colorData.colors[hex].usedAs.includes('background')
@@ -323,19 +367,15 @@ const ColorAnalyzer = {
     ) {
       colorData.colors[hex].usedAs.push('text');
     } else if (
-      property.includes('border') &&
+      (property === 'fill' || property === 'stroke') &&
+      !colorData.colors[hex].usedAs.includes('fill')
+    ) {
+      colorData.colors[hex].usedAs.push('fill');
+    } else if (
+      property === 'border-color' &&
       !colorData.colors[hex].usedAs.includes('border')
     ) {
       colorData.colors[hex].usedAs.push('border');
-    }
-
-    // Add location-based categories (navigation, header, footer)
-    if (elementLocation === 'navigation' && !colorData.colors[hex].usedAs.includes('navigation')) {
-      colorData.colors[hex].usedAs.push('navigation');
-    } else if (elementLocation === 'header' && !colorData.colors[hex].usedAs.includes('header')) {
-      colorData.colors[hex].usedAs.push('header');
-    } else if (elementLocation === 'footer' && !colorData.colors[hex].usedAs.includes('footer')) {
-      colorData.colors[hex].usedAs.push('footer');
     }
 
     colorData.colors[hex].instances.push({
@@ -346,7 +386,6 @@ const ColorAnalyzer = {
       section: getSectionInfo(element),
       block: getBlockInfo(element),
       context: this.getElementContext(element),
-      location: elementLocation,
       pairedWith: pairedColor ? this.rgbToHex(pairedColor) : null
     });
   },
@@ -448,7 +487,46 @@ const ColorAnalyzer = {
     return {
       colors: {},
       contrastPairs: [],
-      _processedContrastElements: new Set()
+      _processedContrastElements: new Set(),
+      // DevTools CSS Overview format - separate Sets for each property type
+      backgroundColors: new Set(),
+      textColors: new Set(),
+      fillColors: new Set(),
+      borderColors: new Set(),
+      allColors: new Set()
+    };
+  },
+
+  // ============================================
+  // DEVTOOLS FORMAT CONVERSION
+  // ============================================
+
+  /**
+   * Convert color Sets to DevTools CSS Overview format
+   * Returns object matching Chrome DevTools CSS Overview tab structure
+   */
+  getDevToolsColorSummary: function (colorData) {
+    return {
+      summary: {
+        count: colorData.allColors ? colorData.allColors.size : 0,
+        colors: colorData.allColors ? Array.from(colorData.allColors).sort() : []
+      },
+      background: {
+        count: colorData.backgroundColors ? colorData.backgroundColors.size : 0,
+        colors: colorData.backgroundColors ? Array.from(colorData.backgroundColors).sort() : []
+      },
+      text: {
+        count: colorData.textColors ? colorData.textColors.size : 0,
+        colors: colorData.textColors ? Array.from(colorData.textColors).sort() : []
+      },
+      fill: {
+        count: colorData.fillColors ? colorData.fillColors.size : 0,
+        colors: colorData.fillColors ? Array.from(colorData.fillColors).sort() : []
+      },
+      border: {
+        count: colorData.borderColors ? colorData.borderColors.size : 0,
+        colors: colorData.borderColors ? Array.from(colorData.borderColors).sort() : []
+      }
     };
   }
 };

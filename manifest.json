@@ -29,7 +29,8 @@
         "content-script-helpers.js",
         "content-script-theme-capture.js",
         "content-script-analyzers.js",
-        "sqs-style-analyzer-main.js"
+        "sqs-style-analyzer-main.js",
+        "automated-color-test.js"
       ],
       "run_at": "document_idle"
     }

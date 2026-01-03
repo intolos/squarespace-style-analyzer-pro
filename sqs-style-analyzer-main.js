@@ -42,7 +42,6 @@
       links: {
         'in-content': { locations: [] }
       },
-      _processedElements: new Set(), // Track elements already processed for color tracking
       images: [],
       colorPalette: {
         backgrounds: [],
@@ -89,6 +88,10 @@
     // Initialize color tracker
     var colorTracker = ContentScriptHelpers.createColorTracker();
 
+    // Add Set to track processed elements (prevent duplicate color tracking)
+    results.colorData._processedElements = new Set();
+    console.log('[COLOR DEBUG] _processedElements Set initialized:', results.colorData._processedElements);
+
     // Capture Squarespace theme styles
     var squarespaceThemeStyles = ContentScriptThemeCapture.captureSquarespaceThemeStyles(colorTracker, results.colorData);
     results.squarespaceThemeStyles = squarespaceThemeStyles;
@@ -105,12 +108,18 @@
 
     // Scan all page colors to capture any colors missed by element-specific analyzers
     // This ensures we capture section backgrounds, navigation colors, decorative elements, etc.
+    console.log('[COLOR DEBUG] Before scanAllPageColors - processed elements:', results.colorData._processedElements.size);
     ContentScriptHelpers.scanAllPageColors(results.colorData);
+    console.log('[COLOR DEBUG] After scanAllPageColors - total unique colors:', Object.keys(results.colorData.colors).length);
 
     // Finalize color palette
     results.colorPalette = ContentScriptHelpers.finalizeColorPalette(colorTracker);
 
+    // Add DevTools CSS Overview format color summary
+    results.devToolsColorSummary = ColorAnalyzer.getDevToolsColorSummary(results.colorData);
+
     console.log('Analysis completed');
+    console.log('[COLOR DEBUG] DevTools Summary:', results.devToolsColorSummary);
 
     // Mobile usability checks are now handled by MobileLighthouseAnalyzer
     // via the analyzeMobileViewport action when checkbox is enabled

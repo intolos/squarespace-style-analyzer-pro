@@ -249,11 +249,26 @@ var ContentScriptHelpers = (function() {
         // Track colors using ColorAnalyzer
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;
-        var borderColor = computed.borderColor;
 
         ColorAnalyzer.trackColor(bgColor, element, 'background-color', textColor, colorData, getSectionInfo, getBlockInfo);
         ColorAnalyzer.trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo);
-        ColorAnalyzer.trackColor(borderColor, element, 'border-color', null, colorData, getSectionInfo, getBlockInfo);
+
+        // Track border colors (check all four sides individually, matching Chrome DevTools CSS Overview)
+        var borderSides = [
+          { color: computed.borderTopColor, width: parseFloat(computed.borderTopWidth) || 0 },
+          { color: computed.borderRightColor, width: parseFloat(computed.borderRightWidth) || 0 },
+          { color: computed.borderBottomColor, width: parseFloat(computed.borderBottomWidth) || 0 },
+          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 }
+        ];
+
+        var trackedBorderColors = new Set();
+        borderSides.forEach(function(side) {
+          if (side.color && !ColorAnalyzer.isTransparentColor(side.color) &&
+              side.width > 0 && !trackedBorderColors.has(side.color)) {
+            trackedBorderColors.add(side.color);
+            ColorAnalyzer.trackColor(side.color, element, 'border-color', null, colorData, getSectionInfo, getBlockInfo);
+          }
+        });
 
         // Track contrast for text elements
         if (elementType === 'heading' || elementType === 'paragraph' || elementType === 'text' || elementType === 'button') {
@@ -263,7 +278,12 @@ var ContentScriptHelpers = (function() {
         // Track in legacy colorTracker too (for backwards compatibility)
         addColor(colorTracker, computed.backgroundColor, 'backgrounds');
         addColor(colorTracker, computed.color, 'text');
-        addColor(colorTracker, computed.borderColor, 'borders');
+        // For borders, track individual side colors
+        borderSides.forEach(function(side) {
+          if (side.color && !ColorAnalyzer.isTransparentColor(side.color) && side.width > 0) {
+            addColor(colorTracker, side.color, 'borders');
+          }
+        });
       }
       
       if (elementType === 'button') {
@@ -394,26 +414,50 @@ var ContentScriptHelpers = (function() {
           continue;
         }
 
+        // Helper function to check if a color is explicitly set (not inherited)
+        function isColorExplicitlySet(element, property) {
+          // Get inline style
+          var inlineStyle = element.style[property];
+          if (inlineStyle && inlineStyle !== '') return true;
+
+          // Check if element has any class or ID that might set this color
+          // If element has no class and no ID, color is likely inherited
+          if (!element.className && !element.id) return false;
+
+          return true; // Assume explicitly set if element has styling hooks
+        }
+
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;
         var borderColor = computed.borderColor;
 
-        // Track background color (ColorAnalyzer.trackColor handles its own deduplication)
+        // Track background color (only if explicitly set or element has visible dimensions suggesting it's meaningful)
         if (bgColor && !ColorAnalyzer.isTransparentColor(bgColor)) {
-          ColorAnalyzer.trackColor(
-            bgColor,
-            element,
-            'background-color',
-            textColor,
-            colorData,
-            getSectionInfo,
-            getBlockInfo
-          );
+          // Only track if background is likely explicitly set (has classes/ID) or is a significant container
+          var hasSignificantSize = rect.width > 100 || rect.height > 100;
+          if (isColorExplicitlySet(element, 'backgroundColor') || hasSignificantSize || element.style.backgroundColor) {
+            ColorAnalyzer.trackColor(
+              bgColor,
+              element,
+              'background-color',
+              textColor,
+              colorData,
+              getSectionInfo,
+              getBlockInfo
+            );
+          }
         }
 
-        // Track text color (only for elements with actual text content)
-        var hasText = element.textContent && element.textContent.trim().length > 0;
-        if (hasText && textColor && !ColorAnalyzer.isTransparentColor(textColor)) {
+        // Track text color (only for leaf elements with direct text, not containers)
+        var hasDirectTextNode = false;
+        for (var j = 0; j < element.childNodes.length; j++) {
+          if (element.childNodes[j].nodeType === 3 && element.childNodes[j].textContent.trim().length > 0) {
+            hasDirectTextNode = true;
+            break;
+          }
+        }
+
+        if (hasDirectTextNode && textColor && !ColorAnalyzer.isTransparentColor(textColor)) {
           ColorAnalyzer.trackColor(
             textColor,
             element,
@@ -425,17 +469,62 @@ var ContentScriptHelpers = (function() {
           );
         }
 
-        // Track border color
-        if (borderColor && !ColorAnalyzer.isTransparentColor(borderColor)) {
-          ColorAnalyzer.trackColor(
-            borderColor,
-            element,
-            'border-color',
-            null,
-            colorData,
-            getSectionInfo,
-            getBlockInfo
-          );
+        // Track border colors (check all four sides individually, matching Chrome DevTools CSS Overview)
+        // Only track if border width > 0 on that side
+        var borderSides = [
+          { color: computed.borderTopColor, width: parseFloat(computed.borderTopWidth) || 0 },
+          { color: computed.borderRightColor, width: parseFloat(computed.borderRightWidth) || 0 },
+          { color: computed.borderBottomColor, width: parseFloat(computed.borderBottomWidth) || 0 },
+          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 }
+        ];
+
+        var trackedBorderColors = new Set(); // Prevent duplicate tracking of same color
+        borderSides.forEach(function(side) {
+          if (side.color && !ColorAnalyzer.isTransparentColor(side.color) &&
+              side.width > 0 && !trackedBorderColors.has(side.color)) {
+            trackedBorderColors.add(side.color);
+            ColorAnalyzer.trackColor(
+              side.color,
+              element,
+              'border-color',
+              null,
+              colorData,
+              getSectionInfo,
+              getBlockInfo
+            );
+          }
+        });
+
+        // Track SVG fill and stroke colors (matching DevTools CSS Overview)
+        if (element.tagName === 'svg' || element.tagName === 'SVG' ||
+            element.ownerSVGElement || element.closest('svg')) {
+          // For SVG elements, check fill and stroke
+          var fillColor = computed.fill;
+          var strokeColor = computed.stroke;
+
+          if (fillColor && !ColorAnalyzer.isTransparentColor(fillColor) && fillColor !== 'none') {
+            ColorAnalyzer.trackColor(
+              fillColor,
+              element,
+              'fill',
+              null,
+              colorData,
+              getSectionInfo,
+              getBlockInfo
+            );
+          }
+
+          if (strokeColor && !ColorAnalyzer.isTransparentColor(strokeColor) && strokeColor !== 'none') {
+            ColorAnalyzer.trackColor(
+              strokeColor,
+              element,
+              'stroke',
+              null,
+              colorData,
+              getSectionInfo,
+              getBlockInfo
+            );
+          }
         }
       } catch (e) {
         // Skip elements that cause errors
