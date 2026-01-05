@@ -859,7 +859,15 @@ class ExportStyleGuideColorsReport {
     ${analysis.contrastFailures.length > 0 ? `
     ${this.generateSectionHeader('accessibility-section', `Accessibility Issues for Text Contrast (${analysis.contrastFailures.length} WCAG contrast failures)`, '♿', getNextSection('accessibility-section'))}
     <div class="section">
-      <p style="color: #718096; margin-bottom: 20px;">Text and background combinations that fail WCAG accessibility standards. Suggestion: Use an online WCAG text contrast checker to find colors with higher contrast that meet WCAG guidelines.</p>
+      <div style="background: #f0f4f8; border-left: 4px solid #4a90e2; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="color: #1a202c; margin: 0; font-size: 0.95rem; line-height: 1.6;">
+          These are text and background combinations that fail WCAG accessibility standards. Due to website design complexities, it is not always possible to detect contrast errors when gradients, filters, or background transparency are present. To test specific colors manually, you can use this
+          <a href="#" onclick="showContrastChecker(); return false;" style="color: #4a90e2; text-decoration: underline; font-weight: 600;">
+            Contrast Checker Tool
+          </a>
+          to find colors with higher contrast that meet WCAG guidelines.
+        </p>
+      </div>
       <div class="accordion-container">
         <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
           <div class="accordion-title">
@@ -871,6 +879,16 @@ class ExportStyleGuideColorsReport {
       ${analysis.contrastFailures.map(failure => `
         <div class="contrast-issue">
           <div class="contrast-header">
+            ${failure.elementScreenshot ? `
+            <div class="contrast-screenshot" style="margin-right: 15px;">
+              <img src="${failure.elementScreenshot}"
+                   alt="Element screenshot"
+                   class="screenshot-thumbnail"
+                   data-context="${failure.elementContext || failure.elementScreenshot}"
+                   style="height: 50px; width: auto; max-width: 200px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer; object-fit: contain;"
+                   title="Click to view full size">
+            </div>
+            ` : ''}
             <div class="contrast-colors">
               <div class="contrast-swatch" style="background-color: ${failure.textColor};" title="Text color"></div>
               <div class="contrast-swatch" style="background-color: ${failure.backgroundColor};" title="Background color"></div>
@@ -878,6 +896,11 @@ class ExportStyleGuideColorsReport {
             <div class="contrast-info">
               <div class="contrast-ratio">Ratio: ${failure.ratio}:1 (${failure.wcagLevel})</div>
               <div>Text: ${failure.textColor} on Background: ${failure.backgroundColor}</div>
+              ${failure.elementText && failure.elementText !== 'Unknown' ? `
+              <div style="margin-top: 8px; padding: 8px; background: #f7fafc; border-radius: 4px;">
+                <strong>Element Text:</strong> "${failure.elementText}"
+              </div>
+              ` : ''}
             </div>
           </div>
           <div class="contrast-location">
@@ -905,12 +928,222 @@ class ExportStyleGuideColorsReport {
     ${this.generateSectionHeader('distribution-section', 'Color Distribution Across Pages', '🌈', null)}
     ${this.generatePageBreakdown(data)}
 
+    <script>
+      // Open contrast checker in separate window
+      function showContrastChecker() {
+        document.getElementById('contrastCheckerModal').style.display = 'block';
+        updateContrastCheck();
+      }
+    </script>
+
+    <!-- Contrast Checker Modal -->
+    <div id="contrastCheckerModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); overflow: auto;">
+      <div style="position: relative; width: 90%; max-width: 600px; margin: 50px auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+        <span onclick="document.getElementById('contrastCheckerModal').style.display='none'" style="position: absolute; top: 15px; right: 25px; font-size: 2.5rem; color: #999; cursor: pointer; line-height: 1;">&times;</span>
+
+        <h2 style="margin-top: 0; color: #2d3748; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+          🎨 WCAG Contrast Checker
+        </h2>
+
+        <div style="margin: 25px 0;">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #4a5568;">
+            Foreground Color (Text):
+          </label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="color" id="fgColorPicker" value="#000000" style="width: 60px; height: 40px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer;">
+            <input type="text" id="fgColorInput" value="#000000" maxlength="7" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 4px; font-family: monospace; font-size: 1rem;">
+          </div>
+        </div>
+
+        <div style="margin: 25px 0;">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #4a5568;">
+            Background Color:
+          </label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="color" id="bgColorPicker" value="#FFFFFF" style="width: 60px; height: 40px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer;">
+            <input type="text" id="bgColorInput" value="#FFFFFF" maxlength="7" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 4px; font-family: monospace; font-size: 1rem;">
+          </div>
+        </div>
+
+        <div style="margin: 25px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e2e8f0;">
+          <div id="contrastPreview" style="padding: 30px; text-align: center; font-size: 1.5rem; font-weight: 600; border-radius: 6px; margin-bottom: 15px; color: #000000; background: #FFFFFF; border: 1px solid #cbd5e0;">
+            Sample Text (Aa)
+          </div>
+          <div id="contrastRatio" style="text-align: center; font-size: 2rem; font-weight: bold; color: #2d3748; margin-bottom: 10px;">
+            Ratio: <span id="ratioValue">21.00</span>:1
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div id="wcagAA" style="padding: 12px; border-radius: 6px; text-align: center; background: #c6f6d5; color: #22543d; font-weight: 600;">
+              ✓ WCAG AA
+            </div>
+            <div id="wcagAAA" style="padding: 12px; border-radius: 6px; text-align: center; background: #c6f6d5; color: #22543d; font-weight: 600;">
+              ✓ WCAG AAA
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background: #eef2ff; border-left: 4px solid #667eea; border-radius: 4px;">
+          <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">
+            <strong>WCAG 2.1 Requirements:</strong><br>
+            • AA Normal Text: ≥4.5:1<br>
+            • AA Large Text (≥18pt or ≥14pt bold): ≥3:1<br>
+            • AAA Normal Text: ≥7:1<br>
+            • AAA Large Text: ≥4.5:1
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Sync color picker with text input
+      document.getElementById('fgColorPicker').addEventListener('input', function() {
+        document.getElementById('fgColorInput').value = this.value.toUpperCase();
+        updateContrastCheck();
+      });
+
+      document.getElementById('bgColorPicker').addEventListener('input', function() {
+        document.getElementById('bgColorInput').value = this.value.toUpperCase();
+        updateContrastCheck();
+      });
+
+      document.getElementById('fgColorInput').addEventListener('input', function() {
+        const val = this.value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          document.getElementById('fgColorPicker').value = val;
+          updateContrastCheck();
+        }
+      });
+
+      document.getElementById('bgColorInput').addEventListener('input', function() {
+        const val = this.value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          document.getElementById('bgColorPicker').value = val;
+          updateContrastCheck();
+        }
+      });
+
+      function updateContrastCheck() {
+        const fgColor = document.getElementById('fgColorInput').value;
+        const bgColor = document.getElementById('bgColorInput').value;
+
+        // Update preview
+        const preview = document.getElementById('contrastPreview');
+        preview.style.color = fgColor;
+        preview.style.background = bgColor;
+
+        // Calculate contrast ratio
+        const ratio = calculateContrast(fgColor, bgColor);
+        document.getElementById('ratioValue').textContent = ratio.toFixed(2);
+
+        // Update WCAG badges
+        const wcagAA = document.getElementById('wcagAA');
+        const wcagAAA = document.getElementById('wcagAAA');
+
+        if (ratio >= 4.5) {
+          wcagAA.style.background = '#c6f6d5';
+          wcagAA.style.color = '#22543d';
+          wcagAA.innerHTML = '✓ WCAG AA';
+        } else {
+          wcagAA.style.background = '#fed7d7';
+          wcagAA.style.color = '#9b2c2c';
+          wcagAA.innerHTML = '✗ WCAG AA';
+        }
+
+        if (ratio >= 7.0) {
+          wcagAAA.style.background = '#c6f6d5';
+          wcagAAA.style.color = '#22543d';
+          wcagAAA.innerHTML = '✓ WCAG AAA';
+        } else {
+          wcagAAA.style.background = '#fed7d7';
+          wcagAAA.style.color = '#9b2c2c';
+          wcagAAA.innerHTML = '✗ WCAG AAA';
+        }
+      }
+
+      function calculateContrast(fg, bg) {
+        // Convert hex to RGB
+        const fgRGB = hexToRgb(fg);
+        const bgRGB = hexToRgb(bg);
+
+        // Calculate relative luminance
+        const fgLum = getLuminance(fgRGB);
+        const bgLum = getLuminance(bgRGB);
+
+        // Calculate contrast ratio
+        const lighter = Math.max(fgLum, bgLum);
+        const darker = Math.min(fgLum, bgLum);
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      function hexToRgb(hex) {
+        const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16) / 255,
+          g: parseInt(result[2], 16) / 255,
+          b: parseInt(result[3], 16) / 255
+        } : { r: 0, g: 0, b: 0 };
+      }
+
+      function getLuminance(rgb) {
+        const rsRGB = rgb.r <= 0.03928 ? rgb.r / 12.92 : Math.pow((rgb.r + 0.055) / 1.055, 2.4);
+        const gsRGB = rgb.g <= 0.03928 ? rgb.g / 12.92 : Math.pow((rgb.g + 0.055) / 1.055, 2.4);
+        const bsRGB = rgb.b <= 0.03928 ? rgb.b / 12.92 : Math.pow((rgb.b + 0.055) / 1.055, 2.4);
+        return 0.2126 * rsRGB + 0.7152 * gsRGB + 0.0722 * bsRGB;
+      }
+    </script>
+
     <!-- Back to top link -->
     <div style="text-align: center; margin-top: 40px; padding: 20px;">
       <a href="#toc" style="color: #667eea; text-decoration: none; font-size: 2rem; display: inline-block;">⬆️</a>
     </div>
 
   </div>
+
+  <!-- Screenshot Modal -->
+  <div id="screenshotModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); padding: 20px;">
+    <div style="position: relative; max-width: 90%; max-height: 90%; margin: auto; top: 50%; transform: translateY(-50%);">
+      <span onclick="closeScreenshotModal()" style="position: absolute; top: -40px; right: 0; color: white; font-size: 40px; cursor: pointer;">&times;</span>
+      <img id="modalScreenshot" src="" style="width: auto; max-width: 100%; max-height: 80vh; display: block; margin: auto; border-radius: 8px;">
+    </div>
+  </div>
+
+  <script>
+    function showScreenshotModal(contextSrc) {
+      const modal = document.getElementById('screenshotModal');
+      const modalImg = document.getElementById('modalScreenshot');
+      modal.style.display = 'block';
+      modalImg.src = contextSrc;
+    }
+
+    function closeScreenshotModal() {
+      document.getElementById('screenshotModal').style.display = 'none';
+    }
+
+    // Add click handlers to all screenshot thumbnails
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.screenshot-thumbnail').forEach(function(img) {
+        img.addEventListener('click', function() {
+          // Use context screenshot (larger) for modal, fallback to thumbnail
+          const contextSrc = this.getAttribute('data-context') || this.src;
+          showScreenshotModal(contextSrc);
+        });
+      });
+    });
+
+    // Close modal on click outside image
+    document.getElementById('screenshotModal').onclick = function(event) {
+      if (event.target === this) {
+        closeScreenshotModal();
+      }
+    };
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeScreenshotModal();
+      }
+    });
+  </script>
 </body>
 </html>`;
 

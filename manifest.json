@@ -25,12 +25,12 @@
         "https://*/*"
       ],
       "js": [
+        "axe-core.min.js",
         "color-analyzer.js",
         "content-script-helpers.js",
         "content-script-theme-capture.js",
         "content-script-analyzers.js",
-        "sqs-style-analyzer-main.js",
-        "automated-color-test.js"
+        "sqs-style-analyzer-main.js"
       ],
       "run_at": "document_idle"
     }
@@ -46,7 +46,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["welcome.html"],
+      "resources": ["welcome.html", "contrast-checker.html", "contrast-checker.js"],
       "matches": ["<all_urls>"]
     }
   ]

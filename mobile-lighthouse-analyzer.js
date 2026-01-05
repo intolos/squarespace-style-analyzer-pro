@@ -69,20 +69,25 @@ var MobileLighthouseAnalyzer = (function() {
       // Font-size check removed (Lighthouse v12+ removed this audit)
       results.contentWidth = await checkContentWidth(tabId);
       results.imageSizing = await checkImageSizing(tabId);
-      
-      // Step 7: Detach debugger
+
+      // Step 7: Reset viewport to desktop BEFORE detaching
+      await resetToDesktopView(tabId);
+      await delay(500); // Let viewport reset stabilize
+
+      // Step 8: Detach debugger
       await detachDebugger(tabId);
-      
+
       return results;
-      
+
     } catch (error) {
-      // Always try to detach on error
+      // Always try to reset viewport and detach on error
       try {
+        await resetToDesktopView(tabId);
         await detachDebugger(tabId);
       } catch (e) {
-        // Ignore detach errors
+        // Ignore cleanup errors
       }
-      
+
       throw error;
     }
   }
@@ -114,7 +119,16 @@ var MobileLighthouseAnalyzer = (function() {
       MOBILE_DEVICE_CONFIG
     );
   }
-  
+
+  function resetToDesktopView(tabId) {
+    // Clear device metrics override to return to desktop view
+    return sendDebuggerCommand(
+      tabId,
+      'Emulation.clearDeviceMetricsOverride',
+      {}
+    );
+  }
+
   function setMobileUserAgent(tabId) {
     return sendDebuggerCommand(
       tabId,
@@ -200,7 +214,7 @@ var MobileLighthouseAnalyzer = (function() {
   
   function generateTapTargetsCheckScript() {
     var minSize = LIGHTHOUSE_THRESHOLDS.minTapTargetSize;
-    var fingerSize = LIGHTHOUSE_THRESHOLDS.minTapTargetSize;
+    var fingerSize = 24; // WCAG 2.2 Level AA standard: 24x24px minimum tap target size
     var maxOverlapRatio = 0.25; // Lighthouse uses 25% overlap threshold
 
     return `(function() {
@@ -271,6 +285,18 @@ var MobileLighthouseAnalyzer = (function() {
       var elements = document.querySelectorAll(selectors);
 
       var rects = [];
+      var filterReasons = {
+        noClientRects: 0,
+        zeroDimensions: 0,
+        outsideViewport: 0,
+        offScreen: 0,
+        hidden: 0,
+        lowOpacity: 0,
+        noOffsetParent: 0,
+        noContent: 0,
+        passed: 0
+      };
+
       for (var i = 0; i < elements.length; i++) {
         var el = elements[i];
 
@@ -279,45 +305,81 @@ var MobileLighthouseAnalyzer = (function() {
         var clientRects = el.getClientRects();
 
         // Skip if no client rects (element not rendered)
-        if (clientRects.length === 0) continue;
+        if (clientRects.length === 0) {
+          filterReasons.noClientRects++;
+          continue;
+        }
 
         // Use the first client rect for visibility checks (or could use bounding rect)
         var rect = clientRects[0];
 
         // Skip invisible elements (0 dimensions)
-        if (rect.width === 0 || rect.height === 0) continue;
+        if (rect.width === 0 || rect.height === 0) {
+          filterReasons.zeroDimensions++;
+          continue;
+        }
 
         // Skip elements outside viewport (normal bounds)
-        if (rect.bottom < 0 || rect.right < 0) continue;
-        if (rect.top > window.innerHeight || rect.left > window.innerWidth) continue;
+        if (rect.bottom < 0 || rect.right < 0) {
+          filterReasons.outsideViewport++;
+          continue;
+        }
+        if (rect.top > window.innerHeight || rect.left > window.innerWidth) {
+          filterReasons.outsideViewport++;
+          continue;
+        }
 
         // Skip elements positioned way off-screen (like skip links hidden until focus)
         var left = rect.left;
         var top = rect.top;
-        if (left < -1000 || top < -1000 || left > window.innerWidth + 1000 || top > window.innerHeight + 1000) continue;
+        if (left < -1000 || top < -1000 || left > window.innerWidth + 1000 || top > window.innerHeight + 1000) {
+          filterReasons.offScreen++;
+          continue;
+        }
 
         // Skip hidden elements (check computed styles)
         var styles = window.getComputedStyle(el);
-        if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0') continue;
+        if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0') {
+          filterReasons.hidden++;
+          continue;
+        }
 
         // Skip elements with very low opacity (effectively invisible)
-        if (parseFloat(styles.opacity) < 0.01) continue;
+        if (parseFloat(styles.opacity) < 0.01) {
+          filterReasons.lowOpacity++;
+          continue;
+        }
 
         // Skip if not actually visible (z-index occlusion check)
-        if (!isElementVisible(el, rect)) continue;
+        // NOTE: Make this check more lenient for tap targets - only skip if completely occluded
+        // Small links may fail elementFromPoint check due to text wrapping or nested elements
+        if (el.offsetParent === null && el.tagName !== 'BODY') {
+          filterReasons.noOffsetParent++;
+          continue;
+        }
 
         // Get text content and aria-label
         var text = (el.textContent || '').trim();
         var ariaLabel = el.getAttribute('aria-label') || '';
-        var hasContent = text.length > 0 || ariaLabel.length > 0;
+        var title = el.getAttribute('title') || '';
+        var hasContent = text.length > 0 || ariaLabel.length > 0 || title.length > 0;
 
         // Skip elements with no text and no aria-label (empty/decorative links)
-        // Exception: Allow if element has background image or child img (icon buttons)
+        // Exception: Allow if element has background image, child img, or SVG (icon buttons)
         if (!hasContent) {
           var hasImage = el.querySelector('img') !== null;
+          var hasSVG = el.querySelector('svg') !== null || el.tagName.toLowerCase() === 'svg';
           var hasBackgroundImage = styles.backgroundImage && styles.backgroundImage !== 'none';
-          if (!hasImage && !hasBackgroundImage) continue;
+          if (!hasImage && !hasSVG && !hasBackgroundImage) {
+            filterReasons.noContent++;
+            continue;
+          }
         }
+
+        filterReasons.passed++;
+
+        // NOTE: Do NOT filter out social/share links for tap target detection
+        // All interactive elements must meet minimum tap target size for accessibility
 
         // NOTE: Do NOT filter out nested interactive elements here
         // Lighthouse INCLUDES nested elements but then IGNORES their overlap during containment check
@@ -328,6 +390,47 @@ var MobileLighthouseAnalyzer = (function() {
           elementId += '#' + el.id;
         } else if (el.className) {
           elementId += '.' + el.className.split(' ')[0];
+        }
+
+        // Generate CSS selector for screenshot capture
+        // Use a more robust full-path selector
+        var cssSelector = '';
+        if (el.id) {
+          cssSelector = '#' + el.id;
+        } else {
+          // Build full path selector from root for better uniqueness
+          var path = [];
+          var current = el;
+          while (current && current !== document.body) {
+            var selector = current.tagName.toLowerCase();
+
+            // Add ID if available (makes selector unique)
+            if (current.id) {
+              selector += '#' + current.id;
+              path.unshift(selector);
+              break; // Stop here since ID is unique
+            }
+
+            // Add first class if available
+            if (current.className && typeof current.className === 'string') {
+              var classes = current.className.split(' ').filter(function(c) { return c.length > 0; });
+              if (classes.length > 0) {
+                selector += '.' + classes[0];
+              }
+            }
+
+            // Add nth-child for uniqueness
+            if (current.parentElement) {
+              var siblings = Array.prototype.slice.call(current.parentElement.children);
+              var index = siblings.indexOf(current) + 1;
+              selector += ':nth-child(' + index + ')';
+            }
+
+            path.unshift(selector);
+            current = current.parentElement;
+          }
+
+          cssSelector = path.join(' > ');
         }
 
         // Add position info to make identifier unique for elements without IDs
@@ -353,6 +456,7 @@ var MobileLighthouseAnalyzer = (function() {
         rects.push({
           el: el,
           element: elementId,
+          selector: cssSelector,  // CSS selector for screenshot capture
           clientRects: allClientRects,  // Store all client rects for size check
           width: rect.width,   // Primary rect for overlap checks
           height: rect.height,
@@ -360,7 +464,7 @@ var MobileLighthouseAnalyzer = (function() {
           top: rect.top,
           right: rect.right,
           bottom: rect.bottom,
-          text: (text || ariaLabel).substring(0, 50),
+          text: (text || ariaLabel || title).substring(0, 50),
           href: el.href || null
         });
       }
@@ -373,11 +477,13 @@ var MobileLighthouseAnalyzer = (function() {
         var rect = rects[i];
 
         // Check 1: Size requirement (Lighthouse approach)
-        // Only flag as too small if ALL client rects are below minimum size
-        // If ANY client rect meets the size requirement, the target passes
+        // A tap target fails if ALL client rects have EITHER dimension below minimum
+        // If ANY client rect has BOTH width AND height >= minSize, the target passes
+        // CRITICAL: Must check BOTH dimensions - a link can be 100px wide but only 16px tall
         var allRectsBelowMinimum = true;
         for (var k = 0; k < rect.clientRects.length; k++) {
           var cr = rect.clientRects[k];
+          // Target passes if it has at least minSize × minSize clickable area
           if (cr.width >= minSize && cr.height >= minSize) {
             allRectsBelowMinimum = false;
             break;
@@ -397,6 +503,7 @@ var MobileLighthouseAnalyzer = (function() {
           issues.push({
             type: 'size',
             element: rect.element,
+            selector: rect.selector,
             text: rect.text,
             width: Math.round(largestRect.width),
             height: Math.round(largestRect.height),
@@ -445,6 +552,7 @@ var MobileLighthouseAnalyzer = (function() {
                 issues.push({
                   type: 'spacing',
                   element: rect.element,
+                  selector: rect.selector,
                   text: rect.text,
                   nearElement: other.element,
                   overlapPercent: Math.round(overlapRatio * 100),
@@ -455,6 +563,25 @@ var MobileLighthouseAnalyzer = (function() {
           }
         }
       }
+
+      // Log filtering statistics for debugging
+      var totalElements = filterReasons.noClientRects + filterReasons.zeroDimensions +
+                         filterReasons.outsideViewport + filterReasons.offScreen +
+                         filterReasons.hidden + filterReasons.lowOpacity +
+                         filterReasons.noOffsetParent + filterReasons.noContent +
+                         filterReasons.passed;
+      console.log('🔍 TAP TARGET DETECTION STATS:');
+      console.log('  Total interactive elements found:', totalElements);
+      console.log('  Filtered out - no client rects:', filterReasons.noClientRects);
+      console.log('  Filtered out - zero dimensions:', filterReasons.zeroDimensions);
+      console.log('  Filtered out - outside viewport:', filterReasons.outsideViewport);
+      console.log('  Filtered out - off screen:', filterReasons.offScreen);
+      console.log('  Filtered out - hidden:', filterReasons.hidden);
+      console.log('  Filtered out - low opacity:', filterReasons.lowOpacity);
+      console.log('  Filtered out - no offset parent:', filterReasons.noOffsetParent);
+      console.log('  Filtered out - no content:', filterReasons.noContent);
+      console.log('  ✅ Passed all filters:', filterReasons.passed);
+      console.log('  📊 Tap target issues found:', issues.length);
 
       return issues;
     })()`;

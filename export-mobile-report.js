@@ -125,7 +125,7 @@ const ExportMobileReport = {
     .section-header a { color: white; text-decoration: none; font-size: 1.5rem; }
     .issue-item { background: #f8f9fa; padding: 15px 20px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #e53e3e; }
     .issue-item.warning { border-left-color: #ed8936; }
-    .issue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .issue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
     .issue-severity { padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
     .issue-severity.error { background: #fed7d7; color: #9b2c2c; }
     .issue-severity.warning { background: #feebc8; color: #c05621; }
@@ -254,10 +254,28 @@ const ExportMobileReport = {
                   ${pageIssues.map((issue, idx) => `
                     <div class="issue-item ${issue.severity}" style="margin-left: 0;">
                       <div class="issue-header">
-                        <span class="issue-element">#${idx + 1} - ${issue.element}</span>
-                        <span class="issue-severity ${issue.severity}">${issue.severity}</span>
+                        ${issue.elementScreenshot ? `
+                          <div style="margin-right: 15px;">
+                            <img src="${issue.elementScreenshot}"
+                                 alt="Element screenshot"
+                                 class="screenshot-thumbnail"
+                                 data-context="${issue.elementContext || issue.elementScreenshot}"
+                                 style="height: 50px; width: auto; max-width: 200px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer; object-fit: contain;"
+                                 title="Click to view full size">
+                          </div>
+                        ` : ''}
+                        <div style="flex: 1;">
+                          ${(issue.type === 'touch-target-too-small' || issue.type === 'touch-target-spacing') && issue.text
+                            ? `<span class="issue-element">#${idx + 1} - Link text: ${escapeHtmlFn(issue.text)}</span>`
+                            : `<span class="issue-element">#${idx + 1} - ${issue.element}</span>`
+                          }
+                          <span class="issue-severity ${issue.severity}">${issue.severity}</span>
+                        </div>
                       </div>
-                      ${issue.text ? `<div class="issue-text">"${escapeHtmlFn(issue.text)}"</div>` : ''}
+                      ${(issue.type === 'touch-target-too-small' || issue.type === 'touch-target-spacing') && issue.details?.href
+                        ? `<div class="issue-text">Link URL: <a href="${escapeHtmlFn(issue.details.href)}" target="_blank" style="color: #4a90e2; text-decoration: underline;">${escapeHtmlFn(issue.details.href)}</a></div>`
+                        : ''
+                      }
                       ${issue.details?.src
                         ? `<div class="issue-location">
                              <strong>Image:</strong> <a href="${escapeHtmlFn(issue.details.src)}" target="_blank">${escapeHtmlFn(issue.details.src)}</a>
@@ -297,6 +315,36 @@ const ExportMobileReport = {
       <a href="#mobile-toc" style="color: #667eea; text-decoration: none; font-size: 2rem;">⬆️</a>
     </div>
   </div>
+
+  <!-- Screenshot Modal -->
+  <div id="screenshotModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); cursor: pointer;">
+    <div style="position: relative; width: 90%; max-width: 1200px; margin: 50px auto; background: white; border-radius: 8px; padding: 20px;">
+      <span style="position: absolute; top: 10px; right: 20px; font-size: 3rem; color: #999; cursor: pointer;">&times;</span>
+      <img id="modalImage" src="" style="width: 100%; height: auto; border-radius: 4px;">
+    </div>
+  </div>
+
+  <script>
+    // Screenshot thumbnail click handlers
+    document.querySelectorAll('.screenshot-thumbnail').forEach(function(img) {
+      img.addEventListener('click', function() {
+        const contextSrc = this.getAttribute('data-context') || this.src;
+        showScreenshotModal(contextSrc);
+      });
+    });
+
+    function showScreenshotModal(imageSrc) {
+      const modal = document.getElementById('screenshotModal');
+      const modalImg = document.getElementById('modalImage');
+      modal.style.display = 'block';
+      modalImg.src = imageSrc;
+    }
+
+    // Close modal on click
+    document.getElementById('screenshotModal').addEventListener('click', function() {
+      this.style.display = 'none';
+    });
+  </script>
 </body>
 </html>`;
 

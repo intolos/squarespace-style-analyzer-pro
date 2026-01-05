@@ -105,7 +105,23 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             },
             squarespaceThemeStyles: {}
           };
-          
+
+          // NOTE: Mobile screenshots disabled - viewport mismatch causes wrong screenshots
+          // Screenshots would need to be captured DURING mobile view, not after
+          console.log('Mobile screenshots skipped (viewport mismatch issue)');
+          // try {
+          //   const screenshotResponse = await chrome.tabs.sendMessage(tabId, {
+          //     action: 'captureMobileScreenshots',
+          //     issues: mobileIssues
+          //   });
+          //   if (screenshotResponse && screenshotResponse.success) {
+          //     mobileOnlyData.mobileIssues.issues = screenshotResponse.issues;
+          //     console.log('Mobile screenshots captured:', screenshotResponse.capturedCount);
+          //   }
+          // } catch (error) {
+          //   console.warn('Failed to capture mobile screenshots:', error);
+          // }
+
           console.log('✅ Mobile-only analysis complete. Found', mobileIssues.length, 'issues');
           console.log('🔍 VERIFICATION: mobileOnly=true, returning data with:');
           console.log('  - headings:', Object.keys(mobileOnlyData.headings).length, 'types, total locations:', Object.values(mobileOnlyData.headings).reduce((sum, h) => sum + h.locations.length, 0));
@@ -143,6 +159,22 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
               viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
               issues: mobileIssues
             };
+
+            // NOTE: Mobile screenshots disabled - viewport mismatch causes wrong screenshots
+            // Screenshots would need to be captured DURING mobile view, not after
+            console.log('Mobile screenshots skipped (viewport mismatch issue)');
+            // try {
+            //   const screenshotResponse = await chrome.tabs.sendMessage(tabId, {
+            //     action: 'captureMobileScreenshots',
+            //     issues: mobileIssues
+            //   });
+            //   if (screenshotResponse && screenshotResponse.success) {
+            //     designResponse.data.mobileIssues.issues = screenshotResponse.issues;
+            //     console.log('Mobile screenshots captured:', screenshotResponse.capturedCount);
+            //   }
+            // } catch (error) {
+            //   console.warn('Failed to capture mobile screenshots:', error);
+            // }
 
             console.log('✅ Analysis complete. Mobile issues:', mobileIssues.length);
             console.log('🔍 VERIFICATION: mobileOnly=false, returning data with:');
@@ -215,11 +247,27 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
   
   if (request.action === 'getDomainAnalysisStatus') {
-    sendResponse({ 
-      isRunning: domainAnalyzer ? domainAnalyzer.isRunning() : false 
+    sendResponse({
+      isRunning: domainAnalyzer ? domainAnalyzer.isRunning() : false
     });
   }
-  
+
+  if (request.action === 'captureScreenshot') {
+    (async () => {
+      try {
+        const dataUrl = await chrome.tabs.captureVisibleTab(null, {
+          format: 'png',
+          quality: 100
+        });
+        sendResponse({ success: true, screenshot: dataUrl });
+      } catch (error) {
+        console.error('Screenshot capture failed:', error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Keep channel open for async response
+  }
+
   return true;
 });
 

@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.zip
+
+# Test files (optional - remove if you want Prettier to format these too)
+tests/
+
+# HTML files (optional - remove if you want Prettier to format HTML)
+*.html

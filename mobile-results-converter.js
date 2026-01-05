@@ -110,6 +110,7 @@ var MobileResultsConverter = (function() {
           type: 'touch-target-too-small',
           severity: 'error',
           element: issue.element,
+          selector: issue.selector,
           text: issue.text || '',
           url: pageUrl,
           navigationName: new URL(pageUrl).pathname,
@@ -119,7 +120,8 @@ var MobileResultsConverter = (function() {
             actual: issue.width + 'x' + issue.height + 'px',
             recommended: '≥' + issue.minRequired + 'x' + issue.minRequired + 'px (accessibility standard)',
             width: issue.width,
-            height: issue.height
+            height: issue.height,
+            href: issue.href || null
           }
         });
       } else if (issue.type === 'spacing') {
@@ -127,6 +129,7 @@ var MobileResultsConverter = (function() {
           type: 'touch-target-spacing',
           severity: 'warning',
           element: issue.element,
+          selector: issue.selector,
           text: issue.text || '',
           url: pageUrl,
           navigationName: new URL(pageUrl).pathname,
@@ -135,7 +138,8 @@ var MobileResultsConverter = (function() {
           details: {
             actual: issue.overlapPercent + '% overlap with nearby tap target',
             recommended: '≤25% overlap (Lighthouse standard), maintain ≥' + issue.minRequired + 'px spacing',
-            nearElement: issue.nearElement
+            nearElement: issue.nearElement,
+            href: issue.href || null
           }
         });
       }

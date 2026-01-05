@@ -8,7 +8,7 @@ var ContentScriptAnalyzers = (function() {
   // BUTTON ANALYSIS
   // ============================================
 
-  function analyzeButtons(results, navigationName, colorTracker, colorData) {
+  async function analyzeButtons(results, navigationName, colorTracker, colorData) {
     var buttonSelectors = [
       'button:not([aria-hidden="true"])',
       'a.button', 'a.btn',
@@ -64,7 +64,7 @@ var ContentScriptAnalyzers = (function() {
       
       if (isAccordion) continue;
       
-      // Skip navigation/header/footer buttons
+      // Check if button is in navigation/header/footer (for inventory filtering)
       parentEl = btn;
       var isInNav = false;
       for (var p = 0; p < 5; p++) {
@@ -76,7 +76,8 @@ var ContentScriptAnalyzers = (function() {
         }
         parentEl = parentEl.parentElement;
       }
-      if (isInNav) continue;
+      // Don't skip nav buttons entirely - still need to check contrast!
+      // Only skip from inventory if in nav
       
       // Skip excluded patterns
       var lowerText = text.toLowerCase();
@@ -103,32 +104,38 @@ var ContentScriptAnalyzers = (function() {
       var hasButtonClass = (btn.className || '').toLowerCase().includes('button');
       
       if (!hasHref && !isButton && !hasButtonRole && !hasButtonClass) continue;
-      
-      var styleDefinition = ContentScriptHelpers.getStyleDefinition(btn, 'button', colorTracker, colorData);
-      var btnClass = (btn.className || '').toLowerCase();
-      
-      var buttonType = 'other';
-      if (btnClass.includes('primary') || btnClass.includes('main-action') || btnClass.includes('cta')) {
-        buttonType = 'primary';
-      } else if (btnClass.includes('secondary') || btnClass.includes('outline')) {
-        buttonType = 'secondary';
-      } else if (btnClass.includes('tertiary') || btnClass.includes('text-button') || btnClass.includes('link-button')) {
-        buttonType = 'tertiary';
+
+      // ALWAYS check contrast for all buttons (including nav/header/footer)
+      // This ensures we catch accessibility issues everywhere, matching WAVE behavior
+      var styleDefinition = await ContentScriptHelpers.getStyleDefinition(btn, 'button', colorTracker, colorData);
+
+      // Only add to button inventory if NOT in nav/header/footer
+      if (!isInNav) {
+        var btnClass = (btn.className || '').toLowerCase();
+
+        var buttonType = 'other';
+        if (btnClass.includes('primary') || btnClass.includes('main-action') || btnClass.includes('cta')) {
+          buttonType = 'primary';
+        } else if (btnClass.includes('secondary') || btnClass.includes('outline')) {
+          buttonType = 'secondary';
+        } else if (btnClass.includes('tertiary') || btnClass.includes('text-button') || btnClass.includes('link-button')) {
+          buttonType = 'tertiary';
+        }
+
+        results.buttons[buttonType].locations.push({
+          navigationName: navigationName,
+          url: window.location.href,
+          styleDefinition: styleDefinition,
+          text: text.substring(0, 200),
+          pageTitle: document.title || 'Unknown',
+          section: section,
+          block: block,
+          element: tagName,
+          classes: btn.className || ''
+        });
+
+        processedButtonKeys.add(buttonKey);
       }
-      
-      results.buttons[buttonType].locations.push({
-        navigationName: navigationName,
-        url: window.location.href,
-        styleDefinition: styleDefinition,
-        text: text.substring(0, 200),
-        pageTitle: document.title || 'Unknown',
-        section: section,
-        block: block,
-        element: tagName,
-        classes: btn.className || ''
-      });
-      
-      processedButtonKeys.add(buttonKey);
     }
   }
 
@@ -136,7 +143,7 @@ var ContentScriptAnalyzers = (function() {
   // HEADING ANALYSIS
   // ============================================
 
-  function analyzeHeadings(results, navigationName, colorTracker, colorData) {
+  async function analyzeHeadings(results, navigationName, colorTracker, colorData) {
     var headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
     console.log('Found headings:', headings.length);
     
@@ -160,7 +167,7 @@ var ContentScriptAnalyzers = (function() {
       var text = heading.textContent.trim();
       var section = ContentScriptHelpers.getSectionInfo(heading);
       var block = ContentScriptHelpers.getBlockInfo(heading);
-      var styleDefinition = ContentScriptHelpers.getStyleDefinition(heading, 'heading', colorTracker, colorData);
+      var styleDefinition = await ContentScriptHelpers.getStyleDefinition(heading, 'heading', colorTracker, colorData);
       var computed = window.getComputedStyle(heading);
       var fontSize = computed.fontSize;
       
@@ -291,7 +298,7 @@ var ContentScriptAnalyzers = (function() {
   // PARAGRAPH ANALYSIS
   // ============================================
 
-  function analyzeParagraphs(results, navigationName, squarespaceThemeStyles, colorTracker, colorData) {
+  async function analyzeParagraphs(results, navigationName, squarespaceThemeStyles, colorTracker, colorData) {
     var paragraphs = document.querySelectorAll('p');
     console.log('Found paragraphs:', paragraphs.length);
     
@@ -373,7 +380,7 @@ var ContentScriptAnalyzers = (function() {
         
         var section = ContentScriptHelpers.getSectionInfo(p);
         var block = ContentScriptHelpers.getBlockInfo(p);
-        var styleDefinition = ContentScriptHelpers.getStyleDefinition(p, 'paragraph', colorTracker, colorData);
+        var styleDefinition = await ContentScriptHelpers.getStyleDefinition(p, 'paragraph', colorTracker, colorData);
         
         results.paragraphs[paragraphType].locations.push({
           navigationName: navigationName,
@@ -389,10 +396,10 @@ var ContentScriptAnalyzers = (function() {
     }
     
     // Analyze list items as paragraphs
-    analyzeListItems(results, navigationName, colorTracker, colorData);
+    await analyzeListItems(results, navigationName, colorTracker, colorData);
   }
 
-  function analyzeListItems(results, navigationName, colorTracker, colorData) {
+  async function analyzeListItems(results, navigationName, colorTracker, colorData) {
     var listItems = document.querySelectorAll('li');
     
     for (var i = 0; i < listItems.length; i++) {
@@ -453,7 +460,7 @@ var ContentScriptAnalyzers = (function() {
       
       var section = ContentScriptHelpers.getSectionInfo(listItem);
       var block = ContentScriptHelpers.getBlockInfo(listItem);
-      var styleDefinition = ContentScriptHelpers.getStyleDefinition(listItem, 'paragraph', colorTracker, colorData);
+      var styleDefinition = await ContentScriptHelpers.getStyleDefinition(listItem, 'paragraph', colorTracker, colorData);
       
       results.paragraphs[paragraphType].locations.push({
         navigationName: navigationName,
@@ -472,7 +479,7 @@ var ContentScriptAnalyzers = (function() {
   // LINK ANALYSIS
   // ============================================
 
-  function analyzeLinks(results, navigationName, colorTracker, colorData) {
+  async function analyzeLinks(results, navigationName, colorTracker, colorData) {
     var contentAreas = document.querySelectorAll('main, article, section, .content, .page-content, [role="main"], .sqs-block-content');
     var processedLinkKeys = new Set();
     
@@ -512,7 +519,7 @@ var ContentScriptAnalyzers = (function() {
         if (processedLinkKeys.has(linkKey)) continue;
         processedLinkKeys.add(linkKey);
         
-        var styleDefinition = ContentScriptHelpers.getStyleDefinition(link, 'text', colorTracker, colorData);
+        var styleDefinition = await ContentScriptHelpers.getStyleDefinition(link, 'text', colorTracker, colorData);
         var href = link.getAttribute('href') || '';
         
         results.links['in-content'].locations.push({

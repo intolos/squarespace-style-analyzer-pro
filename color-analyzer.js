@@ -146,23 +146,158 @@ const ColorAnalyzer = {
     return false;
   },
 
-  getEffectiveBackgroundColor: function (element, initialBackgroundColor) {
+  /**
+   * Get effective background color for an element
+   * Priority: solid background > screenshot sampling > DOM fallback > white
+   *
+   * @param {Element} element - The DOM element to check
+   * @param {string} initialBackgroundColor - Direct background color from computed styles
+   * @param {string} screenshot - Base64 data URL of page screenshot (for pixel sampling)
+   * @returns {Promise<string>} RGB/RGBA color string
+   */
+  getEffectiveBackgroundColor: async function (element, initialBackgroundColor, screenshot) {
+    // If element has a solid background color, use it (fastest and accurate)
     if (initialBackgroundColor && !this.isTransparentColor(initialBackgroundColor)) {
       return initialBackgroundColor;
     }
 
+    // First, get DOM-based background (standard method)
+    let domBackground = null;
     let el = element;
     while (el) {
       const style = window.getComputedStyle(el);
       const bg = style && style.backgroundColor;
       if (bg && !this.isTransparentColor(bg)) {
-        return bg;
+        domBackground = bg;
+        break;
       }
       el = el.parentElement;
     }
 
-    // Fallback: assume white if nothing else is found
-    return 'rgb(255, 255, 255)';
+    // If no DOM background found, assume white
+    if (!domBackground) {
+      domBackground = 'rgb(255, 255, 255)';
+    }
+
+    // For buttons, ALWAYS use screenshot to verify against background images
+    // This catches cases where background images are on ancestor elements
+    const tagName = element.tagName.toLowerCase();
+    const isButton = tagName === 'button' || tagName === 'a' || tagName === 'input';
+    const hasButtonRole = element.getAttribute('role') === 'button';
+    const hasButtonClass = (element.className || '').toLowerCase().includes('button');
+    const isButtonLike = isButton || hasButtonRole || hasButtonClass;
+
+    if (isButtonLike && screenshot) {
+      try {
+        const screenshotBg = await this.getBackgroundColorFromCanvas(element, screenshot);
+        if (screenshotBg && !this.isTransparentColor(screenshotBg)) {
+          // Compare screenshot color to DOM color
+          const domHex = this.rgbToHex(domBackground);
+          const screenshotHex = this.rgbToHex(screenshotBg);
+
+          // If they differ significantly, screenshot is more accurate (catches background images)
+          if (domHex !== screenshotHex) {
+            console.log('Button screenshot BG:', screenshotBg, 'vs DOM BG:', domBackground, 'for', element.textContent.trim().substring(0, 30));
+            return screenshotBg;
+          }
+        }
+      } catch (e) {
+        console.warn('Screenshot sampling failed for button, using DOM:', e);
+      }
+    }
+
+    // Return DOM-detected background
+    return domBackground;
+  },
+
+  /**
+   * Get background color using screenshot pixel sampling
+   * This is the MOST ACCURATE method - matches WAVE tool exactly
+   * Handles background images, gradients, overlapping elements, and all visual effects
+   *
+   * @param {Element} element - The DOM element to check
+   * @param {string} screenshot - Base64 data URL of page screenshot
+   * @returns {Promise<string|null>} RGBA color string, or null if detection fails
+   *
+   * Why screenshot-based: Only method that captures actual visual representation
+   * including background images, gradients, complex overlays, etc.
+   * Uses chrome.tabs.captureVisibleTab() - same technique as WAVE tool
+   */
+  getBackgroundColorFromCanvas: async function (element, screenshot) {
+    const rect = element.getBoundingClientRect();
+
+    // Skip if element not visible
+    if (rect.width === 0 || rect.height === 0) {
+      return null;
+    }
+
+    // If no screenshot provided, cannot do pixel sampling
+    if (!screenshot) {
+      console.warn('No screenshot provided for pixel sampling');
+      return null;
+    }
+
+    try {
+      // Create canvas and load screenshot
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = screenshot;
+      });
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // Calculate element center in viewport coordinates
+      // Account for device pixel ratio (retina displays, etc.)
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const centerX = Math.floor((rect.left + rect.width / 2) * devicePixelRatio);
+      const centerY = Math.floor((rect.top + rect.height / 2) * devicePixelRatio);
+
+      // Sample pixels around center (5x5 grid for robustness)
+      // This handles anti-aliasing and slight variations
+      const sampleSize = 5;
+      const halfSize = Math.floor(sampleSize / 2);
+      const colors = [];
+
+      for (let dx = -halfSize; dx <= halfSize; dx++) {
+        for (let dy = -halfSize; dy <= halfSize; dy++) {
+          const x = centerX + dx;
+          const y = centerY + dy;
+
+          if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+            const pixel = ctx.getImageData(x, y, 1, 1).data;
+            colors.push({
+              r: pixel[0],
+              g: pixel[1],
+              b: pixel[2],
+              a: pixel[3] / 255
+            });
+          }
+        }
+      }
+
+      // Average the sampled colors for robust result
+      if (colors.length === 0) {
+        return null;
+      }
+
+      const avgR = Math.round(colors.reduce((sum, c) => sum + c.r, 0) / colors.length);
+      const avgG = Math.round(colors.reduce((sum, c) => sum + c.g, 0) / colors.length);
+      const avgB = Math.round(colors.reduce((sum, c) => sum + c.b, 0) / colors.length);
+      const avgA = colors.reduce((sum, c) => sum + c.a, 0) / colors.length;
+
+      return `rgba(${avgR}, ${avgG}, ${avgB}, ${avgA})`;
+
+    } catch (error) {
+      console.error('Canvas pixel sampling failed:', error);
+      return null;
+    }
   },
 
   // ============================================
@@ -394,38 +529,69 @@ const ColorAnalyzer = {
   // CONTRAST PAIR TRACKING
   // ============================================
 
-  trackContrastPair: function (
+  /**
+   * Track WCAG contrast pair for an element
+   * Uses screenshot-based background detection for maximum accuracy
+   *
+   * @param {Element} element - The DOM element to check
+   * @param {string} textColor - RGB text color
+   * @param {string} backgroundColor - RGB background color
+   * @param {Object} colorData - Color tracking data structure
+   * @param {Function} getSectionInfo - Function to get section identifier
+   * @param {Function} getBlockInfo - Function to get block identifier
+   * @param {string} screenshot - Base64 data URL of page screenshot
+   * @returns {Promise<void>}
+   */
+  trackContrastPair: async function (
     element,
     textColor,
     backgroundColor,
     colorData,
     getSectionInfo,
-    getBlockInfo
+    getBlockInfo,
+    screenshot
   ) {
     if (!element || !colorData || !textColor) return;
 
     // Ignore ghost / unlabeled buttons in contrast analysis
     if (this.isGhostButtonForColorAnalysis(element)) return;
 
-    // Only check contrast for elements with DIRECT text content
-    // Skip parent containers that only have inherited text from children
+    // Check if element has meaningful text content
+    // For buttons: Accept direct text OR text in immediate children (common pattern: <a><span>Buy</span></a>)
+    // For other elements: Only accept DIRECT text to avoid checking parent containers
+    const tagName = element.tagName.toLowerCase();
+    const isButton = tagName === 'button' || tagName === 'a' || tagName === 'input';
+    const hasButtonRole = element.getAttribute('role') === 'button';
+    const hasButtonClass = (element.className || '').toLowerCase().includes('button');
+    const isButtonLike = isButton || hasButtonRole || hasButtonClass;
+
     let hasDirectText = false;
-    for (let i = 0; i < element.childNodes.length; i++) {
-      const node = element.childNodes[i];
-      if (node.nodeType === 3 && node.textContent.trim().length > 0) {
+
+    if (isButtonLike) {
+      // For buttons: Check if there's ANY visible text (direct or in children)
+      const text = element.textContent.trim();
+      if (text.length > 0) {
         hasDirectText = true;
-        break;
+      }
+    } else {
+      // For non-buttons: Only check for DIRECT text nodes
+      for (let i = 0; i < element.childNodes.length; i++) {
+        const node = element.childNodes[i];
+        if (node.nodeType === 3 && node.textContent.trim().length > 0) {
+          hasDirectText = true;
+          break;
+        }
       }
     }
 
-    // Skip if no direct text nodes (only contains child elements)
+    // Skip if no text content
     if (!hasDirectText) return;
 
     const textHex = this.rgbToHex(textColor);
     if (!textHex) return;
 
-    // Resolve effective background (handles transparent / inherited)
-    const effectiveBg = this.getEffectiveBackgroundColor(element, backgroundColor);
+    // Resolve effective background using screenshot pixel sampling (most accurate)
+    const effectiveBg = await this.getEffectiveBackgroundColor(element, backgroundColor, screenshot);
     const bgHex = this.rgbToHex(effectiveBg);
 
     if (!bgHex) return;

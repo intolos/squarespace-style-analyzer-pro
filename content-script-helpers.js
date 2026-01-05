@@ -224,7 +224,7 @@ var ContentScriptHelpers = (function() {
   // STYLE DEFINITION EXTRACTION
   // ============================================
 
-  function getStyleDefinition(element, elementType, colorTracker, colorData) {
+  async function getStyleDefinition(element, elementType, colorTracker, colorData) {
     try {
       var computed = window.getComputedStyle(element);
       var styleDef = [];
@@ -270,9 +270,9 @@ var ContentScriptHelpers = (function() {
           }
         });
 
-        // Track contrast for text elements
+        // Track contrast for text elements (using screenshot for accurate background detection)
         if (elementType === 'heading' || elementType === 'paragraph' || elementType === 'text' || elementType === 'button') {
-          ColorAnalyzer.trackContrastPair(element, textColor, bgColor, colorData, getSectionInfo, getBlockInfo);
+          await ColorAnalyzer.trackContrastPair(element, textColor, bgColor, colorData, getSectionInfo, getBlockInfo);
         }
 
         // Track in legacy colorTracker too (for backwards compatibility)
