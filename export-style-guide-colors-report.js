@@ -1,7 +1,6 @@
 // export-style-guide-colors-report.js - Color Analysis and Report Generation
 
 class ExportStyleGuideColorsReport {
-  
   // Analyze color consistency and generate score
   static analyzeColorConsistency(data) {
     const colorData = data.colorData;
@@ -18,16 +17,27 @@ class ExportStyleGuideColorsReport {
     if (totalColors > 50) {
       const deduction = 3.0;
       score -= deduction;
-      deductions.push({ reason: `Excessive colors: ${totalColors} total (recommend 10-15)`, points: deduction });
-      issues.push(`Excessive colors detected: ${totalColors} colors found (professional sites typically use 10-15)`);
+      deductions.push({
+        reason: `Excessive colors: ${totalColors} total (recommend 10-15)`,
+        points: deduction,
+      });
+      issues.push(
+        `Excessive colors detected: ${totalColors} colors found (professional sites typically use 10-15)`
+      );
     } else if (totalColors > 35) {
       const deduction = 2.0;
       score -= deduction;
-      deductions.push({ reason: `Too many colors: ${totalColors} total (recommend 10-15)`, points: deduction });
+      deductions.push({
+        reason: `Too many colors: ${totalColors} total (recommend 10-15)`,
+        points: deduction,
+      });
     } else if (totalColors > 25) {
       const deduction = 1.0;
       score -= deduction;
-      deductions.push({ reason: `High color count: ${totalColors} total (recommend 10-15)`, points: deduction });
+      deductions.push({
+        reason: `High color count: ${totalColors} total (recommend 10-15)`,
+        points: deduction,
+      });
     }
 
     // 2. Group similar colors and detect variations
@@ -39,13 +49,19 @@ class ExportStyleGuideColorsReport {
         const deduction = 1.5;
         score -= deduction;
         excessiveVariations++;
-        deductions.push({ reason: `Color family with ${group.variations.length} variations (consolidate similar shades)`, points: deduction });
+        deductions.push({
+          reason: `Color family with ${group.variations.length} variations (consolidate similar shades)`,
+          points: deduction,
+        });
         issues.push(`Color family has ${group.variations.length} variations`);
       } else if (group.variations.length > 5) {
         const deduction = 1.0;
         score -= deduction;
         excessiveVariations++;
-        deductions.push({ reason: `Color family with ${group.variations.length} variations`, points: deduction });
+        deductions.push({
+          reason: `Color family with ${group.variations.length} variations`,
+          points: deduction,
+        });
       }
     });
 
@@ -54,12 +70,18 @@ class ExportStyleGuideColorsReport {
     if (grays.length > 12) {
       const deduction = 1.5;
       score -= deduction;
-      deductions.push({ reason: `Too many gray shades: ${grays.length} (recommend 3-5)`, points: deduction });
+      deductions.push({
+        reason: `Too many gray shades: ${grays.length} (recommend 3-5)`,
+        points: deduction,
+      });
       issues.push(`Too many gray shades: ${grays.length}`);
     } else if (grays.length > 8) {
       const deduction = 1.0;
       score -= deduction;
-      deductions.push({ reason: `Many gray shades: ${grays.length} (recommend 3-5)`, points: deduction });
+      deductions.push({
+        reason: `Many gray shades: ${grays.length} (recommend 3-5)`,
+        points: deduction,
+      });
     }
 
     // 4. Detect outliers (colors used 1-2 times)
@@ -67,7 +89,10 @@ class ExportStyleGuideColorsReport {
     if (outliers.length > 10) {
       const deduction = 2.0;
       score -= deduction;
-      deductions.push({ reason: `${outliers.length} outlier colors (may be accidental)`, points: deduction });
+      deductions.push({
+        reason: `${outliers.length} outlier colors (may be accidental)`,
+        points: deduction,
+      });
       issues.push(`${outliers.length} outlier colors detected (may be accidental)`);
     } else if (outliers.length > 5) {
       const deduction = 1.0;
@@ -92,12 +117,18 @@ class ExportStyleGuideColorsReport {
     if (contrastFailures.length > 5) {
       const deduction = 1.5;
       score -= deduction;
-      deductions.push({ reason: `${contrastFailures.length} WCAG contrast failures`, points: deduction });
+      deductions.push({
+        reason: `${contrastFailures.length} WCAG contrast failures`,
+        points: deduction,
+      });
       issues.push(`${contrastFailures.length} accessibility contrast failures (WCAG)`);
     } else if (contrastFailures.length > 2) {
       const deduction = 0.5;
       score -= deduction;
-      deductions.push({ reason: `${contrastFailures.length} WCAG contrast issues`, points: deduction });
+      deductions.push({
+        reason: `${contrastFailures.length} WCAG contrast issues`,
+        points: deduction,
+      });
       warnings.push(`${contrastFailures.length} accessibility contrast issues`);
     }
 
@@ -113,38 +144,38 @@ class ExportStyleGuideColorsReport {
       contrastFailures: contrastFailures,
       issues: issues,
       warnings: warnings,
-      deductions: deductions // List of all score deductions
+      deductions: deductions, // List of all score deductions
     };
   }
-  
+
   // Group similar colors using RGB distance
   static groupSimilarColors(colors) {
     const allColors = Object.keys(colors);
     const groups = [];
     const processed = new Set();
-    
+
     // Similarity threshold (15% of max RGB distance)
     const threshold = 441 * 0.15; // sqrt(255^2 + 255^2 + 255^2) * 0.15
-    
+
     allColors.forEach(color1 => {
       if (processed.has(color1)) return;
-      
+
       const group = {
         mainColor: color1,
         mainCount: colors[color1].count,
         variations: [color1],
-        totalInstances: colors[color1].count
+        totalInstances: colors[color1].count,
       };
-      
+
       allColors.forEach(color2 => {
         if (color1 === color2 || processed.has(color2)) return;
-        
+
         const distance = this.calculateColorDistance(color1, color2);
         if (distance < threshold) {
           group.variations.push(color2);
           group.totalInstances += colors[color2].count;
           processed.add(color2);
-          
+
           // Update main color to most frequently used
           if (colors[color2].count > group.mainCount) {
             group.mainColor = color2;
@@ -152,40 +183,40 @@ class ExportStyleGuideColorsReport {
           }
         }
       });
-      
+
       processed.add(color1);
-      
+
       // Only add groups with multiple variations
       if (group.variations.length > 1) {
         groups.push(group);
       }
     });
-    
+
     return groups;
   }
-  
+
   // Calculate Euclidean distance between two colors
   static calculateColorDistance(hex1, hex2) {
     const rgb1 = this.hexToRgb(hex1);
     const rgb2 = this.hexToRgb(hex2);
-    
+
     const rDiff = rgb1.r - rgb2.r;
     const gDiff = rgb1.g - rgb2.g;
     const bDiff = rgb1.b - rgb2.b;
-    
+
     return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
   }
-  
+
   // Convert hex to RGB
   static hexToRgb(hex) {
     hex = hex.replace('#', '');
     return {
       r: parseInt(hex.substr(0, 2), 16),
       g: parseInt(hex.substr(2, 2), 16),
-      b: parseInt(hex.substr(4, 2), 16)
+      b: parseInt(hex.substr(4, 2), 16),
     };
   }
-  
+
   // Identify gray colors
   static identifyGrays(colors) {
     return colors.filter(color => {
@@ -193,10 +224,10 @@ class ExportStyleGuideColorsReport {
       // Gray if R, G, B are within 15 of each other
       const max = Math.max(rgb.r, rgb.g, rgb.b);
       const min = Math.min(rgb.r, rgb.g, rgb.b);
-      return (max - min) < 15;
+      return max - min < 15;
     });
   }
-  
+
   // Generate color swatch table using DevTools CSS Overview format
   static generateColorSwatchTable(colors, devToolsSummary) {
     let html = '';
@@ -207,32 +238,34 @@ class ExportStyleGuideColorsReport {
         id: 'summary',
         title: '🎨 Summary of All Colors',
         colors: devToolsSummary.summary.colors,
-        description: 'All unique colors found across the entire site excluding social/sharing icons and images ≤64x64px grouping those as icons'
+        description:
+          'All unique colors found across the entire site excluding social/sharing icons and images ≤64x64px grouping those as icons',
       },
       {
         id: 'background',
         title: '🖼️ Background Colors',
         colors: devToolsSummary.background.colors,
-        description: 'Colors used in background-color CSS property (excluding icons ≤64x64px)'
+        description: 'Colors used in background-color CSS property (excluding icons ≤64x64px)',
       },
       {
         id: 'text',
         title: '📝 Text Colors',
         colors: devToolsSummary.text.colors,
-        description: 'Colors used in color CSS property for text foreground (excluding icons ≤64x64px)'
+        description:
+          'Colors used in color CSS property for text foreground (excluding icons ≤64x64px)',
       },
       {
         id: 'fill',
         title: '🎭 Fill Colors',
         colors: devToolsSummary.fill.colors,
-        description: 'Colors used in SVG fill and stroke properties (excluding icons ≤64x64px)'
+        description: 'Colors used in SVG fill and stroke properties (excluding icons ≤64x64px)',
       },
       {
         id: 'border',
         title: '🔲 Border Colors',
         colors: devToolsSummary.border.colors,
-        description: 'Colors used in border-color CSS property (excluding icons ≤64x64px)'
-      }
+        description: 'Colors used in border-color CSS property (excluding icons ≤64x64px)',
+      },
     ];
 
     sections.forEach(section => {
@@ -269,13 +302,13 @@ class ExportStyleGuideColorsReport {
 
   // Generate section header with up arrow and optional down arrow
   static generateSectionHeader(id, title, emoji, nextSectionId = null) {
-    const arrows = nextSectionId 
+    const arrows = nextSectionId
       ? `<div>
           <a href="#toc" style="color: white; text-decoration: none; font-size: 1.5rem; margin-right: 15px;">⬆️</a>
           <a href="#${nextSectionId}" style="color: white; text-decoration: none; font-size: 1.5rem;">⬇️</a>
         </div>`
       : `<a href="#toc" style="color: white; text-decoration: none; font-size: 1.5rem;">⬆️</a>`;
-    
+
     return `
       <div id="${id}" style="background: #667eea; color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
         <h2 style="margin: 0; color: white; border: none; padding: 0;">${emoji} ${title}</h2>
@@ -287,61 +320,78 @@ class ExportStyleGuideColorsReport {
   // Generate Table of Contents
   static generateTableOfContents(analysis, colors) {
     const tocItems = [];
-    
+
     if (analysis.issues.length > 0) {
       tocItems.push({ id: 'issues-section', label: '🔴 Issues Detected' });
     }
-    
+
     if (analysis.warnings.length > 0) {
       tocItems.push({ id: 'warnings-section', label: '⚠️ Warnings' });
     }
-    
-    tocItems.push({ id: 'all-colors-section', label: `🎨 All Colors Used (${Object.keys(colors).length})` });
-    
+
+    tocItems.push({
+      id: 'all-colors-section',
+      label: `🎨 All Colors Used (${Object.keys(colors).length})`,
+    });
+
     if (analysis.colorGroups.length > 0) {
       tocItems.push({ id: 'families-section', label: '👨‍👩‍👧‍👦 Color Families & Variations' });
     }
-    
+
     if (analysis.grays.length > 0) {
-      tocItems.push({ id: 'neutrals-section', label: `⚪ Neutral Colors (${analysis.grays.length})` });
+      tocItems.push({
+        id: 'neutrals-section',
+        label: `⚪ Neutral Colors (${analysis.grays.length})`,
+      });
     }
-    
+
     if (analysis.outliers.length > 0) {
-      tocItems.push({ id: 'outliers-section', label: `🚨 Outlier Colors (${analysis.outliers.length})` });
+      tocItems.push({
+        id: 'outliers-section',
+        label: `🚨 Outlier Colors (${analysis.outliers.length})`,
+      });
     }
-    
-    tocItems.push({ id: 'accessibility-section', label: analysis.contrastFailures.length > 0 
-      ? `♿ Accessibility Issues for Text Contrast (${analysis.contrastFailures.length})` 
-      : '♿ Accessibility Status' });
-    
+
+    tocItems.push({
+      id: 'accessibility-section',
+      label:
+        analysis.contrastFailures.length > 0
+          ? `♿ Accessibility Issues for Text Contrast (${analysis.contrastFailures.length})`
+          : '♿ Accessibility Status',
+    });
+
     tocItems.push({ id: 'distribution-section', label: '🌈 Color Distribution Across Pages' });
-    
+
     return `
       <div id="toc" style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 40px; border: 2px solid #667eea;">
         <h2 style="margin-top: 0; color: #667eea;">📋 Table of Contents</h2>
         <ul style="list-style: none; padding-left: 0;">
-          ${tocItems.map(item => `
+          ${tocItems
+            .map(
+              item => `
             <li style="margin: 10px 0;">
               <a href="#${item.id}" style="color: #667eea; text-decoration: none; font-weight: bold;">${item.label}</a>
             </li>
-          `).join('')}
+          `
+            )
+            .join('')}
         </ul>
       </div>
     `;
   }
-  
+
   // Main export function
   static export(data, filenameBrand, showSuccess, downloadFile) {
     if (!data || !data.colorData) {
       alert('No color data available to export.');
       return;
     }
-    
+
     const domain = data.metadata.domain.replace(/^www\./, '');
     const analysis = this.analyzeColorConsistency(data);
     const colors = data.colorData.colors;
     const allColors = Object.keys(colors);
-    
+
     // Build dynamic section order based on what data exists
     const sectionOrder = [];
     if (analysis.issues.length > 0) sectionOrder.push('issues-section');
@@ -352,16 +402,16 @@ class ExportStyleGuideColorsReport {
     if (analysis.outliers.length > 0) sectionOrder.push('outliers-section');
     sectionOrder.push('accessibility-section');
     sectionOrder.push('distribution-section');
-    
+
     // Helper to get next section ID
-    const getNextSection = (currentId) => {
+    const getNextSection = currentId => {
       const idx = sectionOrder.indexOf(currentId);
       if (idx >= 0 && idx < sectionOrder.length - 1) {
         return sectionOrder[idx + 1];
       }
       return null;
     };
-    
+
     // Generate HTML report
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -722,18 +772,26 @@ class ExportStyleGuideColorsReport {
       <div class="score-circle">${analysis.score}/10</div>
       <p>The pages analyzed use ${analysis.totalColors} different colors.</p>
 
-      ${analysis.score < 10 && analysis.deductions && analysis.deductions.length > 0 ? `
+      ${
+        analysis.score < 10 && analysis.deductions && analysis.deductions.length > 0
+          ? `
       <div style="margin-top: 25px; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 8px; text-align: left;">
         <h3 style="color: white; margin: 0 0 15px 0; font-size: 1.2rem;">Score Deductions</h3>
         <ul style="margin: 0; padding-left: 20px; list-style: none;">
-          ${analysis.deductions.map(d => `
+          ${analysis.deductions
+            .map(
+              d => `
             <li style="color: white; font-size: 1rem; margin-bottom: 8px; line-height: 1.5;">
               <strong>-${d.points.toFixed(1)}</strong> ${d.reason}
             </li>
-          `).join('')}
+          `
+            )
+            .join('')}
         </ul>
       </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
 
     <!-- Score Explanation -->
@@ -756,24 +814,32 @@ class ExportStyleGuideColorsReport {
     ${this.generateTableOfContents(analysis, colors)}
 
     <!-- Issues Detected -->
-    ${analysis.issues.length > 0 ? `
+    ${
+      analysis.issues.length > 0
+        ? `
     ${this.generateSectionHeader('issues-section', 'Issues Detected', '🔴', getNextSection('issues-section'))}
     <div class="section">
       <ul class="issues-list">
         ${analysis.issues.map(issue => `<li>${issue}</li>`).join('')}
       </ul>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <!-- Warnings -->
-    ${analysis.warnings.length > 0 ? `
+    ${
+      analysis.warnings.length > 0
+        ? `
     ${this.generateSectionHeader('warnings-section', 'Warnings', '⚠️', getNextSection('warnings-section'))}
     <div class="section">
       <ul class="warnings-list">
         ${analysis.warnings.map(warning => `<li>${warning}</li>`).join('')}
       </ul>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <!-- All Colors with Swatches (DevTools CSS Overview Format) -->
     ${this.generateSectionHeader('all-colors-section', `All Colors Used (${allColors.length} total)`, '🎨', getNextSection('all-colors-section'))}
@@ -782,15 +848,21 @@ class ExportStyleGuideColorsReport {
     </div>
 
     <!-- Color Groups and Variations -->
-    ${analysis.colorGroups.length > 0 ? `
+    ${
+      analysis.colorGroups.length > 0
+        ? `
     ${this.generateSectionHeader('families-section', 'Color Families & Variations', '👨‍👩‍👧‍👦', getNextSection('families-section'))}
     <div class="section">
       <p style="color: #718096; margin-bottom: 20px;">Similar colors grouped together. Consider consolidating variations within each family.</p>
-      ${analysis.colorGroups.map(group => `
+      ${analysis.colorGroups
+        .map(
+          group => `
         <div class="color-group">
           <h3>Color Family - ${group.variations.length} variations (${group.totalInstances} total uses)</h3>
           <div class="color-variations">
-            ${group.variations.map(color => `
+            ${group.variations
+              .map(
+                color => `
               <div class="variation-item ${color === group.mainColor ? 'main-color' : ''}">
                 <div class="variation-swatch" style="background-color: ${color};"></div>
                 <div class="variation-info">
@@ -798,39 +870,56 @@ class ExportStyleGuideColorsReport {
                   <div class="variation-count">${colors[color].count} uses${color === group.mainColor ? ' (most used)' : ''}</div>
                 </div>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
         </div>
-      `).join('')}
+      `
+        )
+        .join('')}
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <!-- Neutral Colors (Grays) -->
-    ${analysis.grays.length > 0 ? `
+    ${
+      analysis.grays.length > 0
+        ? `
     ${this.generateSectionHeader('neutrals-section', `Neutral Colors (${analysis.grays.length} neutrals found)`, '⚪', getNextSection('neutrals-section'))}
     <div class="section">
       <div class="color-swatch-grid">
-        ${analysis.grays.map(color => `
+        ${analysis.grays
+          .map(
+            color => `
           <div class="color-swatch">
             <div class="swatch" style="background-color: ${color};"></div>
             <div class="swatch-label">${color}</div>
             <div class="swatch-count">${colors[color].count} uses</div>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <!-- Outlier Colors -->
-    ${analysis.outliers.length > 0 ? `
+    ${
+      analysis.outliers.length > 0
+        ? `
     ${this.generateSectionHeader('outliers-section', `Outlier Colors (${analysis.outliers.length} found)`, '◯', getNextSection('outliers-section'))}
     <div class="section">
       <p style="color: #718096; margin-bottom: 20px;">Colors used only 1-2 times. These may be accidental or inconsistent with your brand.</p>
       <div class="outlier-grid">
-        ${analysis.outliers.map(color => {
-          const instances = colors[color].instances;
-          const firstInstance = instances[0];
-          return `
+        ${analysis.outliers
+          .map(color => {
+            const instances = colors[color].instances;
+            const firstInstance = instances[0];
+            return `
             <div class="outlier-item">
               <div class="outlier-header">
                 <div class="outlier-swatch" style="background-color: ${color};"></div>
@@ -850,19 +939,24 @@ class ExportStyleGuideColorsReport {
               </div>
             </div>
           `;
-        }).join('')}
+          })
+          .join('')}
       </div>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <!-- Accessibility Issues -->
-    ${analysis.contrastFailures.length > 0 ? `
+    ${
+      analysis.contrastFailures.length > 0
+        ? `
     ${this.generateSectionHeader('accessibility-section', `Accessibility Issues for Text Contrast (${analysis.contrastFailures.length} WCAG contrast failures)`, '♿', getNextSection('accessibility-section'))}
     <div class="section">
       <div style="background: #f0f4f8; border-left: 4px solid #4a90e2; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
         <p style="color: #1a202c; margin: 0; font-size: 0.95rem; line-height: 1.6;">
           These are text and background combinations that fail WCAG accessibility standards. Due to website design complexities, it is not always possible to detect contrast errors when gradients, filters, or background transparency are present. To test specific colors manually, you can use this
-          <a href="#" onclick="showContrastChecker(); return false;" style="color: #4a90e2; text-decoration: underline; font-weight: 600;">
+          <a href="javascript:void(0)" onclick="showContrastChecker(); return false;" style="color: #4a90e2; text-decoration: underline; font-weight: 600;">
             Contrast Checker Tool
           </a>
           to find colors with higher contrast that meet WCAG guidelines.
@@ -876,10 +970,14 @@ class ExportStyleGuideColorsReport {
           </div>
         </div>
         <div class="accordion-content">
-      ${analysis.contrastFailures.map(failure => `
+      ${analysis.contrastFailures
+        .map(
+          failure => `
         <div class="contrast-issue">
           <div class="contrast-header">
-            ${failure.elementScreenshot ? `
+            ${
+              failure.elementScreenshot
+                ? `
             <div class="contrast-screenshot" style="margin-right: 15px;">
               <img src="${failure.elementScreenshot}"
                    alt="Element screenshot"
@@ -888,7 +986,9 @@ class ExportStyleGuideColorsReport {
                    style="height: 50px; width: auto; max-width: 200px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer; object-fit: contain;"
                    title="Click to view full size">
             </div>
-            ` : ''}
+            `
+                : ''
+            }
             <div class="contrast-colors">
               <div class="contrast-swatch" style="background-color: ${failure.textColor};" title="Text color"></div>
               <div class="contrast-swatch" style="background-color: ${failure.backgroundColor};" title="Background color"></div>
@@ -896,11 +996,15 @@ class ExportStyleGuideColorsReport {
             <div class="contrast-info">
               <div class="contrast-ratio">Ratio: ${failure.ratio}:1 (${failure.wcagLevel})</div>
               <div>Text: ${failure.textColor} on Background: ${failure.backgroundColor}</div>
-              ${failure.elementText && failure.elementText !== 'Unknown' ? `
+              ${
+                failure.elementText && failure.elementText !== 'Unknown'
+                  ? `
               <div style="margin-top: 8px; padding: 8px; background: #f7fafc; border-radius: 4px;">
                 <strong>Element Text:</strong> "${failure.elementText}"
               </div>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
           </div>
           <div class="contrast-location">
@@ -911,18 +1015,22 @@ class ExportStyleGuideColorsReport {
             <strong>Element:</strong> ${failure.element}
           </div>
         </div>
-      `).join('')}
+      `
+        )
+        .join('')}
         </div>
       </div>
     </div>
-    ` : `
+    `
+        : `
     ${this.generateSectionHeader('accessibility-section', 'Accessibility Status', '♿', getNextSection('accessibility-section'))}
     <div class="section">
       <div style="background: #c6f6d5; padding: 20px; border-radius: 8px; color: #22543d;">
         <strong>Excellent!</strong> All text and background color combinations pass WCAG contrast requirements.
       </div>
     </div>
-    `}
+    `
+    }
 
     <!-- Page-by-Page Color Distribution -->
     ${this.generateSectionHeader('distribution-section', 'Color Distribution Across Pages', '🌈', null)}
@@ -931,164 +1039,144 @@ class ExportStyleGuideColorsReport {
     <script>
       // Open contrast checker in separate window
       function showContrastChecker() {
-        document.getElementById('contrastCheckerModal').style.display = 'block';
-        updateContrastCheck();
-      }
-    </script>
-
-    <!-- Contrast Checker Modal -->
-    <div id="contrastCheckerModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); overflow: auto;">
-      <div style="position: relative; width: 90%; max-width: 600px; margin: 50px auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
-        <span onclick="document.getElementById('contrastCheckerModal').style.display='none'" style="position: absolute; top: 15px; right: 25px; font-size: 2.5rem; color: #999; cursor: pointer; line-height: 1;">&times;</span>
-
-        <h2 style="margin-top: 0; color: #2d3748; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
-          🎨 WCAG Contrast Checker
-        </h2>
-
-        <div style="margin: 25px 0;">
-          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #4a5568;">
-            Foreground Color (Text):
-          </label>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <input type="color" id="fgColorPicker" value="#000000" style="width: 60px; height: 40px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer;">
-            <input type="text" id="fgColorInput" value="#000000" maxlength="7" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 4px; font-family: monospace; font-size: 1rem;">
-          </div>
-        </div>
-
-        <div style="margin: 25px 0;">
-          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #4a5568;">
-            Background Color:
-          </label>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <input type="color" id="bgColorPicker" value="#FFFFFF" style="width: 60px; height: 40px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer;">
-            <input type="text" id="bgColorInput" value="#FFFFFF" maxlength="7" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 4px; font-family: monospace; font-size: 1rem;">
-          </div>
-        </div>
-
-        <div style="margin: 25px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e2e8f0;">
-          <div id="contrastPreview" style="padding: 30px; text-align: center; font-size: 1.5rem; font-weight: 600; border-radius: 6px; margin-bottom: 15px; color: #000000; background: #FFFFFF; border: 1px solid #cbd5e0;">
-            Sample Text (Aa)
-          </div>
-          <div id="contrastRatio" style="text-align: center; font-size: 2rem; font-weight: bold; color: #2d3748; margin-bottom: 10px;">
-            Ratio: <span id="ratioValue">21.00</span>:1
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div id="wcagAA" style="padding: 12px; border-radius: 6px; text-align: center; background: #c6f6d5; color: #22543d; font-weight: 600;">
-              ✓ WCAG AA
-            </div>
-            <div id="wcagAAA" style="padding: 12px; border-radius: 6px; text-align: center; background: #c6f6d5; color: #22543d; font-weight: 600;">
-              ✓ WCAG AAA
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top: 20px; padding: 15px; background: #eef2ff; border-left: 4px solid #667eea; border-radius: 4px;">
-          <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">
-            <strong>WCAG 2.1 Requirements:</strong><br>
-            • AA Normal Text: ≥4.5:1<br>
-            • AA Large Text (≥18pt or ≥14pt bold): ≥3:1<br>
-            • AAA Normal Text: ≥7:1<br>
-            • AAA Large Text: ≥4.5:1
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      // Sync color picker with text input
-      document.getElementById('fgColorPicker').addEventListener('input', function() {
-        document.getElementById('fgColorInput').value = this.value.toUpperCase();
-        updateContrastCheck();
-      });
-
-      document.getElementById('bgColorPicker').addEventListener('input', function() {
-        document.getElementById('bgColorInput').value = this.value.toUpperCase();
-        updateContrastCheck();
-      });
-
-      document.getElementById('fgColorInput').addEventListener('input', function() {
-        const val = this.value;
-        if (/^#[0-9A-F]{6}$/i.test(val)) {
-          document.getElementById('fgColorPicker').value = val;
-          updateContrastCheck();
+        // Open a small popup window that will stay on top of the tab
+        const width = 450;
+        const height = 700;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+        
+        const popup = window.open('', 'ContrastChecker', 'width=' + width + ',height=' + height + ',top=' + top + ',left=' + left + ',resizable=yes,scrollbars=yes,status=yes,menubar=no,toolbar=no');
+        
+        if (!popup) {
+          alert('Please allow popups to use the Contrast Checker Tool.');
+          return;
         }
-      });
-
-      document.getElementById('bgColorInput').addEventListener('input', function() {
-        const val = this.value;
-        if (/^#[0-9A-F]{6}$/i.test(val)) {
-          document.getElementById('bgColorPicker').value = val;
-          updateContrastCheck();
-        }
-      });
-
-      function updateContrastCheck() {
-        const fgColor = document.getElementById('fgColorInput').value;
-        const bgColor = document.getElementById('bgColorInput').value;
-
-        // Update preview
-        const preview = document.getElementById('contrastPreview');
-        preview.style.color = fgColor;
-        preview.style.background = bgColor;
-
-        // Calculate contrast ratio
-        const ratio = calculateContrast(fgColor, bgColor);
-        document.getElementById('ratioValue').textContent = ratio.toFixed(2);
-
-        // Update WCAG badges
-        const wcagAA = document.getElementById('wcagAA');
-        const wcagAAA = document.getElementById('wcagAAA');
-
-        if (ratio >= 4.5) {
-          wcagAA.style.background = '#c6f6d5';
-          wcagAA.style.color = '#22543d';
-          wcagAA.innerHTML = '✓ WCAG AA';
-        } else {
-          wcagAA.style.background = '#fed7d7';
-          wcagAA.style.color = '#9b2c2c';
-          wcagAA.innerHTML = '✗ WCAG AA';
-        }
-
-        if (ratio >= 7.0) {
-          wcagAAA.style.background = '#c6f6d5';
-          wcagAAA.style.color = '#22543d';
-          wcagAAA.innerHTML = '✓ WCAG AAA';
-        } else {
-          wcagAAA.style.background = '#fed7d7';
-          wcagAAA.style.color = '#9b2c2c';
-          wcagAAA.innerHTML = '✗ WCAG AAA';
-        }
-      }
-
-      function calculateContrast(fg, bg) {
-        // Convert hex to RGB
-        const fgRGB = hexToRgb(fg);
-        const bgRGB = hexToRgb(bg);
-
-        // Calculate relative luminance
-        const fgLum = getLuminance(fgRGB);
-        const bgLum = getLuminance(bgRGB);
-
-        // Calculate contrast ratio
-        const lighter = Math.max(fgLum, bgLum);
-        const darker = Math.min(fgLum, bgLum);
-        return (lighter + 0.05) / (darker + 0.05);
-      }
-
-      function hexToRgb(hex) {
-        const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16) / 255,
-          g: parseInt(result[2], 16) / 255,
-          b: parseInt(result[3], 16) / 255
-        } : { r: 0, g: 0, b: 0 };
-      }
-
-      function getLuminance(rgb) {
-        const rsRGB = rgb.r <= 0.03928 ? rgb.r / 12.92 : Math.pow((rgb.r + 0.055) / 1.055, 2.4);
-        const gsRGB = rgb.g <= 0.03928 ? rgb.g / 12.92 : Math.pow((rgb.g + 0.055) / 1.055, 2.4);
-        const bsRGB = rgb.b <= 0.03928 ? rgb.b / 12.92 : Math.pow((rgb.b + 0.055) / 1.055, 2.4);
-        return 0.2126 * rsRGB + 0.7152 * gsRGB + 0.0722 * bsRGB;
+        
+        const popupDoc = popup.document;
+        popupDoc.open();
+        
+        var htmlContent = '<!DOCTYPE html>' +
+'<html lang="en">' +
+'<head>' +
+'  <meta charset="UTF-8">' +
+'  <title>WCAG Contrast Checker</title>' +
+'  <style>' +
+'    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 12px; margin: 0; background: white; color: #2d3748; }' +
+'    .header { margin-bottom: 8px; border: none; }' +
+'    h2 { font-size: 1.3rem; color: #2d3748; margin: 0 0 5px 0; }' +
+'    .instructions { font-size: 0.85rem; color: #4a5568; line-height: 1.4; margin-bottom: 15px; background: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; }' +
+'    .input-section { margin-bottom: 15px; padding: 5px 0; }' +
+'    .input-row { display: flex; align-items: center; margin-bottom: 8px; }' +
+'    .input-row:last-child { margin-bottom: 0; }' +
+'    label { flex: 0 0 140px; font-weight: 600; color: #4a5568; font-size: 0.85rem; margin: 0; }' +
+'    .color-inputs { flex: 1; display: flex; gap: 8px; align-items: center; }' +
+'    input[type="color"] { width: 40px; height: 30px; border: 1px solid #cbd5e0; border-radius: 4px; cursor: pointer; padding: 0; }' +
+'    input[type="text"] { width: 140px; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: monospace; font-size: 0.9rem; height: 30px; box-sizing: border-box; }' +
+'    .results-container { display: flex; gap: 10px; margin-bottom: 10px; }' +
+'    .result-box { flex: 1; background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; }' +
+'    .preview-box { flex: 1; border: 1px solid #cbd5e0; border-radius: 6px; padding: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: 600; transition: all 0.2s; }' +
+'    .ratio-value { font-size: 2.0rem; font-weight: bold; color: #2d3748; line-height: 1; margin-bottom: 2px; }' +
+'    .ratio-label { font-size: 0.75rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }' +
+'    .badges-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }' +
+'    .badge-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.8rem; }' +
+'    .badge-label { font-weight: 500; color: #4a5568; }' +
+'    .badge-status { font-weight: bold; }' +
+'    .info { padding: 8px; background: #eef2ff; border-left: 3px solid #667eea; border-radius: 4px; font-size: 0.8rem; line-height: 1.4; color: #4a5568; }' +
+'  </style>' +
+'</head>' +
+'<body>' +
+'  <div class="header">' +
+'    <h2>🎨 WCAG Contrast Checker</h2>' +
+'  </div>' +
+'  <div class="input-section">' +
+'    <div class="input-row">' +
+'      <label>Foreground Text:</label>' +
+'      <div class="color-inputs"><input type="color" id="fgColorPicker" value="#000000"><input type="text" id="fgColorInput" value="#000000" maxlength="7"></div>' +
+'    </div>' +
+'    <div class="input-row">' +
+'      <label>Background:</label>' +
+'      <div class="color-inputs"><input type="color" id="bgColorPicker" value="#FFFFFF"><input type="text" id="bgColorInput" value="#FFFFFF" maxlength="7"></div>' +
+'    </div>' +
+'  </div>' +
+'  <div class="instructions">Make your browser window narrower so you can keep this Contrast Checker side-by-side. Click each color box to show a color picker icon (small eyedropper) to click on then click a color from your web page. Or you can click, or drag, on the color rectangle. Or enter a color hex code. A new Color Contrast Score is shown. Multiple options makes it easy to find an acceptable combination of colors.</div>' +
+'  <div class="results-container">' +
+'    <div class="result-box">' +
+'      <div id="ratioValue" class="ratio-value">21.00</div>' +
+'      <div class="ratio-label">Contrast Ratio</div>' +
+'    </div>' +
+'    <div id="contrastPreview" class="preview-box" style="color: #000000; background: #FFFFFF;">Sample Text</div>' +
+'  </div>' +
+'  <div class="badges-grid">' +
+'    <!-- Row 1: AA Normal | AAA Normal -->' +
+'    <div class="badge-item"><span class="badge-label">AA Normal</span><span id="statusAANormal" class="badge-status">Pass</span></div>' +
+'    <div class="badge-item"><span class="badge-label">AAA Normal</span><span id="statusAAANormal" class="badge-status">Pass</span></div>' +
+'    <!-- Row 2: AA Large  | AAA Large -->' +
+'    <div class="badge-item"><span class="badge-label">AA Large</span><span id="statusAALarge" class="badge-status">Pass</span></div>' +
+'    <div class="badge-item"><span class="badge-label">AAA Large</span><span id="statusAAALarge" class="badge-status">Pass</span></div>' +
+'  </div>' +
+'  <div class="info">' +
+'    <strong>WCAG 2.1 Requirements:</strong><br>' +
+'    AA Normal: &ge;4.5:1 &bull; AA Large: &ge;3:1<br>' +
+'    AAA Normal: &ge;7:1 &bull; AAA Large: &ge;4.5:1<br>' +
+'    <span style="color: #718096; font-size: 0.75rem;">Large text: 18pt (24px) or 14pt (18.66px) bold.</span>' +
+'  </div>' +
+'  <script>' +
+'    var fgPicker = document.getElementById("fgColorPicker");' +
+'    var fgInput = document.getElementById("fgColorInput");' +
+'    var bgPicker = document.getElementById("bgColorPicker");' +
+'    var bgInput = document.getElementById("bgColorInput");' +
+'    var preview = document.getElementById("contrastPreview");' +
+'    var ratioValue = document.getElementById("ratioValue");' +
+'    var statusAANormal = document.getElementById("statusAANormal");' +
+'    var statusAALarge = document.getElementById("statusAALarge");' +
+'    var statusAAANormal = document.getElementById("statusAAANormal");' +
+'    var statusAAALarge = document.getElementById("statusAAALarge");' +
+'    function hexToRgb(hex) {' +
+'      var result = /^#?([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i.exec(hex);' +
+'      return result ? { r: parseInt(result[1], 16) / 255, g: parseInt(result[2], 16) / 255, b: parseInt(result[3], 16) / 255 } : { r: 0, g: 0, b: 0 };' +
+'    }' +
+'    function getLuminance(rgb) {' +
+'      var rsRGB = rgb.r <= 0.03928 ? rgb.r / 12.92 : Math.pow((rgb.r + 0.055) / 1.055, 2.4);' +
+'      var gsRGB = rgb.g <= 0.03928 ? rgb.g / 12.92 : Math.pow((rgb.g + 0.055) / 1.055, 2.4);' +
+'      var bsRGB = rgb.b <= 0.03928 ? rgb.b / 12.92 : Math.pow((rgb.b + 0.055) / 1.055, 2.4);' +
+'      return 0.2126 * rsRGB + 0.7152 * gsRGB + 0.0722 * bsRGB;' +
+'    }' +
+'    function calculateContrast(fg, bg) {' +
+'      var fgLum = getLuminance(hexToRgb(fg));' +
+'      var bgLum = getLuminance(hexToRgb(bg));' +
+'      var lighter = Math.max(fgLum, bgLum);' +
+'      var darker = Math.min(fgLum, bgLum);' +
+'      return (lighter + 0.05) / (darker + 0.05);' +
+'    }' +
+'    function updateStatus(element, pass) {' +
+'      element.textContent = pass ? "PASS" : "FAIL";' +
+'      element.style.color = pass ? "#22543d" : "#c53030";' +
+'      element.parentElement.style.background = pass ? "#f0fff4" : "#fff5f5";' +
+'      element.parentElement.style.borderColor = pass ? "#9ae6b4" : "#feb2b2";' +
+'    }' +
+'    function updateCheck() {' +
+'      var fg = fgInput.value;' +
+'      var bg = bgInput.value;' +
+'      preview.style.color = fg;' +
+'      preview.style.background = bg;' +
+'      var ratio = calculateContrast(fg, bg);' +
+'      ratioValue.textContent = ratio.toFixed(2);' +
+'      updateStatus(statusAANormal, ratio >= 4.5);' +
+'      updateStatus(statusAALarge, ratio >= 3.0);' +
+'      updateStatus(statusAAANormal, ratio >= 7.0);' +
+'      updateStatus(statusAAALarge, ratio >= 4.5);' +
+'    }' +
+'    fgPicker.addEventListener("input", function() { fgInput.value = this.value.toUpperCase(); updateCheck(); });' +
+'    bgPicker.addEventListener("input", function() { bgInput.value = this.value.toUpperCase(); updateCheck(); });' +
+'    fgInput.addEventListener("input", function() { if (/^#[0-9a-f]{6}$/i.test(this.value)) { fgPicker.value = this.value; updateCheck(); } });' +
+'    bgInput.addEventListener("input", function() { if (/^#[0-9a-f]{6}$/i.test(this.value)) { bgPicker.value = this.value; updateCheck(); } });' +
+'    updateCheck();' +
+'  <\\/script>' +
+'</body>' +
+'</html>';
+        
+        popupDoc.write(htmlContent);
+        popupDoc.close();
       }
     </script>
 
@@ -1152,62 +1240,62 @@ class ExportStyleGuideColorsReport {
     showSuccess('Brand Style Guides for Typography and Colors generated successfully!');
   }
 
-	// Suggest contrast fix
-		static suggestContrastFix(failure) {
-			const textRgb = this.hexToRgb(failure.textColor);
-			const bgRgb = this.hexToRgb(failure.backgroundColor);
-			
-			if (!textRgb || !bgRgb) {
-				return `<div class="contrast-fix">💡 Fix: Increase contrast between text and background colors.</div>`;
-			}
-			
-			// Calculate which is lighter using simple average
-			const textLuminance = (textRgb.r + textRgb.g + textRgb.b) / 3;
-			const bgLuminance = (bgRgb.r + bgRgb.g + bgRgb.b) / 3;
-			
-			// Check if background is white or near-white (average > 250)
-			const isWhiteBackground = bgLuminance > 250;
-			
-			let suggestion = '';
-			if (textLuminance > bgLuminance) {
-				// Text is lighter than background (e.g., white text on colored background)
-				// To improve contrast: darken the background
-				suggestion = 'Consider using a darker background color.';
-			} else {
-				// Text is darker than background (e.g., dark text on light background)
-				if (isWhiteBackground) {
-					// Background is already white, can only darken text
-					suggestion = 'Consider using darker text.';
-				} else {
-					// Background is not white, can darken text or lighten background
-					suggestion = 'Consider using darker text or a lighter background color.';
-				}
-			}
-			
-			return `<div class="contrast-fix">💡 Fix: ${suggestion}</div>`;
-		}
+  // Suggest contrast fix
+  static suggestContrastFix(failure) {
+    const textRgb = this.hexToRgb(failure.textColor);
+    const bgRgb = this.hexToRgb(failure.backgroundColor);
+
+    if (!textRgb || !bgRgb) {
+      return `<div class="contrast-fix">💡 Fix: Increase contrast between text and background colors.</div>`;
+    }
+
+    // Calculate which is lighter using simple average
+    const textLuminance = (textRgb.r + textRgb.g + textRgb.b) / 3;
+    const bgLuminance = (bgRgb.r + bgRgb.g + bgRgb.b) / 3;
+
+    // Check if background is white or near-white (average > 250)
+    const isWhiteBackground = bgLuminance > 250;
+
+    let suggestion = '';
+    if (textLuminance > bgLuminance) {
+      // Text is lighter than background (e.g., white text on colored background)
+      // To improve contrast: darken the background
+      suggestion = 'Consider using a darker background color.';
+    } else {
+      // Text is darker than background (e.g., dark text on light background)
+      if (isWhiteBackground) {
+        // Background is already white, can only darken text
+        suggestion = 'Consider using darker text.';
+      } else {
+        // Background is not white, can darken text or lighten background
+        suggestion = 'Consider using darker text or a lighter background color.';
+      }
+    }
+
+    return `<div class="contrast-fix">💡 Fix: ${suggestion}</div>`;
+  }
 
   // Generate page-by-page breakdown
   static generatePageBreakdown(data) {
     const pages = {};
-    
+
     // Group colors by page
     Object.entries(data.colorData.colors).forEach(([color, colorData]) => {
       colorData.instances.forEach(instance => {
         if (!pages[instance.page]) {
           pages[instance.page] = {
             title: instance.pageTitle,
-            colors: new Set()
+            colors: new Set(),
           };
         }
         pages[instance.page].colors.add(color);
       });
     });
-    
+
     if (Object.keys(pages).length === 0) {
       return '<div class="section"><p style="color: #718096;">No page distribution data available.</p></div>';
     }
-    
+
     const pageCount = Object.keys(pages).length;
     return `
     <div class="section">
@@ -1220,7 +1308,9 @@ class ExportStyleGuideColorsReport {
           </div>
         </div>
         <div class="accordion-content">
-      ${Object.entries(pages).map(([url, pageData]) => `
+      ${Object.entries(pages)
+        .map(
+          ([url, pageData]) => `
         <div class="page-breakdown">
           <h3>${pageData.title}</h3>
           <div class="page-url">
@@ -1231,15 +1321,21 @@ class ExportStyleGuideColorsReport {
           </div>
           <div><strong>${pageData.colors.size} colors used on this page:</strong></div>
           <div class="page-colors">
-            ${Array.from(pageData.colors).map(color => `
+            ${Array.from(pageData.colors)
+              .map(
+                color => `
               <div class="page-color-item">
                 <div class="page-color-swatch" style="background-color: ${color};"></div>
                 <span style="font-family: monospace;">${color}</span>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
         </div>
-      `).join('')}
+      `
+        )
+        .join('')}
         </div>
       </div>
     </div>

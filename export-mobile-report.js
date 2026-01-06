@@ -2,9 +2,8 @@
 // Single Responsibility: Generate the Mobile Usability report
 
 const ExportMobileReport = {
-
   // Format mobile issue description for quality checks display
-  formatIssueDescription: function(issue) {
+  formatIssueDescription: function (issue) {
     const typeLabels = {
       'viewport-missing': 'Missing viewport meta tag',
       'viewport-improper': 'Improper viewport meta tag',
@@ -17,13 +16,13 @@ const ExportMobileReport = {
       'text-overflow': 'Text overflows container',
       'image-wider-than-viewport': `Image wider than viewport: ${issue.details?.actual}`,
       'input-missing-type': issue.text || 'Form input missing mobile-friendly type',
-      'fixed-width-element': `Fixed-width element: ${issue.details?.actual}`
+      'fixed-width-element': `Fixed-width element: ${issue.details?.actual}`,
     };
     return typeLabels[issue.type] || issue.type;
   },
 
   // Get label for mobile issue type
-  getIssueTypeLabel: function(type) {
+  getIssueTypeLabel: function (type) {
     const labels = {
       'viewport-missing': 'Viewport Meta Tag Missing',
       'viewport-improper': 'Viewport Meta Tag Improper',
@@ -37,18 +36,18 @@ const ExportMobileReport = {
       'image-wider-than-viewport': 'Images Wider Than Viewport',
       'input-missing-type': 'Form Inputs Missing Mobile Types',
       'fixed-width-element': 'Fixed-Width Elements',
-      'image-oversized': 'Image Sizing/Optimization'
+      'image-oversized': 'Image Sizing/Optimization',
     };
     return labels[type] || type;
   },
 
   // Export the mobile usability report
-  export: function(data, issues, domain, filenameBrand, escapeHtmlFn, downloadFileFn) {
+  export: function (data, issues, domain, filenameBrand, escapeHtmlFn, downloadFileFn) {
     const self = this;
-    
+
     // Get pages analyzed
     const pagesAnalyzed = data.metadata?.pagesAnalyzed || [];
-    
+
     // Group issues by type
     const issuesByType = {};
     for (const issue of issues) {
@@ -57,14 +56,14 @@ const ExportMobileReport = {
       }
       issuesByType[issue.type].push(issue);
     }
-    
+
     // Count errors and warnings
     const errorCount = issues.filter(i => i.severity === 'error').length;
     const warningCount = issues.filter(i => i.severity === 'warning').length;
-    
+
     // Get unique pages affected
     const pagesAffected = new Set(issues.map(i => i.url));
-    
+
     // Build TOC - show ALL check types in alphabetical order
     const allCheckTypes = [
       { type: 'viewport-missing', label: 'Viewport Meta Tag Missing' },
@@ -75,12 +74,12 @@ const ExportMobileReport = {
       { type: 'touch-target-spacing', label: 'Touch Target Spacing' },
       { type: 'horizontal-scroll', label: 'Horizontal Scrolling' },
       { type: 'content-width', label: 'Content Width Issues' },
-      { type: 'image-oversized', label: 'Image Sizing/Optimization' }
+      { type: 'image-oversized', label: 'Image Sizing/Optimization' },
     ];
-    
+
     // Sort alphabetically by label
     allCheckTypes.sort((a, b) => a.label.localeCompare(b.label));
-    
+
     const tocItems = [];
     allCheckTypes.forEach(checkType => {
       const count = issuesByType[checkType.type] ? issuesByType[checkType.type].length : 0;
@@ -88,10 +87,10 @@ const ExportMobileReport = {
         id: 'mobile-' + checkType.type,
         label: checkType.label,
         count: count,
-        hasIssues: count > 0
+        hasIssues: count > 0,
       });
     });
-    
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -173,7 +172,9 @@ const ExportMobileReport = {
       </div>
     </div>
     
-    ${issues.length === 0 ? `
+    ${
+      issues.length === 0
+        ? `
     <div id="no-issues" style="background: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center;">
       <h2 style="color: #155724; margin: 0 0 15px 0;">✅ No Mobile Usability Issues Found</h2>
       <p style="color: #155724; font-size: 1.1rem; margin: 0 0 20px 0;">
@@ -182,29 +183,40 @@ const ExportMobileReport = {
       <div style="background: white; border-radius: 6px; padding: 20px; margin-top: 20px;">
         <h3 style="color: #155724; margin: 0 0 15px 0;">Pages Analyzed:</h3>
         <ul style="list-style: none; padding: 0; text-align: left; max-width: 800px; margin: 0 auto;">
-          ${pagesAnalyzed.map(page => `
+          ${pagesAnalyzed
+            .map(
+              page => `
             <li style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: #2d3748;">
               ${escapeHtmlFn(page)}
             </li>
-          `).join('')}
+          `
+            )
+            .join('')}
         </ul>
       </div>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
     
     <div class="toc" id="mobile-toc">
       <h2>📋 Table of Contents</h2>
       <ul>
-        ${tocItems.map(item => `
+        ${tocItems
+          .map(
+            item => `
           <li>
-            ${item.hasIssues 
-              ? `<a href="#${item.id}">${item.label}</a>
+            ${
+              item.hasIssues
+                ? `<a href="#${item.id}">${item.label}</a>
                  <span class="toc-count">${item.count}</span>`
-              : `<span style="color: #718096;">${item.label}</span>
+                : `<span style="color: #718096;">${item.label}</span>
                  <span style="color: #22c55e; font-weight: bold; margin-left: 8px;">✓ Pass, No Issues Found</span>`
             }
           </li>
-        `).join('')}
+        `
+          )
+          .join('')}
       </ul>
       
       <div style="border-top: 1px solid #e2e8f0; margin-top: 20px; padding-top: 15px;">
@@ -214,33 +226,36 @@ const ExportMobileReport = {
       </div>
     </div>
     
-    ${allCheckTypes.filter(checkType => issuesByType[checkType.type]).map(checkType => {
-      const type = checkType.type;
-      const typeIssues = issuesByType[type];
-      const typeLabel = checkType.label;
-      
-      // Group by page
-      const issuesByPage = {};
-      for (const issue of typeIssues) {
-        const pageKey = issue.navigationName || issue.url;
-        if (!issuesByPage[pageKey]) {
-          issuesByPage[pageKey] = { url: issue.url, issues: [] };
+    ${allCheckTypes
+      .filter(checkType => issuesByType[checkType.type])
+      .map(checkType => {
+        const type = checkType.type;
+        const typeIssues = issuesByType[type];
+        const typeLabel = checkType.label;
+
+        // Group by page
+        const issuesByPage = {};
+        for (const issue of typeIssues) {
+          const pageKey = issue.navigationName || issue.url;
+          if (!issuesByPage[pageKey]) {
+            issuesByPage[pageKey] = { url: issue.url, issues: [] };
+          }
+          issuesByPage[pageKey].issues.push(issue);
         }
-        issuesByPage[pageKey].issues.push(issue);
-      }
-      
-      return `
+
+        return `
         <div class="section" id="mobile-${type}">
           <div class="section-header">
             <h2>📱 ${typeLabel} (${typeIssues.length})</h2>
             <a href="#mobile-toc">⬆️</a>
           </div>
           
-          ${Object.keys(issuesByPage).map(pageName => {
-            const pageData = issuesByPage[pageName];
-            const pageIssues = pageData.issues;
-            
-            return `
+          ${Object.keys(issuesByPage)
+            .map(pageName => {
+              const pageData = issuesByPage[pageName];
+              const pageIssues = pageData.issues;
+
+              return `
               <div class="accordion-container">
                 <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
                   <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -251,65 +266,83 @@ const ExportMobileReport = {
                   </div>
                 </div>
                 <div class="accordion-content">
-                  ${pageIssues.map((issue, idx) => `
+                  ${pageIssues
+                    .map(
+                      (issue, idx) => `
                     <div class="issue-item ${issue.severity}" style="margin-left: 0;">
                       <div class="issue-header">
-                        ${issue.elementScreenshot ? `
+                        ${
+                          issue.elementScreenshot
+                            ? `
                           <div style="margin-right: 15px;">
                             <img src="${issue.elementScreenshot}"
                                  alt="Element screenshot"
                                  class="screenshot-thumbnail"
                                  data-context="${issue.elementContext || issue.elementScreenshot}"
-                                 style="height: 50px; width: auto; max-width: 200px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer; object-fit: contain;"
+                                 style="height: 50px; width: 200px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer; object-fit: cover;"
                                  title="Click to view full size">
                           </div>
-                        ` : ''}
+                        `
+                            : ''
+                        }
                         <div style="flex: 1;">
-                          ${(issue.type === 'touch-target-too-small' || issue.type === 'touch-target-spacing') && issue.text
-                            ? `<span class="issue-element">#${idx + 1} - Link text: ${escapeHtmlFn(issue.text)}</span>`
-                            : `<span class="issue-element">#${idx + 1} - ${issue.element}</span>`
+                          ${
+                            (issue.type === 'touch-target-too-small' ||
+                              issue.type === 'touch-target-spacing') &&
+                            issue.text
+                              ? `<span class="issue-element">#${idx + 1} - Link text: ${escapeHtmlFn(issue.text)}</span>`
+                              : `<span class="issue-element">#${idx + 1} - ${issue.element}</span>`
                           }
                           <span class="issue-severity ${issue.severity}">${issue.severity}</span>
                         </div>
                       </div>
-                      ${(issue.type === 'touch-target-too-small' || issue.type === 'touch-target-spacing') && issue.details?.href
-                        ? `<div class="issue-text">Link URL: <a href="${escapeHtmlFn(issue.details.href)}" target="_blank" style="color: #4a90e2; text-decoration: underline;">${escapeHtmlFn(issue.details.href)}</a></div>`
-                        : ''
+                      ${
+                        (issue.type === 'touch-target-too-small' ||
+                          issue.type === 'touch-target-spacing') &&
+                        issue.details?.href
+                          ? `<div class="issue-text">Link URL: <a href="${escapeHtmlFn(issue.details.href)}" target="_blank" style="color: #4a90e2; text-decoration: underline;">${escapeHtmlFn(issue.details.href)}</a></div>`
+                          : ''
                       }
-                      ${issue.details?.src
-                        ? `<div class="issue-location">
+                      ${
+                        issue.details?.src
+                          ? `<div class="issue-location">
                              <strong>Image:</strong> <a href="${escapeHtmlFn(issue.details.src)}" target="_blank">${escapeHtmlFn(issue.details.src)}</a>
                            </div>`
-                        : issue.details?.imageUrl
-                          ? `<div class="issue-location">
+                          : issue.details?.imageUrl
+                            ? `<div class="issue-location">
                                <strong>Image:</strong> <a href="${escapeHtmlFn(issue.details.imageUrl)}" target="_blank">${escapeHtmlFn(issue.details.imageUrl)}</a>
                              </div>`
-                          : ''
+                            : ''
                       }
                       <div class="issue-location">
                         <strong>Section:</strong> ${escapeHtmlFn(issue.section)} | <strong>Block:</strong> ${escapeHtmlFn(issue.block)}
                       </div>
-                      ${issue.type === 'image-oversized'
-                        ? `<div class="issue-details">
+                      ${
+                        issue.type === 'image-oversized'
+                          ? `<div class="issue-details">
                              <strong>Display Size:</strong> ${escapeHtmlFn(issue.details?.displaySize || 'N/A')}<br>
                              <strong>Actual Image Size:</strong> ${escapeHtmlFn(issue.details?.naturalSize || 'N/A')}<br>
                              <strong>Ratio:</strong> ${escapeHtmlFn(issue.details?.ratio || 'N/A')}<br>
                              <strong>Wasted Pixels:</strong> ${escapeHtmlFn(issue.details?.wastedPixels || 'N/A')}
                            </div>`
-                        : `<div class="issue-details">
+                          : `<div class="issue-details">
                              <strong>Actual:</strong> ${escapeHtmlFn(issue.details?.actual || 'N/A')}<br>
                              <strong>${issue.details?.recommended ? 'Recommended' : 'Required'}:</strong> ${escapeHtmlFn(issue.details?.recommended || issue.details?.required || 'N/A')}
                            </div>`
                       }
                     </div>
-                  `).join('')}
+                  `
+                    )
+                    .join('')}
                 </div>
               </div>
             `;
-          }).join('')}
+            })
+            .join('')}
         </div>
       `;
-    }).join('')}
+      })
+      .join('')}
     
     <div style="text-align: center; margin-top: 40px; padding: 20px;">
       <a href="#mobile-toc" style="color: #667eea; text-decoration: none; font-size: 2rem;">⬆️</a>
@@ -318,9 +351,9 @@ const ExportMobileReport = {
 
   <!-- Screenshot Modal -->
   <div id="screenshotModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); cursor: pointer;">
-    <div style="position: relative; width: 90%; max-width: 1200px; margin: 50px auto; background: white; border-radius: 8px; padding: 20px;">
-      <span style="position: absolute; top: 10px; right: 20px; font-size: 3rem; color: #999; cursor: pointer;">&times;</span>
-      <img id="modalImage" src="" style="width: 100%; height: auto; border-radius: 4px;">
+    <div style="position: relative; width: 90%; max-width: 900px; margin: 50px auto; background: transparent; padding: 20px; text-align: center;">
+      <span style="position: absolute; top: 10px; right: 20px; font-size: 3rem; color: #fff; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">&times;</span>
+      <img id="modalImage" src="" style="width: auto; max-width: 800px; height: auto; max-height: 600px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
     </div>
   </div>
 
@@ -350,7 +383,7 @@ const ExportMobileReport = {
 
     const filename = `${domain} ${filenameBrand} mobile usability.html`;
     downloadFileFn(html, filename, 'text/html');
-  }
+  },
 };
 
 // Make globally available

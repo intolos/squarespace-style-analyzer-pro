@@ -1,16 +1,16 @@
 // mobile-results-converter.js
 // Single Responsibility: Convert Lighthouse-style results to the extension's issue format
 
-var MobileResultsConverter = (function() {
+var MobileResultsConverter = (function () {
   'use strict';
 
   // ============================================
   // MAIN CONVERSION FUNCTION
   // ============================================
-  
+
   function convertToMobileIssues(lighthouseResults, pageUrl) {
     var issues = [];
-    
+
     // Convert viewport issues
     convertViewportIssues(lighthouseResults.viewport, issues, pageUrl);
 
@@ -21,17 +21,17 @@ var MobileResultsConverter = (function() {
 
     // Convert content width issues
     convertContentWidthIssues(lighthouseResults.contentWidth, issues, pageUrl);
-    
+
     // Convert image sizing issues
     convertImageSizingIssues(lighthouseResults.imageSizing, issues, pageUrl);
-    
+
     return issues;
   }
 
   // ============================================
   // VIEWPORT CONVERSION
   // ============================================
-  
+
   function convertViewportIssues(viewportData, issues, pageUrl) {
     if (!viewportData.exists) {
       issues.push({
@@ -44,8 +44,8 @@ var MobileResultsConverter = (function() {
         block: 'meta',
         details: {
           actual: 'missing',
-          required: '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        }
+          required: '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        },
       });
     } else if (!viewportData.isOptimal) {
       issues.push({
@@ -58,8 +58,8 @@ var MobileResultsConverter = (function() {
         block: 'meta',
         details: {
           actual: viewportData.content,
-          required: 'width=device-width, initial-scale=1'
-        }
+          required: 'width=device-width, initial-scale=1',
+        },
       });
     }
 
@@ -75,8 +75,8 @@ var MobileResultsConverter = (function() {
         block: 'meta',
         details: {
           actual: 'user-scalable=no',
-          required: 'user-scalable=yes or omit (accessibility standard)'
-        }
+          required: 'user-scalable=yes or omit (accessibility standard)',
+        },
       });
     }
 
@@ -91,8 +91,8 @@ var MobileResultsConverter = (function() {
         block: 'meta',
         details: {
           actual: 'maximum-scale=' + viewportData.maxScaleValue,
-          required: 'maximum-scale ≥5 or omit (accessibility standard)'
-        }
+          required: 'maximum-scale ≥5 or omit (accessibility standard)',
+        },
       });
     }
   }
@@ -100,11 +100,11 @@ var MobileResultsConverter = (function() {
   // ============================================
   // TAP TARGET CONVERSION
   // ============================================
-  
+
   function convertTapTargetIssues(tapTargets, issues, pageUrl) {
     for (var i = 0; i < tapTargets.length; i++) {
       var issue = tapTargets[i];
-      
+
       if (issue.type === 'size') {
         issues.push({
           type: 'touch-target-too-small',
@@ -118,11 +118,14 @@ var MobileResultsConverter = (function() {
           block: 'interactive-element',
           details: {
             actual: issue.width + 'x' + issue.height + 'px',
-            recommended: '≥' + issue.minRequired + 'x' + issue.minRequired + 'px (accessibility standard)',
+            recommended:
+              '≥' + issue.minRequired + 'x' + issue.minRequired + 'px (accessibility standard)',
             width: issue.width,
             height: issue.height,
-            href: issue.href || null
-          }
+            href: issue.href || null,
+          },
+          elementScreenshot: issue.elementScreenshot || null,
+          elementContext: issue.elementContext || null,
         });
       } else if (issue.type === 'spacing') {
         issues.push({
@@ -137,10 +140,13 @@ var MobileResultsConverter = (function() {
           block: 'interactive-element',
           details: {
             actual: issue.overlapPercent + '% overlap with nearby tap target',
-            recommended: '≤25% overlap (Lighthouse standard), maintain ≥' + issue.minRequired + 'px spacing',
+            recommended:
+              '≤25% overlap (Lighthouse standard), maintain ≥' + issue.minRequired + 'px spacing',
             nearElement: issue.nearElement,
-            href: issue.href || null
-          }
+            href: issue.href || null,
+          },
+          elementScreenshot: issue.elementScreenshot || null,
+          elementContext: issue.elementContext || null,
         });
       }
     }
@@ -155,7 +161,7 @@ var MobileResultsConverter = (function() {
   // ============================================
   // CONTENT WIDTH CONVERSION
   // ============================================
-  
+
   function convertContentWidthIssues(contentWidth, issues, pageUrl) {
     if (contentWidth.hasHorizontalScroll) {
       issues.push({
@@ -169,20 +175,20 @@ var MobileResultsConverter = (function() {
         details: {
           actual: contentWidth.contentWidth + 'px content width',
           required: contentWidth.viewportWidth + 'px (viewport width)',
-          overflow: contentWidth.overflowAmount + 'px'
-        }
+          overflow: contentWidth.overflowAmount + 'px',
+        },
       });
     }
   }
 
-	// ============================================
+  // ============================================
   // IMAGE SIZING CONVERSION
   // ============================================
-  
+
   function convertImageSizingIssues(imageSizing, issues, pageUrl) {
     for (var i = 0; i < imageSizing.length; i++) {
       var issue = imageSizing[i];
-      
+
       issues.push({
         type: 'image-oversized',
         severity: 'warning',
@@ -197,8 +203,8 @@ var MobileResultsConverter = (function() {
           displaySize: issue.displaySize,
           naturalSize: issue.naturalSize,
           ratio: issue.ratio + 'x display size',
-          wastedPixels: issue.wastedPixels.toLocaleString() + ' pixels'
-        }
+          wastedPixels: issue.wastedPixels.toLocaleString() + ' pixels',
+        },
       });
     }
   }
@@ -206,24 +212,23 @@ var MobileResultsConverter = (function() {
   // ============================================
   // VIEWPORT META TAG RESULT
   // ============================================
-  
+
   function convertViewportMeta(viewportData) {
     return {
       exists: viewportData.exists,
       content: viewportData.content || null,
-      isProper: viewportData.isOptimal || false
+      isProper: viewportData.isOptimal || false,
     };
   }
 
   // ============================================
   // PUBLIC API
   // ============================================
-  
+
   return {
     convertToMobileIssues: convertToMobileIssues,
-    convertViewportMeta: convertViewportMeta
+    convertViewportMeta: convertViewportMeta,
   };
-
 })();
 
 // Make available in service worker context
