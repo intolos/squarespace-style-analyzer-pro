@@ -22,62 +22,11 @@ class SquarespaceAnalyzer {
     await this.checkOngoingDomainAnalysis();
 
     // Check license in background AFTER showing UI (non-blocking)
-    this.verifyStoredLicenseInBackground();
+    LicenseManager.verifyStoredLicenseInBackground(this);
   }
 
   async verifyStoredLicenseInBackground() {
-    try {
-      const data = await chrome.storage.local.get([
-        'licenseEmail',
-        'isPremium',
-        'lastLicenseCheck',
-      ]);
-
-      // Only auto-verify if we have a stored email
-      if (data.licenseEmail) {
-        const now = Date.now();
-        const lastCheck = data.lastLicenseCheck || 0;
-        const hoursSinceLastCheck = (now - lastCheck) / (1000 * 60 * 60);
-
-        // Always respect 24-hour cache
-        if (hoursSinceLastCheck < 24) {
-          console.log('License checked recently, skipping verification');
-          return;
-        }
-
-        console.log('Verifying license with Stripe in background (24+ hours since last check)');
-        const result = await checkLicense(data.licenseEmail);
-
-        if (result && result.valid) {
-          // License valid - update storage and UI if status changed
-          const wasFreeBefore = !this.isPremium;
-
-          await chrome.storage.local.set({
-            isPremium: true,
-            licenseData: result,
-            lastLicenseCheck: now,
-          });
-
-          // If we just upgraded from free to premium, reload UI
-          if (wasFreeBefore) {
-            console.log('Premium status activated! Reloading UI...');
-            this.isPremium = true;
-            this.updateUI();
-          }
-
-          console.log('Background verification complete');
-        } else {
-          // License no longer valid - update for next time
-          await chrome.storage.local.set({
-            isPremium: false,
-            lastLicenseCheck: now,
-          });
-          console.log('License expired or not found');
-        }
-      }
-    } catch (error) {
-      console.error('Background license verification failed:', error);
-    }
+    await LicenseManager.verifyStoredLicenseInBackground(this);
   }
 
   async loadUserData() {
@@ -395,121 +344,11 @@ class SquarespaceAnalyzer {
   }
 
   autoExportReportsForQualityIssues() {
-    if (!this.accumulatedResults) return;
-
-    const data = this.accumulatedResults;
-    const qualityChecks = data.qualityChecks || {};
-
-    // Check each quality check category for errors
-    const hasGenericImages = (qualityChecks.genericImageNames || []).length > 0;
-    const hasMissingAltText = (qualityChecks.missingAltText || []).length > 0;
-
-    // Auto-export Images Report only if image-related quality check errors found
-    if (hasGenericImages || hasMissingAltText) {
-      this.exportImagesReport();
-    }
+    ExportManager.exportImagesReport(this);
   }
 
   async checkPremiumStatus() {
-    const email = await customPrompt('Enter your subscription email to check premium status:');
-    if (!email) return;
-
-    const trimmedEmail = email.trim().toLowerCase();
-
-    // Show status message above the button
-    const statusMsg = document.getElementById('premiumStatusMessage');
-    if (statusMsg) {
-      statusMsg.innerHTML =
-        '<span class="spinner" style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px; display: inline-block; vertical-align: middle;"></span>Checking premium status...';
-      statusMsg.style.display = 'block';
-      statusMsg.style.background = '#bee3f8';
-      statusMsg.style.color = '#2c5282';
-    }
-
-    try {
-      console.log('Checking premium status for email:', trimmedEmail);
-      const data = await checkLicense(trimmedEmail);
-      console.log('License check response:', data);
-
-      if (data && data.valid && data.record) {
-        const record = data.record;
-        const expiresAt = record.expires_at;
-
-        // Handle lifetime licenses (no expiration)
-        if (expiresAt) {
-          const expiryDate = new Date(expiresAt * 1000);
-          const now = new Date();
-          const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-
-          // Update storage with premium status
-          await chrome.storage.local.set({
-            isPremium: true,
-            licenseEmail: trimmedEmail,
-            licenseData: data,
-          });
-
-          // Reload user data and update UI
-          await this.loadUserData();
-          this.updateUI();
-
-          let message = `✅ Premium Status: Active\n\n`;
-          message += `📧 Email: ${trimmedEmail}\n`;
-          message += `📅 Expires: ${expiryDate.toLocaleDateString()}\n`;
-          message += `⏰ Days Remaining: ${daysRemaining} days\n\n`;
-          message += `Your premium status has been activated in the extension!`;
-
-          customAlert(message);
-          if (statusMsg) statusMsg.style.display = 'none';
-        } else {
-          // Lifetime license (no expiration date)
-          await chrome.storage.local.set({
-            isPremium: true,
-            licenseEmail: trimmedEmail,
-            licenseData: data,
-          });
-
-          await this.loadUserData();
-          this.updateUI();
-
-          let message = `✅ Premium Status: Active (Lifetime)\n\n`;
-          message += `📧 Email: ${trimmedEmail}\n`;
-          message += `🎉 Lifetime License - Never Expires\n\n`;
-          message += `Your premium status has been activated in the extension!`;
-
-          customAlert(message);
-          if (statusMsg) statusMsg.style.display = 'none';
-        }
-      } else {
-        // Provide more detailed error message
-        let errorMsg = 'Premium Status: Not Active\n\n';
-        if (data && data.error) {
-          errorMsg += `Error: ${data.error}\n\n`;
-        }
-        errorMsg += `No active subscription found for this email.\n\n`;
-        errorMsg += `The system checked both yearly subscriptions and lifetime licenses.\n\n`;
-        errorMsg += `If you recently purchased, please wait a few minutes and try again.\n\n`;
-        errorMsg += `If you believe this is an error, please contact support at: webbyinsights@gmail.com`;
-
-        console.warn('Premium status check failed:', data);
-        customAlert(errorMsg);
-        if (statusMsg) {
-          statusMsg.textContent = 'No active subscription found.';
-          statusMsg.style.background = '#fed7d7';
-          statusMsg.style.color = '#9b2c2c';
-        }
-      }
-    } catch (error) {
-      console.error('Error checking premium status:', error);
-      const statusMsg = document.getElementById('premiumStatusMessage');
-      if (statusMsg) {
-        statusMsg.textContent = `Error: ${error.message || 'Network error'}. Please try again.`;
-        statusMsg.style.background = '#fed7d7';
-        statusMsg.style.color = '#9b2c2c';
-      }
-      customAlert(
-        `Error checking premium status:\n\n${error.message || 'Network error. Please check your connection and try again.'}`
-      );
-    }
+    await LicenseManager.checkPremiumStatus(this);
   }
 
   async analyzeSite() {
@@ -546,120 +385,23 @@ class SquarespaceAnalyzer {
   }
 
   exportCSV() {
-    if (this.isMobileOnlyData()) {
-      customAlert(
-        'No data to export. This analysis only contains mobile usability data. Use the Mobile Report button instead.'
-      );
-      return;
-    }
-    ExportCSV.export(
-      this.accumulatedResults,
-      this.FILENAME_BRAND,
-      this.showSuccess.bind(this),
-      this.showError.bind(this)
-    );
+    ExportManager.exportCSV(this);
   }
 
   exportHTMLReport() {
-    if (this.isMobileOnlyData()) {
-      customAlert(
-        'No data to export. This analysis only contains mobile usability data. Use the Mobile Report button instead.'
-      );
-      return;
-    }
-    ExportHTMLReports.export(
-      this.accumulatedResults,
-      this.FILENAME_BRAND,
-      this.showSuccess.bind(this),
-      this.showError.bind(this)
-    );
+    ExportManager.exportHTMLReport(this);
   }
 
   exportImagesReport() {
-    if (!this.accumulatedResults) {
-      customAlert('No data to export. Please analyze a page first.');
-      return;
-    }
-
-    const qualityChecks = this.accumulatedResults.qualityChecks || {};
-    const imagesWithoutAlt = qualityChecks.missingAltText || [];
-    const genericImageNames = qualityChecks.genericImageNames || [];
-
-    // Check if there are any image issues to report
-    if (imagesWithoutAlt.length === 0 && genericImageNames.length === 0) {
-      customAlert(
-        'No image issues found. The Images Report is only generated when there are missing alt text or generic image filename issues.'
-      );
-      return;
-    }
-
-    ExportImagesReport.export(
-      this.accumulatedResults,
-      imagesWithoutAlt,
-      genericImageNames,
-      this.FILENAME_BRAND,
-      this.downloadFile.bind(this)
-    );
+    ExportManager.exportImagesReport(this);
   }
 
   exportStyleGuide() {
-    if (this.isMobileOnlyData()) {
-      customAlert(
-        'No data to export. This analysis only contains mobile usability data. Use the Mobile Report button instead.'
-      );
-      return;
-    }
-    ExportStyleGuide.export(
-      this.accumulatedResults,
-      this.FILENAME_BRAND,
-      this.showSuccess.bind(this),
-      this.downloadFile.bind(this)
-    );
+    ExportManager.exportStyleGuide(this);
   }
 
   exportMobileReport() {
-    if (!this.accumulatedResults) {
-      customAlert('No data to export. Please analyze a page first.');
-      return;
-    }
-
-    // Check if mobile analysis was performed
-    if (!this.hasMobileData()) {
-      customAlert(
-        'No mobile analysis data to export. This analysis was performed without mobile analysis. Please run an analysis with mobile analysis enabled.'
-      );
-      return;
-    }
-
-    const mobileIssues = this.accumulatedResults.mobileIssues?.issues || [];
-    const domain = this.accumulatedResults.metadata?.domain || 'website';
-
-    ExportMobileReport.export(
-      this.accumulatedResults,
-      mobileIssues,
-      domain,
-      this.FILENAME_BRAND,
-      text =>
-        text.replace(
-          /[&<>"']/g,
-          m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-        ),
-      this.downloadFile.bind(this)
-    );
-
-    this.showSuccess('✅ Mobile Usability report exported!');
-  }
-
-  downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    ExportManager.exportMobileReport(this);
   }
 
   trackUsage(event) {
