@@ -36,3 +36,8 @@ tests/
 # Temporary files
 *.tmp
 *.temp
+
+# Chrome extension specific
+*.crx
+*.pem
+web-store-upload.zip
