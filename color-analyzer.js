@@ -521,6 +521,7 @@ const ColorAnalyzer = {
       block: getBlockInfo(element),
       context: this.getElementContext(element),
       pairedWith: pairedColor ? this.rgbToHex(pairedColor) : null,
+      selector: ContentScriptHelpers.generateSelector(element),
     });
   },
 

@@ -16,10 +16,10 @@ const LicenseManager = {
   // Legacy: Keep for backward compatibility
   PRODUCT_ID: 'squarespace-style-analyzer',
   SUCCESS_URL_YEARLY:
-    'https://intolos.github.io/squarespace-style-analyzer-pro/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
+    'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
   SUCCESS_URL_LIFETIME:
-    'https://intolos.github.io/squarespace-style-analyzer-pro/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
-  CANCEL_URL: 'https://intolos.github.io/squarespace-style-analyzer-pro/cancel.html',
+    'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
+  CANCEL_URL: 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/cancel.html',
   // ============================================
 
   // Storage helpers

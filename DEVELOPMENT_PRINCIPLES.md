@@ -176,25 +176,21 @@ Match or exceed the accuracy of industry-standard tools. Nothing less is accepta
 ### File Organization Rules:
 
 1. **Each file should have ONE clear responsibility**
-
    - If a file handles multiple concerns, split it into separate files
    - Module names should clearly indicate their single purpose
 
 2. **File Size Guidelines:**
-
    - If a file exceeds 500 lines, evaluate if it should be split
    - If a file exceeds 700 lines, it MUST be refactored into smaller modules
    - Exception: Generated files or configuration files
 
 3. **Module Separation Examples:**
-
    - GOOD: `color-analyzer.js` (handles ONLY color analysis)
    - GOOD: `mobile-lighthouse-analyzer.js` (handles ONLY mobile usability checks)
    - BAD: `utils.js` (vague, handles multiple unrelated utilities)
    - BAD: A single file that handles both data fetching AND UI rendering
 
 4. **When to Split a File:**
-
    - File has multiple distinct sections with different purposes
    - File handles multiple unrelated data transformations
    - File contains both business logic AND presentation logic
@@ -431,7 +427,9 @@ const scale = Math.min(1, maxSize / Math.max(rect.width, rect.height));
 
 # Mandatory Planning and Pre-Implementation Checklist
 
-## Before Writing ANY Code, Answer These Questions:
+## Before Writing ANY Code, Answer These Questions and follow this first command:
+
+- [ ] I will not change items that are working properly. I will not change items that are not requested.
 
 - [ ] Have I researched how industry-standard tools (WAVE, Lighthouse, axe) implement this?
 

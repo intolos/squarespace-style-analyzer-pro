@@ -269,13 +269,15 @@ const ExportHTMLReports = {
     const hierarchyCorrect = brokenHierarchy.length === 0;
 
     if (brokenHierarchy.length > 5) {
-      this.exportQualityCheckReport(
-        data,
-        'brokenHeadingHierarchy',
-        brokenHierarchy,
-        domain,
-        filenameBrand
-      );
+      setTimeout(() => {
+        this.exportQualityCheckReport(
+          data,
+          'brokenHeadingHierarchy',
+          brokenHierarchy,
+          domain,
+          filenameBrand
+        );
+      }, 1000);
       checks.push({
         passed: false,
         message: `${brokenHierarchy.length} heading hierarchy issue(s) found. See downloaded Heading Hierarchy report.`,
@@ -486,13 +488,6 @@ const ExportHTMLReports = {
 
     const genericImageNames = data.qualityChecks?.genericImageNames || [];
     if (imagesWithoutAlt.length > 5 || genericImageNames.length > 5) {
-      ExportImagesReport.export(
-        data,
-        imagesWithoutAlt,
-        genericImageNames,
-        filenameBrand,
-        this.downloadFile.bind(this)
-      );
       checks.push({
         passed: false,
         message: `${imagesWithoutAlt.length} image(s) missing alt text. See downloaded Images Analysis report.`,
@@ -657,8 +652,8 @@ const ExportHTMLReports = {
   <title>${reportTitle}</title>
   <link rel="icon" type="image/png" href="https://intolos.github.io/squarespace-style-analyzer-pro/icon32.png">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
-    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }   
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f0f4f8; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }   
     .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
     .header h1 { font-size: 2.7rem; margin: 0 0 10px 0; color: #2d3748; }
     .header p { color: #7180D8; font-size: 1.8rem; }
@@ -676,7 +671,7 @@ const ExportHTMLReports = {
 <body>
   <div class="container">
     <div class="header">
-      <h1>${iconEmoji} ${reportTitle}</h1>
+      <h1>✨ Typography Styles Consistency Audit ✨</h1>
       <p>Professional Design Audit by Squarespace Style Analyzer Pro</p>
       <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
     </div>
@@ -812,7 +807,7 @@ const ExportHTMLReports = {
             html += `<a href="${location.url}${location.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(location.selector)}" 
                         target="_blank" 
                         style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold; flex-shrink: 0;">
-                        🔍 Locate
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
                      </a>`;
           }
           html += `</div>`;
@@ -861,7 +856,7 @@ const ExportHTMLReports = {
               html += `<a href="${location.url}${location.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(location.selector)}" 
                           target="_blank" 
                           style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.7rem; font-weight: bold; flex-shrink: 0;">
-                          🔍 Locate
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
                        </a>`;
             }
             html += `</div>`;
@@ -991,7 +986,7 @@ const ExportHTMLReports = {
     .report-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, transparent, #667eea, #764ba2, #667eea, transparent); }
     .report-divider-icon { background: white; padding: 0 30px; position: relative; font-size: 2.5rem; }
     .reports-nav { background: linear-gradient(135deg, #5562D8 0%, #764ba2 100%); padding: 25px; border-radius: 12px; margin-bottom: 40px; }
-    .reports-nav h3 { color: white; margin: 0 0 15px 0; font-size: 1.5rem; text-align: center; }
+    .reports-nav h3 { color: white; margin: 0 0 25px 0; font-size: 1.8rem; text-align: center; font-weight: 800; }
     .reports-nav-links { display: flex; flex-direction: column; gap: 12px; }
     .reports-nav-link { font-size: 1.3rem; background: rgba(255,255,255,0.10); padding: 15px 20px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600; transition: all 0.2s ease; display: block; }
     .reports-nav-link:hover { transform: translateX(5px); }
@@ -1141,8 +1136,13 @@ const ExportHTMLReports = {
 </html>`;
 
     const filename = `${domain} ${filenameBrand} website analysis.html`;
-    this.downloadFile(html, filename, 'text/html');
-    showSuccess('✅ Website Analysis report exported successfully!');
+
+    // Add a small delay for the main report to avoid browser download collision
+    // when multiple reports are exported at once
+    setTimeout(() => {
+      this.downloadFile(html, filename, 'text/html');
+      showSuccess('✅ Website Analysis report exported successfully!');
+    }, 500);
   },
 };
 

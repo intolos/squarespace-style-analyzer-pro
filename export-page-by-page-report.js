@@ -53,10 +53,10 @@ const ExportPageByPageReport = {
       // Page section header
       const arrows = nextPageId
         ? `<div>
-            <a href="#toc" style="color: white; text-decoration: none; font-size: 1.5rem; margin-right: 15px;">⬆️</a>
+            <a href="#reports-nav" style="color: white; text-decoration: none; font-size: 1.5rem; margin-right: 15px;">⬆️</a>
             <a href="#${nextPageId}" style="color: white; text-decoration: none; font-size: 1.5rem;">⬇️</a>
           </div>`
-        : `<a href="#toc" style="color: white; text-decoration: none; font-size: 1.5rem;">⬆️</a>`;
+        : `<a href="#reports-nav" style="color: white; text-decoration: none; font-size: 1.5rem;">⬆️</a>`;
 
       html += `
         <div id="${pageId}" style="margin-bottom: 40px;">
@@ -104,7 +104,7 @@ const ExportPageByPageReport = {
     // Footer with up arrow
     html += `
       <div style="text-align: center; margin-top: 40px; padding: 20px;">
-        <a href="#toc" style="color: #667eea; text-decoration: none; font-size: 2rem;">⬆️</a>
+        <a href="#reports-nav" style="color: #667eea; text-decoration: none; font-size: 2rem;">⬆️</a>
       </div>
     `;
 
@@ -256,7 +256,7 @@ const ExportPageByPageReport = {
             <a href="${item.url}${item.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(item.selector)}" 
                target="_blank" 
                style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
-               🔍 Locate
+               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
             </a>
           </div>`;
       }

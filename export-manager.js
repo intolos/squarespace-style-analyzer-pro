@@ -30,11 +30,17 @@ const ExportManager = {
       analyzer.showSuccess.bind(analyzer),
       analyzer.showError.bind(analyzer)
     );
+
+    // Also export images report automatically with bulk export
+    // Add a delay to avoid browser download collision
+    setTimeout(() => {
+      this.exportImagesReport(analyzer, true);
+    }, 1500);
   },
 
-  exportImagesReport: function (analyzer) {
+  exportImagesReport: function (analyzer, isBulkExport = false) {
     if (!analyzer.accumulatedResults) {
-      customAlert('No data to export. Please analyze a page first.');
+      if (!isBulkExport) customAlert('No data to export. Please analyze a page first.');
       return;
     }
 
@@ -42,13 +48,7 @@ const ExportManager = {
     const imagesWithoutAlt = qualityChecks.missingAltText || [];
     const genericImageNames = qualityChecks.genericImageNames || [];
 
-    // Check if there are any image issues to report
-    if (imagesWithoutAlt.length === 0 && genericImageNames.length === 0) {
-      customAlert(
-        'No image issues found. The Images Report is only generated when there are missing alt text or generic image filename issues.'
-      );
-      return;
-    }
+    // Removed check: Export even if no issues found as requested by user
 
     ExportImagesReport.export(
       analyzer.accumulatedResults,
@@ -57,6 +57,10 @@ const ExportManager = {
       analyzer.FILENAME_BRAND,
       this.downloadFile.bind(this)
     );
+
+    if (!isBulkExport) {
+      analyzer.showSuccess('✅ Images report exported successfully!');
+    }
   },
 
   exportStyleGuide: function (analyzer) {

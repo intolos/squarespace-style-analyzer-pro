@@ -173,6 +173,7 @@ var ContentScriptAnalyzers = (function () {
           block: block,
           element: tagName,
           classes: btn.className || '',
+          selector: ContentScriptHelpers.generateSelector(btn),
         });
 
         processedButtonKeys.add(buttonKey);
@@ -238,6 +239,7 @@ var ContentScriptAnalyzers = (function () {
           section: section,
           block: block,
           styles: heading.className || '',
+          selector: ContentScriptHelpers.generateSelector(heading),
         });
       }
     }
@@ -510,6 +512,7 @@ var ContentScriptAnalyzers = (function () {
           section: section,
           block: block,
           styles: p.className || '',
+          selector: ContentScriptHelpers.generateSelector(p),
         });
       }
     }
@@ -599,6 +602,7 @@ var ContentScriptAnalyzers = (function () {
         section: section,
         block: block,
         styles: listItem.className || '',
+        selector: ContentScriptHelpers.generateSelector(listItem),
       });
     }
   }
@@ -825,20 +829,70 @@ var ContentScriptAnalyzers = (function () {
 
   function analyzeImages(results, navigationName) {
     var allImages = document.querySelectorAll('img');
+    var seenImages = new Set(); // Track images to avoid duplicate reporting on same page
 
     for (var i = 0; i < allImages.length; i++) {
       var img = allImages[i];
+
+      // Basic visibility check
+      var style = window.getComputedStyle(img);
+      if (
+        style.display === 'none' ||
+        style.visibility === 'hidden' ||
+        parseFloat(style.opacity) < 0.1
+      ) {
+        continue;
+      }
+
       var alt = img.getAttribute('alt');
-      var src = img.src || '';
+
+      // Squarespace specific: Handle lazy loading and data attributes
+      var src =
+        img.src ||
+        img.getAttribute('data-src') ||
+        img.getAttribute('data-image') ||
+        img.getAttribute('srcset')?.split(' ')[0] ||
+        '';
+
+      // Clean up relative URLs to absolute if needed
+      if (src && !src.startsWith('http')) {
+        try {
+          src = new URL(src, window.location.href).href;
+        } catch (e) {}
+      }
+
       var section = ContentScriptHelpers.getSectionInfo(img);
       var block = ContentScriptHelpers.getBlockInfo(img);
 
       var imgWidth = img.naturalWidth || img.width || 0;
       var imgHeight = img.naturalHeight || img.height || 0;
-      var isSmallImage = (imgWidth > 0 && imgWidth < 50) || (imgHeight > 0 && imgHeight < 50);
+
+      // Squarespace specific: Parse dimensions from data attributes if not loaded yet
+      if (imgWidth === 0 || imgHeight === 0) {
+        var dims = img.getAttribute('data-image-dimensions');
+        if (dims && dims.includes('x')) {
+          var parts = dims.split('x');
+          imgWidth = parseInt(parts[0]) || 0;
+          imgHeight = parseInt(parts[1]) || 0;
+        }
+      }
+
+      // Avoid tiny tracking pixels or spacers
+      if (src && (imgWidth === 1 || imgHeight === 1) && !alt) {
+        continue;
+      }
+
+      // Check if this is likely an icon - Threshold updated to 64px as per user request
+      // STRICT check: BOTH dimensions must be <= 64px to be considered a small icon automatically
+      var isSmallImage = imgWidth > 0 && imgWidth <= 64 && imgHeight > 0 && imgHeight <= 64;
 
       // Check if this is likely an icon
       var isIcon = isLikelyIcon(img, src, imgWidth, imgHeight);
+
+      // Create unique key for this image instance to avoid duplicate reporting
+      var imageKey = src + '|' + (alt || '') + '|' + section + '|' + block;
+      if (seenImages.has(imageKey)) continue;
+      seenImages.add(imageKey);
 
       results.images.push({
         navigationName: navigationName,
@@ -849,19 +903,30 @@ var ContentScriptAnalyzers = (function () {
         section: section,
         block: block,
         selector: ContentScriptHelpers.generateSelector(img),
+        width: imgWidth,
+        height: imgHeight,
       });
 
-      // Skip alt text check for icons
-      if (!isIcon && (!alt || alt.trim() === '')) {
+      // Flag as missing alt text if:
+      // 1. Attribute is completely missing
+      // 2. Attribute is empty (alt="") AND it's not a small icon (<= 64px)
+      // NOTE: We report missing alt text if it's truly missing AND it is NOT a small icon.
+      // Since isSmallImage now strictly requires BOTH dims <= 64, we will report for everything else (e.g. banners).
+      var isTrulyMissingAlt = !alt || alt.trim() === '';
+      var shouldReportAlt = isTrulyMissingAlt && !isSmallImage;
+
+      if (shouldReportAlt) {
         results.qualityChecks.missingAltText.push({
           url: window.location.href,
           pageTitle: document.title || 'Unknown',
           navigationName: navigationName,
           issue: 'Missing alt text on image',
-          imageSrc: src, // Remove truncation to 100
+          imageSrc: src,
           section: section,
           block: block,
           selector: ContentScriptHelpers.generateSelector(img),
+          width: imgWidth,
+          height: imgHeight,
         });
       }
 
@@ -875,6 +940,8 @@ var ContentScriptAnalyzers = (function () {
               navigationName: navigationName,
               src: src,
               filename: filename,
+              width: imgWidth,
+              height: imgHeight,
               pattern: pattern,
               section: section,
               block: block,

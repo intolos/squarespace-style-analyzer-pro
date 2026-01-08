@@ -101,19 +101,15 @@ const ExportAggregatedStylesReport = {
           html += `<div class="accordion-item-number">#${j + 1}</div>`;
           html += `<div style="flex: 1;">`;
           html += `<div>📍 ${escapeHtmlFn(loc.navigationName || 'Unknown')} — <a href="${escapeHtmlFn(loc.url)}" target="_blank" style="color: #667eea; text-decoration: underline;">${escapeHtmlFn(loc.url)}</a></div>`;
+          if (loc.selector) {
+            html += `<div style="margin-top: 5px; text-align: right;"><a href="${loc.url}${loc.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(loc.selector)}" target="_blank" style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate</a></div>`;
+          }
           if (loc.text) {
             const displayText = escapeHtmlFn(loc.text.substring(0, 150));
             html += `<div class="location-text">"${displayText}${loc.text.length > 150 ? '...' : ''}"</div>`;
           }
           html += `</div>`;
           html += `</div>`;
-          if (loc.selector) {
-            html += `<a href="${loc.url}${loc.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(loc.selector)}" 
-                        target="_blank" 
-                        style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.7rem; font-weight: bold; flex-shrink: 0;">
-                        🔍 Locate
-                     </a>`;
-          }
           html += `</div>`;
         }
         html += `</div>`;
@@ -301,7 +297,12 @@ const ExportAggregatedStylesReport = {
     }
 
     // Links Section
-    html += this.generateSectionHeader('agg-links-section', 'Links', '🔗', 'page-report-start');
+    html += this.generateSectionHeader(
+      'agg-links-section',
+      'In-Content Links',
+      '🔗',
+      'page-report-start'
+    );
     html += `<p style="color: #718096; font-size: 0.95rem; margin-bottom: 20px; font-style: italic;">
       Analyzes in-content links for consistent styling. Excludes navigation, footer, and social media links since these often use specialized styling.
     </p>`;
@@ -435,12 +436,11 @@ const ExportAggregatedStylesReport = {
             ${buttonsSublist ? `<ul style="list-style: none; padding-left: 25px; margin-top: 5px;">${buttonsSublist}</ul>` : ''}
           </li>
           <li style="margin: 10px 0;">
-            <a href="#agg-links-section" style="color: #667eea; text-decoration: none; font-weight: bold;">🔗 Links</a>
-            ${linksSublist ? `<ul style="list-style: none; padding-left: 25px; margin-top: 5px;">${linksSublist}</ul>` : ''}
+            <a href="#agg-links-in-content" style="color: #667eea; text-decoration: none; font-weight: bold;">🔗 In-Content Links${data.links && data.links['in-content'] && data.links['in-content'].locations && data.links['in-content'].locations.length > 0 ? (StyleComparisonUtils.groupByStyleDefinition(data.links['in-content'].locations).length > 1 ? ` <span style="color: #e53e3e;">(${data.links['in-content'].locations.length}, ${StyleComparisonUtils.groupByStyleDefinition(data.links['in-content'].locations).length} vars)</span>` : '') : ''}</a>
           </li>
         </ul>
         <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
-           <strong>💡 NOTE:</strong> To properly use the Locate link, in the In-Content Links section, you must let the web page fully and completely finish loading. It is at the very end of the page loading that the item is identified with a red outline.
+           <strong>💡 NOTE:</strong> To properly use the Locate link, in the In-Content Links section, the item will be identified with a red outline as soon as it appears on the page. For the most accurate placement, it is recommended to let the page finish loading.
         </p>
       </div>
     `;

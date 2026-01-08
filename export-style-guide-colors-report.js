@@ -644,6 +644,11 @@ class ExportStyleGuideColorsReport {
       align-items: center;
       gap: 15px;
       margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .contrast-inspect {
+      margin-left: auto;
     }
     
     .contrast-colors {
@@ -927,6 +932,18 @@ class ExportStyleGuideColorsReport {
                   <div class="outlier-hex">${color}</div>
                   <div class="variation-count">${colors[color].count} use${colors[color].count > 1 ? 's' : ''}</div>
                 </div>
+                ${
+                  firstInstance.selector
+                    ? `
+                  <div style="margin-left: auto;">
+                    <a href="${firstInstance.page}${firstInstance.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(firstInstance.selector)}" 
+                       target="_blank" 
+                       style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
+                    </a>
+                  </div>`
+                    : ''
+                }
               </div>
               <div class="outlier-location">
                 <strong>Page:</strong>
@@ -936,18 +953,6 @@ class ExportStyleGuideColorsReport {
                 <strong>Element:</strong> ${firstInstance.context}<br>
                 <strong>Section:</strong> ${firstInstance.section}<br>
                 <strong>Block:</strong> ${firstInstance.block}<br>
-                ${
-                  firstInstance.selector
-                    ? `
-                  <div style="margin-top: 10px;">
-                    <a href="${firstInstance.page}${firstInstance.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(firstInstance.selector)}" 
-                       target="_blank" 
-                       style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
-                       🔍 Locate on Page
-                    </a>
-                  </div>`
-                    : ''
-                }
               </div>
             </div>
           `;
@@ -965,7 +970,7 @@ class ExportStyleGuideColorsReport {
         ? `
     ${this.generateSectionHeader('accessibility-section', `Accessibility Issues for Text Contrast (${analysis.contrastFailures.length} WCAG contrast failures)`, '♿', getNextSection('accessibility-section'))}
     <p style="margin: 15px 0; font-size: 0.85rem; color: black; line-height: 1.4;">
-       <strong>💡 NOTE:</strong> To properly use the Locate link, you must let the web page fully and completely finish loading. It is at the very end of the page loading that the item is identified with a red outline.
+       <strong>💡 NOTE:</strong> To properly use the Locate link, the item will be identified with a red outline as soon as it appears on the page. For the most accurate placement, it is recommended to let the page finish loading.
     </p>
     <div class="section">
       <div style="background: #f0f4f8; border-left: 4px solid #4a90e2; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
@@ -990,21 +995,6 @@ class ExportStyleGuideColorsReport {
           failure => `
         <div class="contrast-issue">
           <div class="contrast-header">
-            ${
-              failure.selector
-                ? `
-            <div class="contrast-inspect" style="margin-right: 15px;">
-              <a href="${failure.page}${failure.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(failure.selector)}" 
-                 target="_blank" 
-                 style="display: inline-block; padding: 8px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; transition: background 0.2s;"
-                 onmouseover="this.style.background='#5a67d8'"
-                 onmouseout="this.style.background='#667eea'">
-                 🔍 Locate on Page
-              </a>
-            </div>
-            `
-                : ''
-            }
             <div class="contrast-colors">
               <div class="contrast-swatch" style="background-color: ${failure.textColor};" title="Text color"></div>
               <div class="contrast-swatch" style="background-color: ${failure.backgroundColor};" title="Background color"></div>
@@ -1022,6 +1012,22 @@ class ExportStyleGuideColorsReport {
                   : ''
               }
             </div>
+            ${
+              failure.selector
+                ? `
+            <div class="contrast-inspect">
+              <a href="${failure.page}${failure.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(failure.selector)}" 
+                 target="_blank" 
+                 style="display: inline-flex; align-items: center; padding: 8px 16px; background: #667eea; color: white; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);"
+                 onmouseover="this.style.background='#5a67d8'; this.style.transform='translateY(-1px)';"
+                 onmouseout="this.style.background='#667eea'; this.style.transform='translateY(0)';">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                 Locate on Page
+              </a>
+            </div>
+            `
+                : ''
+            }
           </div>
           <div class="contrast-location">
             <strong>Location:</strong> ${failure.location}<br>
@@ -1323,6 +1329,33 @@ class ExportStyleGuideColorsReport {
         </div>
       </div>
     </div>
+    
+    <script>
+    (function() {
+      // Ensure accordion works even if script loads late
+      const attachAccordion = () => {
+        document.querySelectorAll('.accordion-header').forEach(header => {
+          if (header.dataset.ssaBound) return;
+          header.dataset.ssaBound = 'true';
+          header.addEventListener('click', function(e) {
+            const container = this.closest('.accordion-container');
+            if (container) {
+              container.classList.toggle('open');
+            }
+          });
+        });
+      };
+      attachAccordion();
+      // Also catch any dynamic ones
+      document.addEventListener('click', function(e) {
+        const header = e.target.closest('.accordion-header');
+        if (header && !header.dataset.ssaBound) {
+          const container = header.closest('.accordion-container');
+          if (container) container.classList.toggle('open');
+        }
+      });
+    })();
+    </script>
     `;
   }
 }

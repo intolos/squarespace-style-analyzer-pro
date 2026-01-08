@@ -2,8 +2,7 @@
 // Handles generating and exporting the Brand Style Guide HTML report
 
 const ExportStyleGuide = {
-
-  export: function(accumulatedResults, filenameBrand, showSuccess, downloadFile) {
+  export: function (accumulatedResults, filenameBrand, showSuccess, downloadFile) {
     if (!accumulatedResults) {
       customAlert('No data to export. Please analyze a page first.');
       return;
@@ -11,7 +10,7 @@ const ExportStyleGuide = {
 
     const data = accumulatedResults;
     const domain = data.metadata.domain.replace(/^www\./, '');
-    
+
     let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -47,7 +46,7 @@ const ExportStyleGuide = {
     <div class="section">
       <h2 class="section-title">✏️ Typography</h2>
       <p style="color: #4a5568; font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px;">
-        The purpose of this report is to show the <strong><em>most commonly used</em></strong> style for each heading, paragraph, and button, as an indication of your intended "Style Guide".
+        The purpose of this report is to show the <strong><em>most commonly used</em></strong> styles for the analyzed pages for each heading, paragraph, and button, as an indication of your intended "Style Guide".
       </p>
     </div>
     
@@ -66,36 +65,56 @@ const ExportStyleGuide = {
     const filename = `${domain} ${filenameBrand} brand style guide typography.html`;
     downloadFile(html, filename, 'text/html');
     showSuccess('Brand Style Guides for Typography and Colors generated successfully!');
-    
-    // Automatically generate colors report
-    ExportStyleGuideColorsReport.export(accumulatedResults, filenameBrand, showSuccess, downloadFile); 
 
+    // Automatically generate colors report with a delay to avoid collision
+    setTimeout(() => {
+      ExportStyleGuideColorsReport.export(
+        accumulatedResults,
+        filenameBrand,
+        showSuccess,
+        downloadFile
+      );
+    }, 1500);
   },
 
-  generateTypographyStyles: function(data) {
+  generateTypographyStyles: function (data) {
     let html = '';
-    
+
     if (data.themeStyles && data.themeStyles.colors && data.themeStyles.colors.styleDefinition) {
       html += '<div class="style-group"><div class="style-label">Theme Colors</div>';
       html += `<div class="style-value">${data.themeStyles.colors.styleDefinition}</div>`;
       html += '</div>';
     }
-    
+
     if (data.squarespaceThemeStyles && data.squarespaceThemeStyles.miscFont) {
       html += '<div class="style-group"><div class="style-label">Miscellaneous Font</div>';
       // Use full style definition if available, otherwise just font-family
-      var miscStyle = data.squarespaceThemeStyles.miscFontStyle || ('font-family: ' + data.squarespaceThemeStyles.miscFont);
+      var miscStyle =
+        data.squarespaceThemeStyles.miscFontStyle ||
+        'font-family: ' + data.squarespaceThemeStyles.miscFont;
       html += `<div class="style-value">${miscStyle}</div>`;
       html += '</div>';
     }
-    
-    html += '<h3 style="font-size: 2rem; color: #2d3748; margin-bottom: 30px; margin-top: 40px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; font-weight: bold;">📝 HEADING STYLES</h3>';
-    
-    const headingTypes = ['heading-1', 'heading-2', 'heading-3', 'heading-4', 'heading-5', 'heading-6'];
+
+    html +=
+      '<h3 style="font-size: 2rem; color: #2d3748; margin-bottom: 30px; margin-top: 40px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; font-weight: bold;">📝 HEADING STYLES</h3>';
+
+    const headingTypes = [
+      'heading-1',
+      'heading-2',
+      'heading-3',
+      'heading-4',
+      'heading-5',
+      'heading-6',
+    ];
     for (const type of headingTypes) {
       let styleDefinition = 'Not used on the pages analyzed';
-      
-      if (data.headings[type] && data.headings[type].locations && data.headings[type].locations.length > 0) {
+
+      if (
+        data.headings[type] &&
+        data.headings[type].locations &&
+        data.headings[type].locations.length > 0
+      ) {
         const styleMap = {};
         for (const loc of data.headings[type].locations) {
           const style = loc.styleDefinition || '';
@@ -103,7 +122,7 @@ const ExportStyleGuide = {
             styleMap[style] = (styleMap[style] || 0) + 1;
           }
         }
-        
+
         let maxCount = 0;
         for (const [style, count] of Object.entries(styleMap)) {
           if (count > maxCount) {
@@ -111,27 +130,35 @@ const ExportStyleGuide = {
             styleDefinition = style;
           }
         }
-      }
-      else if (data.squarespaceThemeStyles && data.squarespaceThemeStyles.headingStyles && data.squarespaceThemeStyles.headingStyles[type]) {
+      } else if (
+        data.squarespaceThemeStyles &&
+        data.squarespaceThemeStyles.headingStyles &&
+        data.squarespaceThemeStyles.headingStyles[type]
+      ) {
         const themeStyle = data.squarespaceThemeStyles.headingStyles[type];
         if (themeStyle !== 'Not used on the pages analyzed') {
           styleDefinition = themeStyle;
         }
       }
-      
+
       html += `<div class="typography-sample">
         <h3>${type.toUpperCase().replace(/-/g, ' ')}</h3>
         <p>${styleDefinition}</p>
       </div>`;
     }
-    
-    html += '<h3 style="font-size: 2rem; color: #2d3748; margin-bottom: 30px; margin-top: 40px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; font-weight: bold;">📄 PARAGRAPH STYLES</h3>';
-    
+
+    html +=
+      '<h3 style="font-size: 2rem; color: #2d3748; margin-bottom: 30px; margin-top: 40px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; font-weight: bold;">📄 PARAGRAPH STYLES</h3>';
+
     const paragraphTypes = ['paragraph-1', 'paragraph-2', 'paragraph-3'];
     for (const type of paragraphTypes) {
       let styleDefinition = 'Not used on the pages analyzed';
-      
-      if (data.paragraphs[type] && data.paragraphs[type].locations && data.paragraphs[type].locations.length > 0) {
+
+      if (
+        data.paragraphs[type] &&
+        data.paragraphs[type].locations &&
+        data.paragraphs[type].locations.length > 0
+      ) {
         const styleMap = {};
         for (const loc of data.paragraphs[type].locations) {
           const style = loc.styleDefinition || '';
@@ -139,7 +166,7 @@ const ExportStyleGuide = {
             styleMap[style] = (styleMap[style] || 0) + 1;
           }
         }
-        
+
         let maxCount = 0;
         for (const [style, count] of Object.entries(styleMap)) {
           if (count > maxCount) {
@@ -147,31 +174,38 @@ const ExportStyleGuide = {
             styleDefinition = style;
           }
         }
-      }
-      else if (data.squarespaceThemeStyles && data.squarespaceThemeStyles.paragraphStyles && data.squarespaceThemeStyles.paragraphStyles[type]) {
+      } else if (
+        data.squarespaceThemeStyles &&
+        data.squarespaceThemeStyles.paragraphStyles &&
+        data.squarespaceThemeStyles.paragraphStyles[type]
+      ) {
         const themeStyle = data.squarespaceThemeStyles.paragraphStyles[type];
         if (themeStyle !== 'Not used on the pages analyzed') {
           styleDefinition = themeStyle;
         }
       }
-      
+
       html += `<div class="typography-sample">
         <h3>${type.toUpperCase().replace(/-/g, ' ')}</h3>
         <p>${styleDefinition}</p>
       </div>`;
     }
-    
+
     return html;
   },
 
-  generateButtonStylesForGuide: function(data) {
+  generateButtonStylesForGuide: function (data) {
     let html = '';
-    
+
     const buttonTypes = ['primary', 'secondary', 'tertiary', 'other'];
     const processedButtonTexts = new Set();
-    
+
     for (const type of buttonTypes) {
-      if (data.buttons[type] && data.buttons[type].locations && data.buttons[type].locations.length > 0) {
+      if (
+        data.buttons[type] &&
+        data.buttons[type].locations &&
+        data.buttons[type].locations.length > 0
+      ) {
         const uniqueButtons = data.buttons[type].locations.filter(loc => {
           const key = loc.text + loc.styleDefinition;
           if (processedButtonTexts.has(key)) {
@@ -180,14 +214,14 @@ const ExportStyleGuide = {
           processedButtonTexts.add(key);
           return true;
         });
-        
+
         if (uniqueButtons.length > 0) {
           const styleMap = {};
           for (const loc of uniqueButtons) {
             const style = loc.styleDefinition || 'No style definition';
             styleMap[style] = (styleMap[style] || 0) + 1;
           }
-          
+
           let mostCommonStyle = 'No style definition';
           let maxCount = 0;
           for (const [style, count] of Object.entries(styleMap)) {
@@ -196,7 +230,7 @@ const ExportStyleGuide = {
               mostCommonStyle = style;
             }
           }
-          
+
           html += `<div class="style-group">
             <div class="style-label">${type.toUpperCase()} Button</div>
             <div class="style-value">${mostCommonStyle}</div>
@@ -204,9 +238,9 @@ const ExportStyleGuide = {
         }
       }
     }
-    
+
     return html || '<p>No button styles found.</p>';
-  }
+  },
 };
 
 // Make globally available

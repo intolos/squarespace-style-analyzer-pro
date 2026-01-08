@@ -226,9 +226,9 @@ const ExportMobileReport = {
         <p style="font-size: 0.9rem; color: #4a5568; line-height: 1.6; margin: 10px 0 0 0;">
           <strong>Touch Targets Too Small:</strong> We are using the generally accepted minimum font size for links and body text on mobile sites of 16px. If you want to be more strict or need legal compliance, the WCAG 2.2 AA minimum target is 24 x 24 pixels.
         </p>
-        <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
-           <strong>💡 NOTE:</strong> To properly use the Locate link, you must let the web page fully and completely finish loading. It is at the very end of the page loading that the item is identified with a red outline.
-        </p>
+         <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
+           <strong>💡 NOTE:</strong> To properly use the Locate link, the item will be identified with a red outline as soon as it appears on the page. For the most accurate placement, it is recommended to let the page finish loading.
+         </p>
       </div>
     </div>
     
@@ -287,7 +287,7 @@ const ExportMobileReport = {
                                style="display: inline-block; padding: 8px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; transition: background 0.2s;"
                                onmouseover="this.style.background='#5a67d8'"
                                onmouseout="this.style.background='#667eea'">
-                               🔍 Locate on Page
+                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate on Page
                             </a>
                           </div>
                         `
