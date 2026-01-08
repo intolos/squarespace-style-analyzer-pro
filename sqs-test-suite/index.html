@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Squarespace Style Analyzer Pro – Test Suite Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
+    h1 { margin-bottom: 0.25em; }
+    h2 { margin-top: 1.5em; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin: 0.15em 0; }
+    a { text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .category { margin-bottom: 1.5em; }
+    .note { font-size: 0.9em; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Squarespace Style Analyzer Pro – Test Suite</h1>
+  <p class="note">
+    Use these pages to validate heading hierarchy, font sizes, ALT text,
+    button consistency, color palettes, SEO metadata, and navigation checks.
+  </p>
+
+  <div class="category">
+    <h2>Headings</h2>
+    <ul>
+      <li><a href="headings/headings-perfect.html">Headings – Perfect hierarchy</a></li>
+      <li><a href="headings/headings-jump.html">Headings – Simple jump (H1 → H3)</a></li>
+      <li><a href="headings/headings-chaotic.html">Headings – Chaotic hierarchy</a></li>
+      <li><a href="headings/headings-missing-h1.html">Headings – Missing H1</a></li>
+      <li><a href="headings/headings-multiple-h1.html">Headings – Multiple H1s</a></li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>Font Sizes</h2>
+    <ul>
+      <li><a href="font-sizes/fonts-variance.html">Fonts – H2 variance</a></li>
+      <li><a href="font-sizes/fonts-h3-larger-than-h2.html">Fonts – H3 larger than H2</a></li>
+      <li><a href="font-sizes/fonts-inline-overrides.html">Fonts – Inline overrides</a></li>
+      <li><a href="font-sizes/fonts-css-overrides.html">Fonts – CSS overrides</a></li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>Images & ALT Text</h2>
+    <ul>
+      <li><a href="images/images-missing-alt.html">Images – Missing ALT</a></li>
+      <li><a href="images/images-weak-alt.html">Images – Weak ALT text</a></li>
+      <li><a href="images/images-decorative.html">Images – Decorative images</a></li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>Buttons & CTAs</h2>
+    <ul>
+      <li><a href="buttons/buttons-generic-cta.html">Buttons – Generic CTAs</a></li>
+      <li><a href="buttons/buttons-inconsistent-styles.html">Buttons – Inconsistent styles</a></li>
+      <li><a href="buttons/buttons-inline-style-drift.html">Buttons – Inline style drift</a></li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>Colors & Style Drift</h2>
+    <ul>
+      <li><a href="colors/colors-brand-vs-offbrand.html">Colors – Brand vs off-brand</a></li>
+      <li><a href="colors/colors-inline-override.html">Colors – Inline overrides</a></li>
+      <li><a href="colors/colors-random.html">Colors – Random one-off colors</a></li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>SEO Metadata</h2>
+    <ul>
+      <li><a href="seo/seo-missing-title.html">SEO – Missing &lt;title&gt;</a></li>
+      <li><a href="seo/seo-missing-meta.html">SEO – Missing meta description</a></li>
+      <li><a href="seo/seo-duplicate-title-1.html">SEO – Duplicate title (Page 1)</a></li>
+      <li><a href="seo/seo-duplicate-title-2.html">SEO – Duplicate title (Page 2)</a></li>
+    </ul>
+  </div>
+
+  <div class="category">
+    <h2>Navigation & Structure</h2>
+    <ul>
+      <li><a href="navigation/nav-mismatch.html">Navigation – Label vs H1 mismatch</a></li>
+      <li><a href="navigation/nav-duplicate-names.html">Navigation – Duplicate labels</a></li>
+    </ul>
+  </div>
+
+</body>
+</html>

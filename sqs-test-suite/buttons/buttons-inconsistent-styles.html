@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Buttons – Inconsistent Styles</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
+    .btn { padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    .primary { background-color: #0066ff; color: white; border: none; }
+    .primary-alt { background-color: #0044aa; color: #f0f0f0; border-radius: 20px; }
+    .outline { background-color: transparent; color: #0066ff; border: 2px solid #0066ff; }
+  </style>
+</head>
+<body>
+  <p><strong>Test:</strong> Multiple inconsistent button styles representing the same action level.</p>
+
+  <button class="btn primary">Get Started</button>
+  <button class="btn primary-alt">Get Started</button>
+  <button class="btn outline">Get Started</button>
+</body>
+</html>
