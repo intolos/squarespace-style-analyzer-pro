@@ -20,9 +20,20 @@ class SquarespaceAnalyzer {
     this.bindDomainAnalysisEvents();
     await this.checkCurrentSite();
     await this.checkOngoingDomainAnalysis();
+    await this.checkOngoingSinglePageAnalysis();
 
     // Check license in background AFTER showing UI (non-blocking)
     LicenseManager.verifyStoredLicenseInBackground(this);
+
+    // Listen for background progress updates
+    chrome.runtime.onMessage.addListener(message => {
+      if (message.action === 'analysisProgress' && message.status) {
+        const statusEl = document.getElementById('loadingStatus');
+        if (statusEl) {
+          statusEl.textContent = message.status;
+        }
+      }
+    });
   }
 
   async verifyStoredLicenseInBackground() {
@@ -266,12 +277,16 @@ class SquarespaceAnalyzer {
       this.accumulatedResults = null;
       this.currentResults = null;
 
-      // CRITICAL: Also clear domain analysis storage to prevent old results from reappearing
+      // CRITICAL: Also clear domain and single-page analysis storage to prevent old results from reappearing
       await chrome.storage.local.remove([
         'domainAnalysisComplete',
         'domainAnalysisResults',
         'domainAnalysisError',
         'domainAnalysisProgress',
+        'singlePageAnalysisStatus',
+        'singlePageProgressText',
+        'singlePageAnalysisResults',
+        'singlePageAnalysisError',
       ]);
 
       // Show the analyze buttons again after reset
@@ -353,6 +368,10 @@ class SquarespaceAnalyzer {
 
   async analyzeSite() {
     await SinglePageAnalysisManager.analyzeSite(this);
+  }
+
+  async checkOngoingSinglePageAnalysis() {
+    await SinglePageAnalysisManager.checkOngoingAnalysis(this);
   }
 
   mergeResults(newResults) {

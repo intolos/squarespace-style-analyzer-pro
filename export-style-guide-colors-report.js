@@ -935,7 +935,19 @@ class ExportStyleGuideColorsReport {
                 </a><br>
                 <strong>Element:</strong> ${firstInstance.context}<br>
                 <strong>Section:</strong> ${firstInstance.section}<br>
-                <strong>Block:</strong> ${firstInstance.block}
+                <strong>Block:</strong> ${firstInstance.block}<br>
+                ${
+                  firstInstance.selector
+                    ? `
+                  <div style="margin-top: 10px;">
+                    <a href="${firstInstance.page}${firstInstance.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(firstInstance.selector)}" 
+                       target="_blank" 
+                       style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
+                       🔍 Locate on Page
+                    </a>
+                  </div>`
+                    : ''
+                }
               </div>
             </div>
           `;
@@ -952,6 +964,9 @@ class ExportStyleGuideColorsReport {
       analysis.contrastFailures.length > 0
         ? `
     ${this.generateSectionHeader('accessibility-section', `Accessibility Issues for Text Contrast (${analysis.contrastFailures.length} WCAG contrast failures)`, '♿', getNextSection('accessibility-section'))}
+    <p style="margin: 15px 0; font-size: 0.85rem; color: black; line-height: 1.4;">
+       <strong>💡 NOTE:</strong> To properly use the Locate link, you must let the web page fully and completely finish loading. It is at the very end of the page loading that the item is identified with a red outline.
+    </p>
     <div class="section">
       <div style="background: #f0f4f8; border-left: 4px solid #4a90e2; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
         <p style="color: #1a202c; margin: 0; font-size: 0.95rem; line-height: 1.6;">
@@ -963,7 +978,7 @@ class ExportStyleGuideColorsReport {
         </p>
       </div>
       <div class="accordion-container">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="accordion-header">
           <div class="accordion-title">
             <span class="accordion-icon">▶</span>
             <span class="accordion-count">${analysis.contrastFailures.length} issues</span>
@@ -976,15 +991,16 @@ class ExportStyleGuideColorsReport {
         <div class="contrast-issue">
           <div class="contrast-header">
             ${
-              failure.elementScreenshot
+              failure.selector
                 ? `
-            <div class="contrast-screenshot" style="margin-right: 15px;">
-              <img src="${failure.elementScreenshot}"
-                   alt="Element screenshot"
-                   class="screenshot-thumbnail"
-                   data-context="${failure.elementContext || failure.elementScreenshot}"
-                   style="height: 50px; width: auto; max-width: 200px; border: 2px solid #e2e8f0; border-radius: 4px; cursor: pointer; object-fit: contain;"
-                   title="Click to view full size">
+            <div class="contrast-inspect" style="margin-right: 15px;">
+              <a href="${failure.page}${failure.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(failure.selector)}" 
+                 target="_blank" 
+                 style="display: inline-block; padding: 8px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; transition: background 0.2s;"
+                 onmouseover="this.style.background='#5a67d8'"
+                 onmouseout="this.style.background='#667eea'">
+                 🔍 Locate on Page
+              </a>
             </div>
             `
                 : ''
@@ -1187,48 +1203,16 @@ class ExportStyleGuideColorsReport {
 
   </div>
 
-  <!-- Screenshot Modal -->
-  <div id="screenshotModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); padding: 20px;">
-    <div style="position: relative; max-width: 90%; max-height: 90%; margin: auto; top: 50%; transform: translateY(-50%);">
-      <span onclick="closeScreenshotModal()" style="position: absolute; top: -40px; right: 0; color: white; font-size: 40px; cursor: pointer;">&times;</span>
-      <img id="modalScreenshot" src="" style="width: auto; max-width: 100%; max-height: 80vh; display: block; margin: auto; border-radius: 8px;">
-    </div>
-  </div>
 
   <script>
-    function showScreenshotModal(contextSrc) {
-      const modal = document.getElementById('screenshotModal');
-      const modalImg = document.getElementById('modalScreenshot');
-      modal.style.display = 'block';
-      modalImg.src = contextSrc;
-    }
-
-    function closeScreenshotModal() {
-      document.getElementById('screenshotModal').style.display = 'none';
-    }
-
-    // Add click handlers to all screenshot thumbnails
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.screenshot-thumbnail').forEach(function(img) {
-        img.addEventListener('click', function() {
-          // Use context screenshot (larger) for modal, fallback to thumbnail
-          const contextSrc = this.getAttribute('data-context') || this.src;
-          showScreenshotModal(contextSrc);
-        });
-      });
-    });
-
-    // Close modal on click outside image
-    document.getElementById('screenshotModal').onclick = function(event) {
-      if (event.target === this) {
-        closeScreenshotModal();
-      }
-    };
-
-    // Close modal on ESC key
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'Escape') {
-        closeScreenshotModal();
+    // Accordion functionality
+    document.addEventListener('click', function(e) {
+      const header = e.target.closest('.accordion-header');
+      if (header) {
+        const container = header.closest('.accordion-container');
+        if (container) {
+          container.classList.toggle('open');
+        }
       }
     });
   </script>
@@ -1301,7 +1285,7 @@ class ExportStyleGuideColorsReport {
     <div class="section">
       <p style="color: #718096; margin-bottom: 20px;">Shows which colors appear on each page of your site.</p>
       <div class="accordion-container">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="accordion-header">
           <div class="accordion-title">
             <span class="accordion-icon">▶</span>
             <span class="accordion-count">${pageCount} pages</span>

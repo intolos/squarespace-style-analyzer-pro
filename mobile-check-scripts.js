@@ -43,7 +43,7 @@ var MobileCheckScripts = {
   // Note: 'options' is passed as an argument when injected
   getTapTargetIssues: function (options) {
     var issues = [];
-    var minSize = options.minSize;
+    var minSize = 16; // User requested 16px as the minimum standard
     var fingerSize = 24; // WCAG 2.2 Level AA standard: 24x24px minimum tap target size
     var maxOverlapRatio = 0.25; // Lighthouse uses 25% overlap threshold
 
@@ -106,7 +106,16 @@ var MobileCheckScripts = {
       var rect = clientRects[0];
       if (rect.width === 0 || rect.height === 0) continue;
       if (rect.bottom < 0 || rect.right < 0) continue;
-      if (rect.top > window.innerHeight || rect.left > window.innerWidth) continue;
+      // Refined Visibility Check:
+      // We allow a buffer of one full screen width to capture elements in carousels,
+      // but strictly exclude distant utility links (like skip links at -15000px).
+      var horizontalBuffer = window.innerWidth;
+
+      // Exclude elements that are far off-screen (e.g., skip links, hidden utility menus)
+      if (rect.left < -100 || rect.top < -100) continue;
+
+      // Exclude elements that are too far to the right (beyond one full scroll)
+      if (rect.left > window.innerWidth + horizontalBuffer) continue;
 
       // Hidden check
       var styles = window.getComputedStyle(el);
@@ -116,6 +125,25 @@ var MobileCheckScripts = {
         parseFloat(styles.opacity) < 0.01
       )
         continue;
+
+      // Deduplication: Only audit the outermost interactive element
+      // If any parent up to a certain depth is also one of our interactive selectors, skip this one
+      var isNested = false;
+      var parentElement = el.parentElement;
+      var depth = 0;
+      while (parentElement && parentElement !== document.body && depth < 5) {
+        if (parentElement.matches(selectors)) {
+          isNested = true;
+          break;
+        }
+        parentElement = parentElement.parentElement;
+        depth++;
+      }
+      if (isNested) continue;
+
+      // Font size check: User wants 16px minimum for interactive elements
+      var fontSize = parseFloat(styles.fontSize);
+      var hasSmallFont = fontSize < 16;
 
       // Visibility check
       if (el.offsetParent === null && el.tagName !== 'BODY') continue;
@@ -134,10 +162,11 @@ var MobileCheckScripts = {
       }
 
       var elementId = el.tagName;
-      if (el.id) {
+      if (el.id && !el.id.startsWith('yui_') && !el.id.startsWith('sqs-')) {
         elementId += '#' + el.id;
       } else if (el.className) {
-        elementId += '.' + el.className.split(' ')[0];
+        var firstClass = el.className.trim().split(/\s+/)[0];
+        if (firstClass) elementId += '.' + firstClass;
       }
 
       // Generate CSS selector for screenshot capture
@@ -173,9 +202,9 @@ var MobileCheckScripts = {
         cssSelector = path.join(' > ');
       }
 
-      // Unique identifier for duplicates
+      // Unique identifier for duplicates (removed coordinates junk)
       if (!el.id) {
-        elementId += '@' + Math.round(rect.left) + ',' + Math.round(rect.top);
+        // Just use the tag name if no ID
       }
 
       var allClientRects = [];
@@ -190,6 +219,13 @@ var MobileCheckScripts = {
         });
       }
 
+      var label = (text || ariaLabel || title || '').trim().substring(0, 50);
+      if (!label && el.tagName.toLowerCase() === 'img') {
+        label = el.alt || 'Image';
+      } else if (!label) {
+        label = elementId;
+      }
+
       rects.push({
         el: el,
         element: elementId,
@@ -201,8 +237,10 @@ var MobileCheckScripts = {
         top: rect.top,
         right: rect.right,
         bottom: rect.bottom,
-        text: (text || ariaLabel || title).substring(0, 50),
+        text: label,
         href: el.href || null,
+        fontSize: fontSize,
+        hasSmallFont: hasSmallFont,
       });
     }
 
@@ -212,17 +250,18 @@ var MobileCheckScripts = {
     for (var i = 0; i < rects.length; i++) {
       var rect = rects[i];
 
-      // SIZE CHECK
-      var allRectsBelowMinimum = true;
+      // SIZE CHECK: Flag as "too small" if the target is 16x16 or smaller
+      var isTooSmall = true;
       for (var k = 0; k < rect.clientRects.length; k++) {
         var cr = rect.clientRects[k];
-        if (cr.width >= minSize && cr.height >= minSize) {
-          allRectsBelowMinimum = false;
+        // Target is ONLY compliant if it is larger than the 16px minimum
+        if (cr.width > minSize && cr.height > minSize) {
+          isTooSmall = false;
           break;
         }
       }
 
-      if (allRectsBelowMinimum) {
+      if (isTooSmall || rect.hasSmallFont) {
         var largestRect = rect.clientRects[0];
         for (var k = 1; k < rect.clientRects.length; k++) {
           var cr = rect.clientRects[k];
@@ -231,6 +270,10 @@ var MobileCheckScripts = {
           }
         }
 
+        var issueDescription = allRectsBelowMinimum
+          ? 'Tap target is too small'
+          : 'Font size is too small (' + rect.fontSize + 'px)';
+
         issues.push({
           type: 'size',
           element: rect.element,
@@ -238,6 +281,8 @@ var MobileCheckScripts = {
           text: rect.text,
           width: Math.round(largestRect.width),
           height: Math.round(largestRect.height),
+          fontSize: rect.fontSize,
+          issueDescription: issueDescription,
           minRequired: minSize,
           // Coordinates for screenshot
           left: largestRect.left,
@@ -320,7 +365,7 @@ var MobileCheckScripts = {
   getImageSizingCheck: function () {
     var issues = [];
     var devicePixelRatio = window.devicePixelRatio || 1;
-    var oversizeThreshold = 3.0;
+    var oversizeThreshold = 3.5; // Threshold adjusted for Retina screens
 
     var images = document.querySelectorAll('img');
 
@@ -329,17 +374,34 @@ var MobileCheckScripts = {
       var displayWidth = img.clientWidth;
       var displayHeight = img.clientHeight;
 
-      if (displayWidth === 0 || displayHeight === 0) continue;
+      // Skip invalid dimensions
+      if (displayWidth < 10 || displayHeight < 10) continue;
 
       var naturalWidth = img.naturalWidth;
       var naturalHeight = img.naturalHeight;
 
       if (naturalWidth === 0 || naturalHeight === 0) continue;
 
+      // RESPONSIVE DETECTION: Prevents false positives on Squarespace and other systems
+      var hasSrcset = img.hasAttribute('srcset') || img.hasAttribute('data-srcset');
+      var hasSizes = img.hasAttribute('sizes');
+
+      // Check for Squarespace/CDN dynamic sizing patterns in URL
+      var src = img.src || '';
+      var isDynamicCdn =
+        src.includes('format=') ||
+        src.includes('width=') ||
+        src.includes('?w=') ||
+        src.includes('?s=');
+
+      // If the image is responsive, we assume the platform is handling optimization
+      if (hasSrcset || hasSizes || isDynamicCdn) continue;
+
       var widthRatio = naturalWidth / displayWidth;
       var heightRatio = naturalHeight / displayHeight;
       var maxRatio = Math.max(widthRatio, heightRatio);
 
+      // Only flag static images that are significantly oversized
       if (maxRatio > oversizeThreshold) {
         var elementId = 'IMG';
         if (img.id) elementId += '#' + img.id;
@@ -347,9 +409,41 @@ var MobileCheckScripts = {
 
         var alt = img.getAttribute('alt') || '(no alt text)';
 
+        // Generate selector for Live Inspect
+        var cssSelector = '';
+        if (img.id) {
+          cssSelector = '#' + img.id;
+        } else {
+          var path = [];
+          var current = img;
+          while (current && current !== document.body) {
+            var selector = current.tagName.toLowerCase();
+            if (current.id) {
+              selector += '#' + current.id;
+              path.unshift(selector);
+              break;
+            }
+            if (current.className && typeof current.className === 'string') {
+              var classes = current.className.split(' ').filter(function (c) {
+                return c.length > 0;
+              });
+              if (classes.length > 0) selector += '.' + classes[0];
+            }
+            if (current.parentElement) {
+              var siblings = Array.prototype.slice.call(current.parentElement.children);
+              var index = siblings.indexOf(current) + 1;
+              selector += ':nth-child(' + index + ')';
+            }
+            path.unshift(selector);
+            current = current.parentElement;
+          }
+          cssSelector = path.join(' > ');
+        }
+
         issues.push({
           element: elementId,
-          src: img.src,
+          selector: cssSelector,
+          src: src,
           alt: alt.substring(0, 50),
           displaySize: Math.round(displayWidth) + 'x' + Math.round(displayHeight) + 'px',
           naturalSize: naturalWidth + 'x' + naturalHeight + 'px',

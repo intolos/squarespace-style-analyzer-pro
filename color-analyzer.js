@@ -3,7 +3,6 @@
 // Handles color conversion, tracking, contrast checking, WCAG compliance
 
 const ColorAnalyzer = {
-
   // ============================================
   // COLOR CONVERSION
   // ============================================
@@ -19,13 +18,7 @@ const ColorAnalyzer = {
     const g = parseInt(match[2], 10);
     const b = parseInt(match[3], 10);
 
-    return (
-      '#' +
-      ((1 << 24) + (r << 16) + (g << 8) + b)
-        .toString(16)
-        .slice(1)
-        .toUpperCase()
-    );
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
   },
 
   hexToRgb: function (hex) {
@@ -36,7 +29,7 @@ const ColorAnalyzer = {
     return {
       r: parseInt(hex.substr(0, 2), 16),
       g: parseInt(hex.substr(2, 2), 16),
-      b: parseInt(hex.substr(4, 2), 16)
+      b: parseInt(hex.substr(4, 2), 16),
     };
   },
 
@@ -53,8 +46,7 @@ const ColorAnalyzer = {
     const g = parseInt(hex.substr(2, 2), 16) / 255;
     const b = parseInt(hex.substr(4, 2), 16) / 255;
 
-    const adjust = (val) =>
-      val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+    const adjust = val => (val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4));
 
     const R = adjust(r);
     const G = adjust(g);
@@ -95,10 +87,7 @@ const ColorAnalyzer = {
     if (!colorValue) return true;
     const val = colorValue.toLowerCase().trim();
     return (
-      val === 'transparent' ||
-      val === 'rgba(0, 0, 0, 0)' ||
-      val === 'inherit' ||
-      val === 'initial'
+      val === 'transparent' || val === 'rgba(0, 0, 0, 0)' || val === 'inherit' || val === 'initial'
     );
   },
 
@@ -123,7 +112,12 @@ const ColorAnalyzer = {
     // Check if positioned way off-screen (like skip links hidden until focus)
     const left = rect.left;
     const top = rect.top;
-    if (left < -1000 || top < -1000 || left > window.innerWidth + 1000 || top > window.innerHeight + 1000) {
+    if (
+      left < -1000 ||
+      top < -1000 ||
+      left > window.innerWidth + 1000 ||
+      top > window.innerHeight + 1000
+    ) {
       return false;
     }
 
@@ -197,7 +191,14 @@ const ColorAnalyzer = {
 
           // If they differ significantly, screenshot is more accurate (catches background images)
           if (domHex !== screenshotHex) {
-            console.log('Button screenshot BG:', screenshotBg, 'vs DOM BG:', domBackground, 'for', element.textContent.trim().substring(0, 30));
+            console.log(
+              'Button screenshot BG:',
+              screenshotBg,
+              'vs DOM BG:',
+              domBackground,
+              'for',
+              element.textContent.trim().substring(0, 30)
+            );
             return screenshotBg;
           }
         }
@@ -276,7 +277,7 @@ const ColorAnalyzer = {
               r: pixel[0],
               g: pixel[1],
               b: pixel[2],
-              a: pixel[3] / 255
+              a: pixel[3] / 255,
             });
           }
         }
@@ -293,7 +294,6 @@ const ColorAnalyzer = {
       const avgA = colors.reduce((sum, c) => sum + c.a, 0) / colors.length;
 
       return `rgba(${avgR}, ${avgG}, ${avgB}, ${avgA})`;
-
     } catch (error) {
       console.error('Canvas pixel sampling failed:', error);
       return null;
@@ -315,22 +315,26 @@ const ColorAnalyzer = {
       const classLower = (typeof className === 'string' ? className : '').toLowerCase();
 
       // Skip elements that are content blocks or sections (even if inside header tag)
-      if (classLower.includes('sqs-block') ||
-          classLower.includes('section-border') ||
-          classLower.includes('section-background') ||
-          classLower.includes('-content') ||
-          classLower.includes('page-section') ||
-          classLower.includes('hero') ||
-          classLower.includes('banner') ||
-          classLower.includes('page-title') ||
-          classLower.includes('intro')) {
+      if (
+        classLower.includes('sqs-block') ||
+        classLower.includes('section-border') ||
+        classLower.includes('section-background') ||
+        classLower.includes('-content') ||
+        classLower.includes('page-section') ||
+        classLower.includes('hero') ||
+        classLower.includes('banner') ||
+        classLower.includes('page-title') ||
+        classLower.includes('intro')
+      ) {
         return 'content'; // Treat as body content, not header
       }
 
       // Skip accessibility elements (usually hidden)
-      if (classLower.includes('skip-link') ||
-          classLower.includes('sr-only') ||
-          classLower.includes('visually-hidden')) {
+      if (
+        classLower.includes('skip-link') ||
+        classLower.includes('sr-only') ||
+        classLower.includes('visually-hidden')
+      ) {
         return 'content'; // Don't count as header
       }
 
@@ -356,21 +360,21 @@ const ColorAnalyzer = {
       // Check for common navigation classes/IDs
       const className = el.className || '';
       const id = el.id || '';
-      if (className.toLowerCase().includes('nav') ||
-          id.toLowerCase().includes('nav') ||
-          className.toLowerCase().includes('menu')) {
+      if (
+        className.toLowerCase().includes('nav') ||
+        id.toLowerCase().includes('nav') ||
+        className.toLowerCase().includes('menu')
+      ) {
         return 'navigation';
       }
 
       // Check for header classes/IDs
-      if (className.toLowerCase().includes('header') ||
-          id.toLowerCase().includes('header')) {
+      if (className.toLowerCase().includes('header') || id.toLowerCase().includes('header')) {
         return 'header';
       }
 
       // Check for footer classes/IDs
-      if (className.toLowerCase().includes('footer') ||
-          id.toLowerCase().includes('footer')) {
+      if (className.toLowerCase().includes('footer') || id.toLowerCase().includes('footer')) {
         return 'footer';
       }
 
@@ -385,8 +389,7 @@ const ColorAnalyzer = {
   isGhostButtonForColorAnalysis: function (element) {
     const tag = element.tagName;
     const isButtonTag = tag === 'BUTTON';
-    const isAnchorButton =
-      tag === 'A' && element.classList && element.classList.contains('button');
+    const isAnchorButton = tag === 'A' && element.classList && element.classList.contains('button');
 
     if (!isButtonTag && !isAnchorButton) return false;
 
@@ -408,7 +411,8 @@ const ColorAnalyzer = {
     ) {
       const buttonText = (element.textContent || element.innerText || '').trim();
       const buttonUrl = element.href || '';
-      let result = 'Button: "' + buttonText.substring(0, 50) + (buttonText.length > 50 ? '...' : '') + '"';
+      let result =
+        'Button: "' + buttonText.substring(0, 50) + (buttonText.length > 50 ? '...' : '') + '"';
       if (buttonUrl) {
         const displayUrl = buttonUrl.length > 60 ? buttonUrl.substring(0, 60) + '...' : buttonUrl;
         result += ' → ' + displayUrl;
@@ -417,7 +421,13 @@ const ColorAnalyzer = {
     }
     if (element.tagName.match(/^H[1-6]$/)) {
       const headingText = (element.textContent || '').trim();
-      return element.tagName + ': "' + headingText.substring(0, 50) + (headingText.length > 50 ? '...' : '') + '"';
+      return (
+        element.tagName +
+        ': "' +
+        headingText.substring(0, 50) +
+        (headingText.length > 50 ? '...' : '') +
+        '"'
+      );
     }
     if (element.tagName === 'P') {
       const fullText = (element.textContent || '').trim();
@@ -428,7 +438,8 @@ const ColorAnalyzer = {
       // Extract first sentence (up to first period, question mark, or exclamation)
       const sentenceMatch = fullText.match(/^[^.!?]+[.!?]/);
       const firstSentence = sentenceMatch ? sentenceMatch[0] : fullText.substring(0, 80);
-      const displayText = firstSentence.length > 80 ? firstSentence.substring(0, 80) + '...' : firstSentence;
+      const displayText =
+        firstSentence.length > 80 ? firstSentence.substring(0, 80) + '...' : firstSentence;
       return 'Paragraph: "' + displayText + '"';
     }
     if (element.tagName === 'A') {
@@ -438,10 +449,7 @@ const ColorAnalyzer = {
       const displayUrl = linkUrl.length > 50 ? linkUrl.substring(0, 50) + '...' : linkUrl;
       return 'Link: "' + displayText + '" → ' + displayUrl;
     }
-    return (
-      element.tagName +
-      (element.className ? '.' + element.className.split(' ')[0] : '')
-    );
+    return element.tagName + (element.className ? '.' + element.className.split(' ')[0] : '');
   },
 
   // ============================================
@@ -484,32 +492,23 @@ const ColorAnalyzer = {
       colorData.colors[hex] = {
         count: 0,
         usedAs: [],
-        instances: []
+        instances: [],
       };
     }
 
     colorData.colors[hex].count++;
 
     // Add property-based categories (DevTools CSS Overview format)
-    if (
-      property === 'background-color' &&
-      !colorData.colors[hex].usedAs.includes('background')
-    ) {
+    if (property === 'background-color' && !colorData.colors[hex].usedAs.includes('background')) {
       colorData.colors[hex].usedAs.push('background');
-    } else if (
-      property === 'color' &&
-      !colorData.colors[hex].usedAs.includes('text')
-    ) {
+    } else if (property === 'color' && !colorData.colors[hex].usedAs.includes('text')) {
       colorData.colors[hex].usedAs.push('text');
     } else if (
       (property === 'fill' || property === 'stroke') &&
       !colorData.colors[hex].usedAs.includes('fill')
     ) {
       colorData.colors[hex].usedAs.push('fill');
-    } else if (
-      property === 'border-color' &&
-      !colorData.colors[hex].usedAs.includes('border')
-    ) {
+    } else if (property === 'border-color' && !colorData.colors[hex].usedAs.includes('border')) {
       colorData.colors[hex].usedAs.push('border');
     }
 
@@ -521,7 +520,7 @@ const ColorAnalyzer = {
       section: getSectionInfo(element),
       block: getBlockInfo(element),
       context: this.getElementContext(element),
-      pairedWith: pairedColor ? this.rgbToHex(pairedColor) : null
+      pairedWith: pairedColor ? this.rgbToHex(pairedColor) : null,
     });
   },
 
@@ -591,7 +590,11 @@ const ColorAnalyzer = {
     if (!textHex) return;
 
     // Resolve effective background using screenshot pixel sampling (most accurate)
-    const effectiveBg = await this.getEffectiveBackgroundColor(element, backgroundColor, screenshot);
+    const effectiveBg = await this.getEffectiveBackgroundColor(
+      element,
+      backgroundColor,
+      screenshot
+    );
     const bgHex = this.rgbToHex(effectiveBg);
 
     if (!bgHex) return;
@@ -609,27 +612,27 @@ const ColorAnalyzer = {
     const block = getBlockInfo(element);
     const location = this.getElementContext(element);
     const elementKey = window.location.href + '|' + section + '|' + block + '|' + location;
-    
+
     if (!colorData._processedContrastElements) {
       colorData._processedContrastElements = new Set();
     }
-    
+
     if (colorData._processedContrastElements.has(elementKey)) {
       return;
     }
     colorData._processedContrastElements.add(elementKey);
 
     const ratio = this.calculateContrastRatio(textHex, bgHex);
+    const rect = element.getBoundingClientRect();
 
     const computed = window.getComputedStyle(element);
     const fontSize = parseFloat(computed.fontSize) || 0;
     const fontWeight = parseInt(computed.fontWeight, 10) || 400;
-    const isLargeText =
-      fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
+    const isLargeText = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
     const wcagLevel = this.getWCAGLevel(ratio, isLargeText);
 
     // Track ALL instances - no deduplication so user can see every location
-    colorData.contrastPairs.push({
+    const issue = {
       textColor: textHex,
       backgroundColor: bgHex,
       ratio: Math.round(ratio * 100) / 100,
@@ -641,8 +644,18 @@ const ColorAnalyzer = {
       location: location,
       section: section,
       block: block,
-      element: element.tagName
-    });
+      element: element.tagName,
+      coords: {
+        top: rect.top + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+        height: rect.height,
+      },
+      selector: ContentScriptHelpers.generateSelector(element),
+    };
+
+    colorData.contrastPairs.push(issue);
+    return issue;
   },
 
   // ============================================
@@ -659,7 +672,7 @@ const ColorAnalyzer = {
       textColors: new Set(),
       fillColors: new Set(),
       borderColors: new Set(),
-      allColors: new Set()
+      allColors: new Set(),
     };
   },
 
@@ -675,26 +688,26 @@ const ColorAnalyzer = {
     return {
       summary: {
         count: colorData.allColors ? colorData.allColors.size : 0,
-        colors: colorData.allColors ? Array.from(colorData.allColors).sort() : []
+        colors: colorData.allColors ? Array.from(colorData.allColors).sort() : [],
       },
       background: {
         count: colorData.backgroundColors ? colorData.backgroundColors.size : 0,
-        colors: colorData.backgroundColors ? Array.from(colorData.backgroundColors).sort() : []
+        colors: colorData.backgroundColors ? Array.from(colorData.backgroundColors).sort() : [],
       },
       text: {
         count: colorData.textColors ? colorData.textColors.size : 0,
-        colors: colorData.textColors ? Array.from(colorData.textColors).sort() : []
+        colors: colorData.textColors ? Array.from(colorData.textColors).sort() : [],
       },
       fill: {
         count: colorData.fillColors ? colorData.fillColors.size : 0,
-        colors: colorData.fillColors ? Array.from(colorData.fillColors).sort() : []
+        colors: colorData.fillColors ? Array.from(colorData.fillColors).sort() : [],
       },
       border: {
         count: colorData.borderColors ? colorData.borderColors.size : 0,
-        colors: colorData.borderColors ? Array.from(colorData.borderColors).sort() : []
-      }
+        colors: colorData.borderColors ? Array.from(colorData.borderColors).sort() : [],
+      },
     };
-  }
+  },
 };
 
 // Make globally available

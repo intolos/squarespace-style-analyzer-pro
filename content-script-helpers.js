@@ -1,7 +1,7 @@
 // content-script-helpers.js
 // DOM helper functions and color tracking utilities for content script analysis
 
-var ContentScriptHelpers = (function() {
+var ContentScriptHelpers = (function () {
   'use strict';
 
   // ============================================
@@ -18,7 +18,7 @@ var ContentScriptHelpers = (function() {
       backgrounds: new Set(),
       text: new Set(),
       borders: new Set(),
-      all: new Set()
+      all: new Set(),
     };
   }
 
@@ -35,7 +35,7 @@ var ContentScriptHelpers = (function() {
       backgrounds: Array.from(colorTracker.backgrounds),
       text: Array.from(colorTracker.text),
       borders: Array.from(colorTracker.borders),
-      all: Array.from(colorTracker.all)
+      all: Array.from(colorTracker.all),
     };
   }
 
@@ -64,16 +64,25 @@ var ContentScriptHelpers = (function() {
         var classLower = (typeof className === 'string' ? className : '').toLowerCase();
 
         // Generic icon/social indicators (framework-agnostic)
-        if (classLower.includes('icon') || classLower.includes('social') ||
-            classLower.includes('share') || classLower.includes('badge') ||
-            classLower.includes('avatar')) {
+        if (
+          classLower.includes('icon') ||
+          classLower.includes('social') ||
+          classLower.includes('share') ||
+          classLower.includes('badge') ||
+          classLower.includes('avatar')
+        ) {
           return true;
         }
 
         // Social sharing services (ShareThis, AddThis, AddToAny, etc.)
-        if (classLower.includes('st-btn') || classLower.includes('st_btn') ||
-            classLower.includes('sharethis') || classLower.includes('addthis') ||
-            classLower.includes('a2a') || classLower.includes('addtoany')) {
+        if (
+          classLower.includes('st-btn') ||
+          classLower.includes('st_btn') ||
+          classLower.includes('sharethis') ||
+          classLower.includes('addthis') ||
+          classLower.includes('a2a') ||
+          classLower.includes('addtoany')
+        ) {
           return true;
         }
 
@@ -82,8 +91,12 @@ var ContentScriptHelpers = (function() {
       }
 
       // Check if element is SVG or inside SVG (universal - SVGs often used for icons)
-      if (element.tagName === 'svg' || element.tagName === 'SVG' ||
-          element.closest('svg') || element.ownerSVGElement) {
+      if (
+        element.tagName === 'svg' ||
+        element.tagName === 'SVG' ||
+        element.closest('svg') ||
+        element.ownerSVGElement
+      ) {
         // SVGs ≤64px are typically icons
         var rect = element.getBoundingClientRect();
         if ((rect.width > 0 && rect.width <= 64) || (rect.height > 0 && rect.height <= 64)) {
@@ -98,7 +111,7 @@ var ContentScriptHelpers = (function() {
       var height = parseFloat(computed.height);
 
       // Both dimensions must be ≤64px to be considered an icon/decorative element
-      if ((width > 0 && width <= 64) && (height > 0 && height <= 64)) {
+      if (width > 0 && width <= 64 && height > 0 && height <= 64) {
         return true; // Any small element is likely decorative/icon
       }
 
@@ -108,7 +121,6 @@ var ContentScriptHelpers = (function() {
           return true;
         }
       }
-
     } catch (e) {
       // If we can't determine, don't exclude it
       return false;
@@ -122,33 +134,114 @@ var ContentScriptHelpers = (function() {
   // ============================================
 
   function getNavigationName() {
-    var navLinks = document.querySelectorAll('nav a[href], .navigation a[href], .menu a[href], [class*="nav"] a[href], header a[href]');
+    var navLinks = document.querySelectorAll(
+      'nav a[href], .navigation a[href], .menu a[href], [class*="nav"] a[href], header a[href]'
+    );
     var currentPath = window.location.pathname;
     var currentFullUrl = window.location.href;
-    
+
     for (var i = 0; i < navLinks.length; i++) {
       var link = navLinks[i];
       var linkHref = link.getAttribute('href');
       var navText = link.textContent.trim();
-      
+
       if (!navText || navText.toLowerCase().includes('skip') || navText.length < 2) continue;
-      
+
       if (linkHref) {
-        var fullLinkUrl = linkHref.startsWith('http') ? linkHref : window.location.origin + linkHref;
-        if (fullLinkUrl === currentFullUrl || linkHref === currentPath || (linkHref.length > 1 && currentPath.includes(linkHref))) {
+        var fullLinkUrl = linkHref.startsWith('http')
+          ? linkHref
+          : window.location.origin + linkHref;
+        if (
+          fullLinkUrl === currentFullUrl ||
+          linkHref === currentPath ||
+          (linkHref.length > 1 && currentPath.includes(linkHref))
+        ) {
           return navText;
         }
       }
     }
-    
-    var activeLinks = document.querySelectorAll('nav a.active, nav a.current, .navigation a.active, .menu a.active');
+
+    var activeLinks = document.querySelectorAll(
+      'nav a.active, nav a.current, .navigation a.active, .menu a.active'
+    );
     for (var j = 0; j < activeLinks.length; j++) {
       var activeText = activeLinks[j].textContent.trim();
       if (activeText && !activeText.toLowerCase().includes('skip')) return activeText;
     }
-    
+
     if (currentPath === '/' || currentPath === '') return 'Home';
     return document.title || currentPath.replace(/\//g, '').replace(/-/g, ' ') || 'Home';
+  }
+
+  function generateSelector(element) {
+    if (!element) return '';
+
+    try {
+      // Step 1: Use ID if truly unique and stable
+      if (element.id && typeof element.id === 'string') {
+        const id = element.id.trim();
+        if (
+          id &&
+          !id.includes(' ') &&
+          !id.startsWith('yui_') &&
+          document.querySelectorAll('#' + CSS.escape(id)).length === 1
+        ) {
+          return '#' + CSS.escape(id);
+        }
+      }
+
+      // Step 2: Build path
+      var path = [];
+      var current = element;
+
+      while (
+        current &&
+        current.nodeType === 1 &&
+        current.tagName.toLowerCase() !== 'html' &&
+        current.tagName.toLowerCase() !== 'body'
+      ) {
+        var nodeName = current.tagName.toLowerCase();
+        var selector = nodeName;
+
+        if (
+          current.id &&
+          typeof current.id === 'string' &&
+          !current.id.startsWith('yui_') &&
+          !current.id.includes(' ')
+        ) {
+          selector += '#' + CSS.escape(current.id);
+          path.unshift(selector);
+          if (document.querySelectorAll(path.join(' > ')).length === 1) break;
+        } else {
+          // Add first class if it seems stable
+          if (current.className && typeof current.className === 'string') {
+            var classes = current.className
+              .trim()
+              .split(/\s+/)
+              .filter(c => c.length > 0 && !c.includes(':') && !c.startsWith('yui_'));
+            if (classes.length > 0) {
+              selector += '.' + CSS.escape(classes[0]);
+            }
+          }
+
+          // Add nth-of-type if not unique
+          var siblings = current.parentElement ? current.parentElement.children : [];
+          var sameTagSiblings = Array.from(siblings).filter(s => s.tagName === current.tagName);
+          if (sameTagSiblings.length > 1) {
+            var index = sameTagSiblings.indexOf(current) + 1;
+            selector += ':nth-of-type(' + index + ')';
+          }
+        }
+
+        path.unshift(selector);
+        if (document.querySelectorAll(path.join(' > ')).length === 1) break;
+        current = current.parentElement;
+      }
+
+      return path.join(' > ');
+    } catch (e) {
+      return element.tagName.toLowerCase();
+    }
   }
 
   // ============================================
@@ -156,34 +249,46 @@ var ContentScriptHelpers = (function() {
   // ============================================
 
   function getSectionInfo(element) {
+    if (!element) return 'Main Content';
+
     var parent = element;
     var depth = 0;
-    
     while (parent && depth < 15) {
       if (parent.getAttribute) {
-        if (parent.tagName && parent.tagName.toLowerCase() === 'section') {
-          var sectionId = parent.getAttribute('data-section-id');
-          if (sectionId) return 'section[data-section-id="' + sectionId + '"]';
-        }
-        
-        var dataSectionId = parent.getAttribute('data-section-id');
-        if (dataSectionId) return 'section[data-section-id="' + dataSectionId + '"]';
-        
-        if (parent.tagName && parent.tagName.toLowerCase() === 'section') {
-          var id = parent.getAttribute('id');
-          if (id) return 'section#' + id;
+        var tagName = parent.tagName ? parent.tagName.toLowerCase() : '';
+        var id = parent.id || '';
+        var className = (
+          typeof parent.className === 'string' ? parent.className : ''
+        ).toLowerCase();
+
+        // Priority 1: Semantic zones
+        if (tagName === 'header' || className.includes('header') || id.includes('header'))
+          return 'Header';
+        if (tagName === 'footer' || className.includes('footer') || id.includes('footer'))
+          return 'Footer';
+        if (tagName === 'nav' || className.includes('nav') || id.includes('navigation'))
+          return 'Navigation';
+
+        // Priority 2: Squarespace specific data (still useful for SQS sites)
+        var sqsSection = parent.getAttribute('data-section-id');
+        if (sqsSection) return 'Section (' + sqsSection.substring(0, 8) + '...)';
+
+        // Priority 3: Generic section indicators
+        if (tagName === 'section' || id.includes('section') || className.includes('section')) {
+          if (id && !id.startsWith('yui_')) return 'Section #' + id;
+          return 'Section';
         }
       }
       parent = parent.parentElement;
       depth++;
     }
-    return 'unknown-section';
+    return 'Main Content';
   }
 
   function getBlockInfo(element) {
     var parent = element;
     var depth = 0;
-    
+
     while (parent && depth < 20) {
       if (parent.getAttribute) {
         var id = parent.getAttribute('id');
@@ -196,18 +301,21 @@ var ContentScriptHelpers = (function() {
       parent = parent.parentElement;
       depth++;
     }
-    
+
     parent = element;
     depth = 0;
     while (parent && depth < 20) {
       if (parent.getAttribute) {
         var dataBlockId = parent.getAttribute('data-block-id');
         if (dataBlockId) return '#block-' + dataBlockId;
-        
+
         var blockType = parent.getAttribute('data-block-type');
         if (blockType) {
           var parentId = parent.getAttribute('id');
-          if (parentId && (parentId.toLowerCase().startsWith('block-') || parentId.startsWith('Block'))) {
+          if (
+            parentId &&
+            (parentId.toLowerCase().startsWith('block-') || parentId.startsWith('Block'))
+          ) {
             return '#' + parentId;
           }
           return 'block-type-' + blockType;
@@ -216,7 +324,7 @@ var ContentScriptHelpers = (function() {
       parent = parent.parentElement;
       depth++;
     }
-    
+
     return 'unknown-block';
   }
 
@@ -250,42 +358,82 @@ var ContentScriptHelpers = (function() {
         var bgColor = computed.backgroundColor;
         var textColor = computed.color;
 
-        ColorAnalyzer.trackColor(bgColor, element, 'background-color', textColor, colorData, getSectionInfo, getBlockInfo);
-        ColorAnalyzer.trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo);
+        ColorAnalyzer.trackColor(
+          bgColor,
+          element,
+          'background-color',
+          textColor,
+          colorData,
+          getSectionInfo,
+          getBlockInfo
+        );
+        ColorAnalyzer.trackColor(
+          textColor,
+          element,
+          'color',
+          bgColor,
+          colorData,
+          getSectionInfo,
+          getBlockInfo
+        );
 
         // Track border colors (check all four sides individually, matching Chrome DevTools CSS Overview)
         var borderSides = [
           { color: computed.borderTopColor, width: parseFloat(computed.borderTopWidth) || 0 },
           { color: computed.borderRightColor, width: parseFloat(computed.borderRightWidth) || 0 },
           { color: computed.borderBottomColor, width: parseFloat(computed.borderBottomWidth) || 0 },
-          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 }
+          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 },
         ];
 
         var trackedBorderColors = new Set();
-        borderSides.forEach(function(side) {
-          if (side.color && !ColorAnalyzer.isTransparentColor(side.color) &&
-              side.width > 0 && !trackedBorderColors.has(side.color)) {
+        borderSides.forEach(function (side) {
+          if (
+            side.color &&
+            !ColorAnalyzer.isTransparentColor(side.color) &&
+            side.width > 0 &&
+            !trackedBorderColors.has(side.color)
+          ) {
             trackedBorderColors.add(side.color);
-            ColorAnalyzer.trackColor(side.color, element, 'border-color', null, colorData, getSectionInfo, getBlockInfo);
+            ColorAnalyzer.trackColor(
+              side.color,
+              element,
+              'border-color',
+              null,
+              colorData,
+              getSectionInfo,
+              getBlockInfo
+            );
           }
         });
 
         // Track contrast for text elements (using screenshot for accurate background detection)
-        if (elementType === 'heading' || elementType === 'paragraph' || elementType === 'text' || elementType === 'button') {
-          await ColorAnalyzer.trackContrastPair(element, textColor, bgColor, colorData, getSectionInfo, getBlockInfo);
+        if (
+          elementType === 'heading' ||
+          elementType === 'paragraph' ||
+          elementType === 'text' ||
+          elementType === 'button'
+        ) {
+          await ColorAnalyzer.trackContrastPair(
+            element,
+            textColor,
+            bgColor,
+            colorData,
+            getSectionInfo,
+            getBlockInfo
+          );
         }
 
         // Track in legacy colorTracker too (for backwards compatibility)
         addColor(colorTracker, computed.backgroundColor, 'backgrounds');
         addColor(colorTracker, computed.color, 'text');
         // For borders, track individual side colors
-        borderSides.forEach(function(side) {
+        borderSides.forEach(function (side) {
           if (side.color && !ColorAnalyzer.isTransparentColor(side.color) && side.width > 0) {
             addColor(colorTracker, side.color, 'borders');
           }
         });
       }
-      
+
       if (elementType === 'button') {
         styleDef.push('background-color: ' + computed.backgroundColor);
         styleDef.push('color: ' + computed.color);
@@ -295,27 +443,33 @@ var ContentScriptHelpers = (function() {
         styleDef.push('border-radius: ' + computed.borderRadius);
         styleDef.push('padding: ' + computed.padding);
         styleDef.push('border: ' + computed.border);
-        if (computed.textAlign !== 'start' && computed.textAlign !== 'left') styleDef.push('text-align: ' + computed.textAlign);
-        if (computed.textTransform !== 'none') styleDef.push('text-transform: ' + computed.textTransform);
-      }
-      else if (elementType === 'heading' || elementType === 'paragraph' || elementType === 'text') {
+        if (computed.textAlign !== 'start' && computed.textAlign !== 'left')
+          styleDef.push('text-align: ' + computed.textAlign);
+        if (computed.textTransform !== 'none')
+          styleDef.push('text-transform: ' + computed.textTransform);
+      } else if (
+        elementType === 'heading' ||
+        elementType === 'paragraph' ||
+        elementType === 'text'
+      ) {
         styleDef.push('font-family: ' + computed.fontFamily);
         styleDef.push('font-size: ' + computed.fontSize);
         styleDef.push('font-weight: ' + computed.fontWeight);
         styleDef.push('line-height: ' + computed.lineHeight);
         styleDef.push('color: ' + computed.color);
-        if (computed.textTransform !== 'none') styleDef.push('text-transform: ' + computed.textTransform);
-        if (computed.letterSpacing !== 'normal' && computed.letterSpacing !== '0px') styleDef.push('letter-spacing: ' + computed.letterSpacing);
-      }
-      else {
+        if (computed.textTransform !== 'none')
+          styleDef.push('text-transform: ' + computed.textTransform);
+        if (computed.letterSpacing !== 'normal' && computed.letterSpacing !== '0px')
+          styleDef.push('letter-spacing: ' + computed.letterSpacing);
+      } else {
         var display = computed.display;
-        
+
         if (display !== 'inline') styleDef.push('display: ' + display);
         if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
           styleDef.push('background-color: ' + bgColor);
         }
       }
-      
+
       return styleDef.join('; ');
     } catch (e) {
       return '';
@@ -356,8 +510,14 @@ var ContentScriptHelpers = (function() {
 
       // Skip script, style, noscript, and other non-visual elements
       var tagName = element.tagName.toLowerCase();
-      if (tagName === 'script' || tagName === 'style' || tagName === 'noscript' ||
-          tagName === 'meta' || tagName === 'link' || tagName === 'head') {
+      if (
+        tagName === 'script' ||
+        tagName === 'style' ||
+        tagName === 'noscript' ||
+        tagName === 'meta' ||
+        tagName === 'link' ||
+        tagName === 'head'
+      ) {
         continue;
       }
 
@@ -385,9 +545,11 @@ var ContentScriptHelpers = (function() {
           var parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
           var parentClass = parent.className || '';
           var parentId = parent.id || '';
-          if (parentTag === 'footer' ||
-              parentClass.toLowerCase().includes('footer') ||
-              parentId.toLowerCase().includes('footer')) {
+          if (
+            parentTag === 'footer' ||
+            parentClass.toLowerCase().includes('footer') ||
+            parentId.toLowerCase().includes('footer')
+          ) {
             isInFooter = true;
             break;
           }
@@ -435,7 +597,11 @@ var ContentScriptHelpers = (function() {
         if (bgColor && !ColorAnalyzer.isTransparentColor(bgColor)) {
           // Only track if background is likely explicitly set (has classes/ID) or is a significant container
           var hasSignificantSize = rect.width > 100 || rect.height > 100;
-          if (isColorExplicitlySet(element, 'backgroundColor') || hasSignificantSize || element.style.backgroundColor) {
+          if (
+            isColorExplicitlySet(element, 'backgroundColor') ||
+            hasSignificantSize ||
+            element.style.backgroundColor
+          ) {
             ColorAnalyzer.trackColor(
               bgColor,
               element,
@@ -451,7 +617,10 @@ var ContentScriptHelpers = (function() {
         // Track text color (only for leaf elements with direct text, not containers)
         var hasDirectTextNode = false;
         for (var j = 0; j < element.childNodes.length; j++) {
-          if (element.childNodes[j].nodeType === 3 && element.childNodes[j].textContent.trim().length > 0) {
+          if (
+            element.childNodes[j].nodeType === 3 &&
+            element.childNodes[j].textContent.trim().length > 0
+          ) {
             hasDirectTextNode = true;
             break;
           }
@@ -475,13 +644,17 @@ var ContentScriptHelpers = (function() {
           { color: computed.borderTopColor, width: parseFloat(computed.borderTopWidth) || 0 },
           { color: computed.borderRightColor, width: parseFloat(computed.borderRightWidth) || 0 },
           { color: computed.borderBottomColor, width: parseFloat(computed.borderBottomWidth) || 0 },
-          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 }
+          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 },
         ];
 
         var trackedBorderColors = new Set(); // Prevent duplicate tracking of same color
-        borderSides.forEach(function(side) {
-          if (side.color && !ColorAnalyzer.isTransparentColor(side.color) &&
-              side.width > 0 && !trackedBorderColors.has(side.color)) {
+        borderSides.forEach(function (side) {
+          if (
+            side.color &&
+            !ColorAnalyzer.isTransparentColor(side.color) &&
+            side.width > 0 &&
+            !trackedBorderColors.has(side.color)
+          ) {
             trackedBorderColors.add(side.color);
             ColorAnalyzer.trackColor(
               side.color,
@@ -496,8 +669,12 @@ var ContentScriptHelpers = (function() {
         });
 
         // Track SVG fill and stroke colors (matching DevTools CSS Overview)
-        if (element.tagName === 'svg' || element.tagName === 'SVG' ||
-            element.ownerSVGElement || element.closest('svg')) {
+        if (
+          element.tagName === 'svg' ||
+          element.tagName === 'SVG' ||
+          element.ownerSVGElement ||
+          element.closest('svg')
+        ) {
           // For SVG elements, check fill and stroke
           var fillColor = computed.fill;
           var strokeColor = computed.stroke;
@@ -514,7 +691,11 @@ var ContentScriptHelpers = (function() {
             );
           }
 
-          if (strokeColor && !ColorAnalyzer.isTransparentColor(strokeColor) && strokeColor !== 'none') {
+          if (
+            strokeColor &&
+            !ColorAnalyzer.isTransparentColor(strokeColor) &&
+            strokeColor !== 'none'
+          ) {
             ColorAnalyzer.trackColor(
               strokeColor,
               element,
@@ -548,9 +729,9 @@ var ContentScriptHelpers = (function() {
     getBlockInfo: getBlockInfo,
     getStyleDefinition: getStyleDefinition,
     extractFontSize: extractFontSize,
-    scanAllPageColors: scanAllPageColors
+    generateSelector: generateSelector,
+    scanAllPageColors: scanAllPageColors,
   };
-
 })();
 
 // Make globally available for content scripts

@@ -424,13 +424,23 @@ const DomainAnalysisUI = {
     document.getElementById('analyzeDomainBtn').style.display = 'block';
     document.getElementById('cancelDomainBtn').style.display = 'none';
 
-    analyzer.showError('Analysis error: ' + errorMessage);
+    const cleanMessage = errorMessage.startsWith('Analysis error: ')
+      ? errorMessage
+      : errorMessage === 'Analysis cancelled by user'
+        ? errorMessage
+        : 'Analysis error: ' + errorMessage;
+
+    analyzer.showError(cleanMessage);
     chrome.storage.local.remove(['domainAnalysisError']);
   },
 
   cancelDomainAnalysis: function (analyzer) {
     chrome.runtime.sendMessage({ action: 'cancelDomainAnalysis' });
-    this.handleDomainAnalysisError(analyzer, 'Analysis cancelled by user');
+    // We don't call handleDomainAnalysisError here anymore because we want the
+    // background analyzer to finish merging what it has and trigger
+    // handleDomainAnalysisComplete automatically.
+
+    analyzer.showSuccess('Cancelling... generating report for pages analyzed so far.');
   },
 };
 

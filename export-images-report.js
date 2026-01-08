@@ -2,15 +2,14 @@
 // Single Responsibility: Generate the Images Analysis report
 
 const ExportImagesReport = {
-
   // Export the images analysis report
-  export: function(data, imagesWithoutAlt, genericImageNames, filenameBrand, downloadFileFn) {
+  export: function (data, imagesWithoutAlt, genericImageNames, filenameBrand, downloadFileFn) {
     const domain = data.metadata.domain.replace(/^www\./, '');
     const hasMissingAlt = imagesWithoutAlt && imagesWithoutAlt.length > 0;
     const hasGenericNames = genericImageNames && genericImageNames.length > 0;
-    
+
     // Group images by page URL for accordions
-    const groupByPage = (items) => {
+    const groupByPage = items => {
       const grouped = {};
       for (const item of items) {
         const pageUrl = item.url;
@@ -18,14 +17,14 @@ const ExportImagesReport = {
           grouped[pageUrl] = {
             url: pageUrl,
             navigationName: item.navigationName || 'Unknown',
-            items: []
+            items: [],
           };
         }
         grouped[pageUrl].items.push(item);
       }
       return Object.values(grouped).sort((a, b) => a.url.localeCompare(b.url));
     };
-    
+
     const missingAltByPage = hasMissingAlt ? groupByPage(imagesWithoutAlt) : [];
     const genericNamesByPage = hasGenericNames ? groupByPage(genericImageNames) : [];
 
@@ -35,25 +34,25 @@ const ExportImagesReport = {
         id: 'missing-alt-section',
         label: 'Missing Alt Text',
         count: imagesWithoutAlt.length,
-        hasIssues: hasMissingAlt
+        hasIssues: hasMissingAlt,
       },
       {
         id: 'generic-names-section',
         label: 'Generic File Names',
         count: genericImageNames.length,
-        hasIssues: hasGenericNames
-      }
+        hasIssues: hasGenericNames,
+      },
     ];
 
     const tocItems = allCheckTypes;
-    
+
     // Determine section navigation
-    const getNextSection = (currentId) => {
+    const getNextSection = currentId => {
       const ids = tocItems.map(t => t.id);
       const idx = ids.indexOf(currentId);
       return idx >= 0 && idx < ids.length - 1 ? ids[idx + 1] : null;
     };
-    
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -85,8 +84,8 @@ const ExportImagesReport = {
     .accordion-container.open .accordion-content { display: block; }
     .accordion-item { padding: 12px 15px; border-top: 1px solid #e2e8f0; }
     .accordion-item:hover { background: #f7fafc; }
-    .item-row { display: grid; grid-template-columns: 1fr 200px 120px 150px; gap: 15px; align-items: start; }
-    .item-row.alt-text { grid-template-columns: 1fr 150px; }
+    .item-row { display: grid; grid-template-columns: 1fr 200px 120px 150px 100px; gap: 15px; align-items: start; }
+    .item-row.alt-text { grid-template-columns: 1fr 150px 100px; }
     .item-label { font-size: 0.75rem; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
     .item-value { font-size: 0.9rem; color: #2d3748; word-break: break-all; }
     .item-value a { color: #667eea; text-decoration: none; }
@@ -107,20 +106,30 @@ const ExportImagesReport = {
     <div id="images-toc" class="toc">
       <h2>📋 Table of Contents</h2>
       <ul>
-        ${tocItems.map(item => `
+        ${tocItems
+          .map(
+            item => `
           <li>
-            ${item.hasIssues
-              ? `<a href="#${item.id}">🖼️ ${item.label}</a>
+            ${
+              item.hasIssues
+                ? `<a href="#${item.id}">🖼️ ${item.label}</a>
                  <span class="toc-count">${item.count}</span>`
-              : `<span style="color: #718096;">🖼️ ${item.label}</span>
+                : `<span style="color: #718096;">🖼️ ${item.label}</span>
                  <span style="color: #22c55e; font-weight: bold; margin-left: 8px;">✓ Pass, No Issues Found</span>`
             }
           </li>
-        `).join('')}
+        `
+          )
+          .join('')}
       </ul>
+      <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
+         <strong>💡 NOTE:</strong> To properly use the Locate link, you must let the web page fully and completely finish loading. It is at the very end of the page loading that the item is identified with a red outline.
+      </p>
     </div>
 
-    ${hasMissingAlt ? `
+    ${
+      hasMissingAlt
+        ? `
     <!-- Missing Alt Text Section -->
     <div id="missing-alt-section" class="section-header">
       <h2>🖼️ Missing Alt Text (${imagesWithoutAlt.length})</h2>
@@ -131,15 +140,19 @@ const ExportImagesReport = {
     </div>
     <p style="color: #718096; margin-bottom: 20px;">Images without alt text may cause accessibility issues and hurt SEO.</p>
     
-    ${missingAltByPage.map(page => `
+    ${missingAltByPage
+      .map(
+        page => `
       <div class="accordion-container">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="accordion-header">
           <span><strong>${page.navigationName}</strong> — <a href="${page.url}" target="_blank" onclick="event.stopPropagation();">${page.url}</a></span>
           <span class="accordion-icon">▶</span>
           <span class="accordion-count">${page.items.length} image${page.items.length === 1 ? '' : 's'}</span>
         </div>
         <div class="accordion-content">
-          ${page.items.map(img => `
+          ${page.items
+            .map(
+              img => `
             <div class="accordion-item">
               <div class="item-row alt-text">
                 <div>
@@ -150,15 +163,38 @@ const ExportImagesReport = {
                   <div class="item-label">Location</div>
                   <div class="item-value">${img.section || 'N/A'}${img.block ? ' / ' + img.block : ''}</div>
                 </div>
+                <div>
+                  ${
+                    img.selector
+                      ? `
+                  <div class="item-label">Inspect</div>
+                  <div class="item-value">
+                    <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                       target="_blank" 
+                       style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
+                       🔍 Locate
+                    </a>
+                  </div>`
+                      : ''
+                  }
+                </div>
               </div>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-    `).join('')}
-    ` : ''}
+    `
+      )
+      .join('')}
+    `
+        : ''
+    }
 
-    ${hasGenericNames ? `
+    ${
+      hasGenericNames
+        ? `
     <!-- Generic File Names Section -->
     <div id="generic-names-section" class="section-header">
       <h2>📁 Generic File Names (${genericImageNames.length})</h2>
@@ -168,15 +204,19 @@ const ExportImagesReport = {
     </div>
     <p style="color: #718096; margin-bottom: 20px;">Images with generic file names (like IMG_1234.jpg) should be renamed to descriptive names for better SEO and organization.</p>
     
-    ${genericNamesByPage.map(page => `
+    ${genericNamesByPage
+      .map(
+        page => `
       <div class="accordion-container">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="accordion-header">
           <span><strong>${page.navigationName}</strong> — <a href="${page.url}" target="_blank" onclick="event.stopPropagation();">${page.url}</a></span>
           <span class="accordion-icon">▶</span>
           <span class="accordion-count">${page.items.length} image${page.items.length === 1 ? '' : 's'}</span>
         </div>
         <div class="accordion-content">
-          ${page.items.map(img => `
+          ${page.items
+            .map(
+              img => `
             <div class="accordion-item">
               <div class="item-row">
                 <div>
@@ -195,25 +235,58 @@ const ExportImagesReport = {
                   <div class="item-label">Location</div>
                   <div class="item-value">${img.section || 'N/A'}${img.block ? ' / ' + img.block : ''}</div>
                 </div>
+                <div>
+                  ${
+                    img.selector
+                      ? `
+                  <div class="item-label">Inspect</div>
+                  <div class="item-value">
+                    <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                       target="_blank" 
+                       style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
+                       🔍 Locate
+                    </a>
+                  </div>`
+                      : ''
+                  }
+                </div>
               </div>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-    `).join('')}
-    ` : ''}
+    `
+      )
+      .join('')}
+    `
+        : ''
+    }
 
     <!-- Back to top -->
     <div style="text-align: center; margin-top: 40px; padding: 20px;">
       <a href="#images-toc" style="color: #667eea; text-decoration: none; font-size: 2rem;">⬆️</a>
     </div>
   </div>
+  <script>
+    // Accordion functionality
+    document.addEventListener('click', function(e) {
+      const header = e.target.closest('.accordion-header');
+      if (header) {
+        const container = header.closest('.accordion-container');
+        if (container) {
+          container.classList.toggle('open');
+        }
+      }
+    });
+  </script>
 </body>
 </html>`;
 
     const filename = `${domain} ${filenameBrand} images analysis.html`;
     downloadFileFn(html, filename, 'text/html');
-  }
+  },
 };
 
 // Make globally available

@@ -30,28 +30,74 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 
   if (request.action === 'analyzeMobileViewport') {
-    console.log(
-      'Running Lighthouse-quality mobile analysis for tab:',
-      request.tabId,
-      'mobileOnly:',
-      request.mobileOnly
-    );
+    console.log('Running Zero-Intrusion mobile analysis for URL:', request.url || 'current');
     (async () => {
+      let clonedTabId = null;
+
+      // Helper to send progress to popup and save to storage for persistence
+      const sendProgress = status => {
+        chrome.storage.local.set({
+          singlePageAnalysisStatus: 'in-progress',
+          singlePageProgressText: status,
+        });
+
+        chrome.runtime
+          .sendMessage({
+            action: 'analysisProgress',
+            status: status,
+          })
+          .catch(() => {
+            // Ignore errors if popup is closed
+          });
+      };
       try {
-        const tabId = request.tabId;
         const mobileOnly = request.mobileOnly || false;
+        let targetUrl = request.url;
+
+        // If no URL provided, we get it from the active tab but CLONE it for analysis
+        if (!targetUrl) {
+          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tabs.length > 0) {
+            targetUrl = tabs[0].url;
+          }
+        }
+
+        if (!targetUrl) throw new Error('No URL available for analysis');
+
+        // Step 1: Create a hidden background tab for analysis
+        sendProgress('Creating background audit tab...');
+        const clonedTab = await chrome.tabs.create({
+          url: targetUrl,
+          active: false,
+        });
+        clonedTabId = clonedTab.id;
+
+        // Step 2: Wait for tab to load
+        sendProgress('Loading target page...');
+        await new Promise((resolve, reject) => {
+          const listener = (tabId, info) => {
+            if (tabId === clonedTabId && info.status === 'complete') {
+              chrome.tabs.onUpdated.removeListener(listener);
+              resolve();
+            }
+          };
+          chrome.tabs.onUpdated.addListener(listener);
+          // Safety timeout
+          setTimeout(() => {
+            chrome.tabs.onUpdated.removeListener(listener);
+            resolve();
+          }, 15000);
+        });
 
         if (mobileOnly) {
           // Mobile-only mode: Just run mobile checks
-          console.log('Step 1: Running mobile-only checks...');
-          const tab = await chrome.tabs.get(tabId);
-          const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, tab.url);
-          console.log('Lighthouse results:', lighthouseResults);
-          // Mobile-only: Skip design analysis, only return mobile issues
-          console.log('Mobile-only mode: Skipping design analysis');
+          sendProgress('Running mobile usability audit...');
+          const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(
+            clonedTabId,
+            targetUrl
+          );
 
-          // Create complete structure with empty design fields (required for merge)
-          const pageUrl = lighthouseResults.url || 'unknown';
+          const pageUrl = lighthouseResults.url || targetUrl;
           const domain = new URL(pageUrl).hostname.replace('www.', '');
           const pathname = new URL(pageUrl).pathname;
           const mobileIssues = MobileResultsConverter.convertToMobileIssues(
@@ -68,20 +114,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
               tertiary: { locations: [] },
               other: { locations: [] },
             },
-            links: {
-              'in-content': { locations: [] },
-            },
+            links: { 'in-content': { locations: [] } },
             images: [],
-            colorPalette: {
-              backgrounds: [],
-              text: [],
-              borders: [],
-              all: [],
-            },
-            colorData: {
-              colors: {},
-              contrastPairs: [],
-            },
+            colorPalette: { backgrounds: [], text: [], borders: [], all: [] },
+            colorData: { colors: {}, contrastPairs: [] },
             headings: {
               'heading-1': { locations: [] },
               'heading-2': { locations: [] },
@@ -115,143 +151,108 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             squarespaceThemeStyles: {},
           };
 
-          // NOTE: Mobile screenshots disabled - viewport mismatch causes wrong screenshots
-          // Screenshots would need to be captured DURING mobile view, not after
-          console.log('Mobile screenshots skipped (viewport mismatch issue)');
-          // try {
-          //   const screenshotResponse = await chrome.tabs.sendMessage(tabId, {
-          //     action: 'captureMobileScreenshots',
-          //     issues: mobileIssues
-          //   });
-          //   if (screenshotResponse && screenshotResponse.success) {
-          //     mobileOnlyData.mobileIssues.issues = screenshotResponse.issues;
-          //     console.log('Mobile screenshots captured:', screenshotResponse.capturedCount);
-          //   }
-          // } catch (error) {
-          //   console.warn('Failed to capture mobile screenshots:', error);
-          // }
+          await chrome.storage.local.set({
+            singlePageAnalysisStatus: 'complete',
+            singlePageAnalysisResults: mobileOnlyData,
+          });
 
-          console.log('✅ Mobile-only analysis complete. Found', mobileIssues.length, 'issues');
-          console.log('🔍 VERIFICATION: mobileOnly=true, returning data with:');
-          console.log(
-            '  - headings:',
-            Object.keys(mobileOnlyData.headings).length,
-            'types, total locations:',
-            Object.values(mobileOnlyData.headings).reduce((sum, h) => sum + h.locations.length, 0)
-          );
-          console.log(
-            '  - paragraphs:',
-            Object.keys(mobileOnlyData.paragraphs).length,
-            'types, total locations:',
-            Object.values(mobileOnlyData.paragraphs).reduce((sum, p) => sum + p.locations.length, 0)
-          );
-          console.log(
-            '  - buttons:',
-            Object.keys(mobileOnlyData.buttons).length,
-            'types, total locations:',
-            Object.values(mobileOnlyData.buttons).reduce((sum, b) => sum + b.locations.length, 0)
-          );
-          console.log('  - mobileIssues:', mobileOnlyData.mobileIssues.issues.length, 'issues');
           sendResponse({ success: true, data: mobileOnlyData });
         } else {
           // Full analysis mode: Desktop analysis FIRST, then mobile checks
-          console.log('=== FULL ANALYSIS MODE ===');
-          console.log('Step 1: Running design element analysis in DESKTOP viewport...');
-          console.log('⏱️ Desktop analysis START:', new Date().toISOString());
-          const designResponse = await chrome.tabs.sendMessage(tabId, { action: 'analyzeStyles' });
-          console.log('⏱️ Desktop analysis COMPLETE:', new Date().toISOString());
+          console.log('=== FULL BACKGROUND ANALYSIS MODE ===');
+
+          // Inject script or send message?
+          // Since it's a NEW tab, we might need to wait for content scripts or use chrome.scripting
+          // Wait for content script to be ready with retries
+          let designResponse = null;
+          let scriptReady = false;
+          let retries = 0;
+          const maxRetries = 5;
+
+          while (!scriptReady && retries < maxRetries) {
+            try {
+              console.log(
+                `Checking if content script is ready (Attempt ${retries + 1}/${maxRetries})...`
+              );
+              const pingResponse = await chrome.tabs.sendMessage(clonedTabId, { action: 'ping' });
+              if (pingResponse && pingResponse.success) {
+                scriptReady = true;
+                console.log('Content script is ready!');
+              }
+            } catch (e) {
+              console.log('Content script not ready yet, waiting...');
+              retries++;
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          }
+
+          if (scriptReady) {
+            sendProgress('Scanning page styles and accessibility...');
+            try {
+              designResponse = await chrome.tabs.sendMessage(clonedTabId, {
+                action: 'analyzeStyles',
+              });
+            } catch (e) {
+              console.error('Error sending analyzeStyles message:', e);
+            }
+          } else {
+            console.log(
+              'Content script did not respond to ping, attempting manual injection fallback...'
+            );
+            // Optional: Handle manual injection if needed, but ping retry is usually enough
+          }
 
           if (designResponse && designResponse.success) {
-            // Log color data captured from desktop
-            const colorCount = Object.keys(designResponse.data.colorData?.colors || {}).length;
-            console.log('📊 Desktop analysis captured', colorCount, 'unique colors');
+            sendProgress('Analyzing mobile usability...');
 
-            // Step 2: NOW run mobile analysis (switches to mobile viewport)
-            console.log(
-              'Step 2: Running Lighthouse mobile checks (switches to MOBILE viewport)...'
+            // Extract contrast pairs to screenshot during the mobile audit session
+            const contrastPairs =
+              designResponse.data.colorData && designResponse.data.colorData.contrastPairs
+                ? designResponse.data.colorData.contrastPairs
+                : [];
+
+            const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(
+              clonedTabId,
+              targetUrl,
+              contrastPairs
             );
-            console.log('⏱️ Mobile checks START:', new Date().toISOString());
-            const tab = await chrome.tabs.get(tabId);
-            const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, tab.url);
-            console.log('⏱️ Mobile checks COMPLETE:', new Date().toISOString());
-            console.log('Lighthouse results:', lighthouseResults);
 
-            // Step 3: Convert Lighthouse results to extension format
-            const pageUrl = designResponse.data.metadata.url;
             const mobileIssues = MobileResultsConverter.convertToMobileIssues(
               lighthouseResults,
-              pageUrl
+              targetUrl
             );
 
-            // Step 4: Merge with design analysis results
             designResponse.data.mobileIssues = {
               viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
               issues: mobileIssues,
             };
 
-            // NOTE: Mobile screenshots disabled - viewport mismatch causes wrong screenshots
-            // Screenshots would need to be captured DURING mobile view, not after
-            console.log('Mobile screenshots skipped (viewport mismatch issue)');
-            // try {
-            //   const screenshotResponse = await chrome.tabs.sendMessage(tabId, {
-            //     action: 'captureMobileScreenshots',
-            //     issues: mobileIssues
-            //   });
-            //   if (screenshotResponse && screenshotResponse.success) {
-            //     designResponse.data.mobileIssues.issues = screenshotResponse.issues;
-            //     console.log('Mobile screenshots captured:', screenshotResponse.capturedCount);
-            //   }
-            // } catch (error) {
-            //   console.warn('Failed to capture mobile screenshots:', error);
-            // }
+            await chrome.storage.local.set({
+              singlePageAnalysisStatus: 'complete',
+              singlePageAnalysisResults: designResponse.data,
+            });
 
-            console.log('✅ Analysis complete. Mobile issues:', mobileIssues.length);
-            console.log('🔍 VERIFICATION: mobileOnly=false, returning data with:');
-            console.log(
-              '  - colors:',
-              Object.keys(designResponse.data.colorData?.colors || {}).length,
-              'unique colors'
-            );
-            console.log(
-              '  - headings:',
-              Object.keys(designResponse.data.headings).length,
-              'types, total locations:',
-              Object.values(designResponse.data.headings).reduce(
-                (sum, h) => sum + (h.locations?.length || 0),
-                0
-              )
-            );
-            console.log(
-              '  - paragraphs:',
-              Object.keys(designResponse.data.paragraphs).length,
-              'types, total locations:',
-              Object.values(designResponse.data.paragraphs).reduce(
-                (sum, p) => sum + (p.locations?.length || 0),
-                0
-              )
-            );
-            console.log(
-              '  - buttons:',
-              Object.keys(designResponse.data.buttons).length,
-              'types, total locations:',
-              Object.values(designResponse.data.buttons).reduce(
-                (sum, b) => sum + (b.locations?.length || 0),
-                0
-              )
-            );
-            console.log(
-              '  - mobileIssues:',
-              designResponse.data.mobileIssues.issues.length,
-              'issues'
-            );
             sendResponse({ success: true, data: designResponse.data });
           } else {
-            sendResponse({ success: false, error: 'Design analysis failed' });
+            // If message failed, it might be because the content script isn't loaded yet
+            throw new Error('Could not communicate with background clone. Try again.');
           }
         }
       } catch (error) {
-        console.error('Mobile analysis error:', error);
+        console.error('Background analysis error:', error);
+
+        await chrome.storage.local.set({
+          singlePageAnalysisStatus: 'error',
+          singlePageAnalysisError: error.message,
+        });
+
         sendResponse({ success: false, error: error.message });
+      } finally {
+        // Step 5: Clean up - important to close the tab!
+        if (clonedTabId) {
+          console.log('Cleaning up background clone:', clonedTabId);
+          chrome.tabs.remove(clonedTabId).catch(() => {});
+        }
       }
     })();
     return true;
@@ -310,6 +311,74 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     sendResponse({
       isRunning: domainAnalyzer ? domainAnalyzer.isRunning() : false,
     });
+  }
+
+  if (request.action === 'inspectElement') {
+    (async () => {
+      try {
+        const { url, selector } = request.data;
+        const tab = await chrome.tabs.create({ url: url, active: true });
+
+        // Wait for page to load
+        const listener = async (tabId, info) => {
+          if (tabId === tab.id && info.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(listener);
+
+            // Inject highlighting script
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: sel => {
+                const el = document.querySelector(sel);
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                  // Create a highlight overlay
+                  const rect = el.getBoundingClientRect();
+                  const highlight = document.createElement('div');
+                  highlight.style.position = 'fixed';
+                  highlight.style.top = rect.top + 'px';
+                  highlight.style.left = rect.left + 'px';
+                  highlight.style.width = rect.width + 'px';
+                  highlight.style.height = rect.height + 'px';
+                  highlight.style.border = '4px solid #f56565';
+                  highlight.style.backgroundColor = 'rgba(245, 101, 101, 0.2)';
+                  highlight.style.zIndex = '9999999';
+                  highlight.style.pointerEvents = 'none';
+                  highlight.style.borderRadius = '4px';
+                  highlight.style.boxShadow = '0 0 20px rgba(245, 101, 101, 0.5)';
+
+                  // Add pulsing animation
+                  highlight.animate(
+                    [
+                      { opacity: 0.3, transform: 'scale(1)' },
+                      { opacity: 1, transform: 'scale(1.05)' },
+                      { opacity: 0.3, transform: 'scale(1)' },
+                    ],
+                    {
+                      duration: 1000,
+                      iterations: 5,
+                    }
+                  );
+
+                  document.body.appendChild(highlight);
+
+                  // Remove after 5 seconds
+                  setTimeout(() => {
+                    highlight.remove();
+                  }, 5000);
+                }
+              },
+              args: [selector],
+            });
+          }
+        };
+        chrome.tabs.onUpdated.addListener(listener);
+        sendResponse({ success: true });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true;
   }
 
   if (request.action === 'captureScreenshot') {

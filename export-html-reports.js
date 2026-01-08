@@ -3,13 +3,12 @@
 // Quality Check reports, and Images Analysis reports
 
 const ExportHTMLReports = {
-
   // ============================================
   // UTILITY FUNCTIONS
   // ============================================
 
   // Escape HTML to prevent XSS
-  escapeHtml: function(text) {
+  escapeHtml: function (text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
@@ -17,7 +16,7 @@ const ExportHTMLReports = {
   },
 
   // Check if mobile analysis was actually performed
-  hasMobileAnalysisData: function(data) {
+  hasMobileAnalysisData: function (data) {
     if (!data) return false;
 
     const mobileIssues = data.mobileIssues;
@@ -44,7 +43,7 @@ const ExportHTMLReports = {
   },
 
   // Get total count from data object with locations
-  getTotalCount: function(dataObject) {
+  getTotalCount: function (dataObject) {
     let total = 0;
     for (const key in dataObject) {
       if (dataObject[key].locations) {
@@ -55,20 +54,20 @@ const ExportHTMLReports = {
   },
 
   // Extract font size from style definition string
-  extractFontSize: function(styleDefinition) {
+  extractFontSize: function (styleDefinition) {
     if (!styleDefinition) return null;
     const match = styleDefinition.match(/font-size:\s*([0-9.]+)px/);
     return match ? parseFloat(match[1]) : null;
   },
 
   // Get most common font size for a heading type
-  getMostCommonSize: function(data, headingType) {
+  getMostCommonSize: function (data, headingType) {
     if (!data.headings[headingType] || !data.headings[headingType].locations) return null;
-    
+
     const sizeCounts = {};
     let maxCount = 0;
     let mostCommonSize = null;
-    
+
     for (const location of data.headings[headingType].locations) {
       const fontSize = this.extractFontSize(location.styleDefinition);
       if (fontSize) {
@@ -79,12 +78,12 @@ const ExportHTMLReports = {
         }
       }
     }
-    
+
     return mostCommonSize;
   },
 
   // Download file helper
-  downloadFile: function(content, filename, mimeType) {
+  downloadFile: function (content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -97,58 +96,82 @@ const ExportHTMLReports = {
   },
 
   // Build navigation order for all sections and subsections
-  buildNavigationOrder: function(data) {
+  buildNavigationOrder: function (data) {
     const navOrder = [];
-    
+
     // Headings section
     navOrder.push('headings-section');
-    for (const type of ['heading-1', 'heading-2', 'heading-3', 'heading-4', 'heading-5', 'heading-6']) {
-      if (data.headings[type] && data.headings[type].locations && data.headings[type].locations.length > 0) {
+    for (const type of [
+      'heading-1',
+      'heading-2',
+      'heading-3',
+      'heading-4',
+      'heading-5',
+      'heading-6',
+    ]) {
+      if (
+        data.headings[type] &&
+        data.headings[type].locations &&
+        data.headings[type].locations.length > 0
+      ) {
         navOrder.push(type);
       }
     }
-    
+
     // Paragraphs section
     navOrder.push('paragraphs-section');
     for (const type of ['paragraph-1', 'paragraph-2', 'paragraph-3']) {
-      if (data.paragraphs[type] && data.paragraphs[type].locations && data.paragraphs[type].locations.length > 0) {
+      if (
+        data.paragraphs[type] &&
+        data.paragraphs[type].locations &&
+        data.paragraphs[type].locations.length > 0
+      ) {
         navOrder.push(type);
       }
     }
-    
+
     // Buttons section - enforce order: primary, secondary, tertiary, other
     navOrder.push('buttons-section');
     for (const type of ['primary', 'secondary', 'tertiary', 'other']) {
-      if (data.buttons[type] && data.buttons[type].locations && data.buttons[type].locations.length > 0) {
+      if (
+        data.buttons[type] &&
+        data.buttons[type].locations &&
+        data.buttons[type].locations.length > 0
+      ) {
         navOrder.push('button-' + type);
       }
     }
-    
+
     // Links section
     navOrder.push('links-section');
-    if (data.links && data.links['in-content'] && data.links['in-content'].locations && data.links['in-content'].locations.length > 0) {
+    if (
+      data.links &&
+      data.links['in-content'] &&
+      data.links['in-content'].locations &&
+      data.links['in-content'].locations.length > 0
+    ) {
       navOrder.push('in-content');
     }
-    
+
     return navOrder;
   },
-  
+
   // Get ordered entries for buttons (primary, secondary, tertiary, other)
-  getOrderedButtonEntries: function(buttonsObj) {
+  getOrderedButtonEntries: function (buttonsObj) {
     const orderedTypes = ['primary', 'secondary', 'tertiary', 'other'];
     const result = [];
-    
+
     for (const type of orderedTypes) {
       if (buttonsObj[type] && buttonsObj[type].locations && buttonsObj[type].locations.length > 0) {
         result.push([type, buttonsObj[type]]);
       }
     }
-    
+
     return result;
   },
 
   // Get next section ID from navigation order
-  getNextSection: function(currentId, navOrder) {
+  getNextSection: function (currentId, navOrder) {
     const idx = navOrder.indexOf(currentId);
     if (idx >= 0 && idx < navOrder.length - 1) {
       return navOrder[idx + 1];
@@ -157,14 +180,14 @@ const ExportHTMLReports = {
   },
 
   // Generate section header with navigation arrows
-  generateSectionHeaderWithNav: function(id, title, emoji, nextSectionId) {
-    const arrows = nextSectionId 
+  generateSectionHeaderWithNav: function (id, title, emoji, nextSectionId) {
+    const arrows = nextSectionId
       ? `<div>
           <a href="#toc" style="color: white; text-decoration: none; font-size: 1.5rem; margin-right: 15px;">⬆️</a>
           <a href="#${nextSectionId}" style="color: white; text-decoration: none; font-size: 1.5rem;">⬇️</a>
         </div>`
       : `<a href="#toc" style="color: white; text-decoration: none; font-size: 1.5rem;">⬆️</a>`;
-    
+
     return `
       <div id="${id}" style="background: #667eea; color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
         <h2 style="margin: 0; color: white; border: none; padding: 0;">${emoji} ${title}</h2>
@@ -174,14 +197,14 @@ const ExportHTMLReports = {
   },
 
   // Generate subsection header with navigation arrows
-  generateSubsectionHeaderWithNav: function(id, title, count, nextSectionId) {
-    const arrows = nextSectionId 
+  generateSubsectionHeaderWithNav: function (id, title, count, nextSectionId) {
+    const arrows = nextSectionId
       ? `<div>
           <a href="#toc" style="color: white; text-decoration: none; font-size: 1.2rem; margin-right: 10px;">⬆️</a>
           <a href="#${nextSectionId}" style="color: white; text-decoration: none; font-size: 1.2rem;">⬇️</a>
         </div>`
       : `<a href="#toc" style="color: white; text-decoration: none; font-size: 1.2rem;">⬆️</a>`;
-    
+
     return `
       <div id="${id}" style="background: #667eea; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin: 0; color: white; font-size: 1.3rem;">${title} <span style="font-weight: normal; font-size: 0.9rem;">(${count} instances)</span></h3>
@@ -194,7 +217,7 @@ const ExportHTMLReports = {
   // QUALITY CHECKS CALCULATION
   // ============================================
 
-  calculateQualityChecks: function(data, filenameBrand) {
+  calculateQualityChecks: function (data, filenameBrand) {
     const checks = [];
     let passedCount = 0;
     // totalChecks will be set after we determine if mobile analysis was performed
@@ -202,75 +225,93 @@ const ExportHTMLReports = {
     const self = this;
 
     const domain = data.metadata.domain.replace(/^www\./, '');
-    
+
     // Check 1: Missing H1
     const missingH1 = data.qualityChecks?.missingH1 || [];
     const allHaveH1 = missingH1.length === 0;
-    
+
     checks.push({
       passed: allHaveH1,
-      message: allHaveH1 ? 'All pages have H1 headings' : `${missingH1.length} page(s) missing H1 headings. <a href="#reports-nav" style="color: #667eea;">See the Styles Shown on Each Page report below.</a>`,
-      details: allHaveH1 ? [] : missingH1.slice(0, 5).map(item => ({
-        url: item.url,
-        page: item.page,
-        description: 'Missing H1 heading'
-      }))
+      message: allHaveH1
+        ? 'All pages have H1 headings'
+        : `${missingH1.length} page(s) missing H1 headings. <a href="#reports-nav" style="color: #667eea;">See the Styles Shown on Each Page report below.</a>`,
+      details: allHaveH1
+        ? []
+        : missingH1.slice(0, 5).map(item => ({
+            url: item.url,
+            page: item.page,
+            description: 'Missing H1 heading',
+          })),
     });
     if (allHaveH1) passedCount++;
-    
+
     // Check 2: Multiple H1
     const multipleH1 = data.qualityChecks?.multipleH1 || [];
     const noMultipleH1 = multipleH1.length === 0;
-    
+
     checks.push({
       passed: noMultipleH1,
-      message: noMultipleH1 ? 'No pages have multiple H1 headings' : `${multipleH1.length} page(s) have multiple H1 headings. <a href="#reports-nav" style="color: #667eea;">See the Styles Shown on Each Page report below.</a>`,
-      details: noMultipleH1 ? [] : multipleH1.slice(0, 5).map(item => ({
-        url: item.url,
-        page: item.page,
-        description: `Multiple H1 headings (${item.count} found)`
-      }))
+      message: noMultipleH1
+        ? 'No pages have multiple H1 headings'
+        : `${multipleH1.length} page(s) have multiple H1 headings. <a href="#reports-nav" style="color: #667eea;">See the Styles Shown on Each Page report below.</a>`,
+      details: noMultipleH1
+        ? []
+        : multipleH1.slice(0, 5).map(item => ({
+            url: item.url,
+            page: item.page,
+            description: `Multiple H1 headings (${item.count} found)`,
+          })),
     });
     if (noMultipleH1) passedCount++;
-    
+
     // Check 3: Broken Heading Hierarchy
     const brokenHierarchy = data.qualityChecks?.brokenHeadingHierarchy || [];
     const hierarchyCorrect = brokenHierarchy.length === 0;
-    
+
     if (brokenHierarchy.length > 5) {
-      this.exportQualityCheckReport(data, 'brokenHeadingHierarchy', brokenHierarchy, domain, filenameBrand);
+      this.exportQualityCheckReport(
+        data,
+        'brokenHeadingHierarchy',
+        brokenHierarchy,
+        domain,
+        filenameBrand
+      );
       checks.push({
         passed: false,
         message: `${brokenHierarchy.length} heading hierarchy issue(s) found. See downloaded Heading Hierarchy report.`,
-        details: []
+        details: [],
       });
     } else {
       checks.push({
         passed: hierarchyCorrect,
-        message: hierarchyCorrect ? 'Heading hierarchy is correct on all pages' : `${brokenHierarchy.length} heading hierarchy issue(s) found. <a href="#reports-nav" style="color: #667eea;">See Aggregated Styles Report below.</a>`,
-        details: hierarchyCorrect ? [] : brokenHierarchy.map(item => ({
-          url: item.url,
-          page: item.page,
-          description: item.description || item.issue || 'Broken heading hierarchy'
-        }))
+        message: hierarchyCorrect
+          ? 'Heading hierarchy is correct on all pages'
+          : `${brokenHierarchy.length} heading hierarchy issue(s) found. <a href="#reports-nav" style="color: #667eea;">See Aggregated Styles Report below.</a>`,
+        details: hierarchyCorrect
+          ? []
+          : brokenHierarchy.map(item => ({
+              url: item.url,
+              page: item.page,
+              description: item.description || item.issue || 'Broken heading hierarchy',
+            })),
       });
     }
     if (hierarchyCorrect) passedCount++;
-    
+
     // Check 4: Typography Style Inconsistency (checks ALL style properties except colors)
     if (!data.qualityChecks) data.qualityChecks = {};
     data.qualityChecks.styleInconsistency = [];
-    
+
     // Helper to check style variations for any element type
     const checkStyleVariations = (dataObj, categoryName) => {
       for (const itemType in dataObj) {
         if (!dataObj[itemType] || !dataObj[itemType].locations) continue;
-        
+
         const locations = dataObj[itemType].locations;
         if (locations.length === 0) continue;
-        
+
         const variationCount = StyleComparisonUtils.getVariationCount(locations);
-        
+
         if (variationCount >= 2) {
           let label;
           if (categoryName === 'Button') {
@@ -279,10 +320,10 @@ const ExportHTMLReports = {
           } else {
             label = itemType.replace('heading-', 'H').replace('paragraph-', 'P').toUpperCase();
           }
-          
+
           const issueText = `${label} has ${variationCount} style variations (${locations.length} total instances)`;
           const description = `${label} uses ${variationCount} different styles. <a href="#reports-nav" style="color: #667eea;">See Aggregated Styles Report below.</a>`;
-          
+
           data.qualityChecks.styleInconsistency.push({
             url: '',
             page: 'All Pages',
@@ -290,37 +331,37 @@ const ExportHTMLReports = {
             description: description,
             elementType: itemType,
             variationCount: variationCount,
-            totalInstances: locations.length
+            totalInstances: locations.length,
           });
         }
       }
     };
-    
+
     checkStyleVariations(data.headings, 'Heading');
     checkStyleVariations(data.paragraphs, 'Paragraph');
     checkStyleVariations(data.buttons, 'Button');
-    
+
     // Check hierarchical issues (H3 shouldn't be bigger than H2, etc.)
     const headingComparisons = [
       { higher: 'heading-1', lower: 'heading-2', higherLabel: 'H1', lowerLabel: 'H2' },
       { higher: 'heading-2', lower: 'heading-3', higherLabel: 'H2', lowerLabel: 'H3' },
       { higher: 'heading-3', lower: 'heading-4', higherLabel: 'H3', lowerLabel: 'H4' },
       { higher: 'heading-4', lower: 'heading-5', higherLabel: 'H4', lowerLabel: 'H5' },
-      { higher: 'heading-5', lower: 'heading-6', higherLabel: 'H5', lowerLabel: 'H6' }
+      { higher: 'heading-5', lower: 'heading-6', higherLabel: 'H5', lowerLabel: 'H6' },
     ];
 
     for (const comparison of headingComparisons) {
       const higherSize = this.getMostCommonSize(data, comparison.higher);
       const lowerSize = this.getMostCommonSize(data, comparison.lower);
-      
+
       if (higherSize && lowerSize) {
         const higherSizeNum = parseFloat(higherSize);
         const lowerSizeNum = parseFloat(lowerSize);
-        
+
         if (lowerSizeNum > higherSizeNum) {
           const issueText = `${comparison.lowerLabel} (${lowerSize}px) is larger than ${comparison.higherLabel} (${higherSize}px)`;
           const description = `${comparison.higherLabel} should be larger than ${comparison.lowerLabel}. Heading sizes should decrease as level increases.`;
-          
+
           data.qualityChecks.styleInconsistency.push({
             url: '',
             page: 'All Pages',
@@ -329,161 +370,183 @@ const ExportHTMLReports = {
             higherLevel: comparison.higherLabel,
             higherSize: higherSize,
             lowerLevel: comparison.lowerLabel,
-            lowerSize: lowerSize
+            lowerSize: lowerSize,
           });
         }
       }
     }
-    
+
     const allStyleInconsistencies = data.qualityChecks.styleInconsistency;
     const allStylesConsistent = allStyleInconsistencies.length === 0;
-    
+
     // Show up to 5 details inline, with message about remaining
     const displayedInconsistencies = allStyleInconsistencies.slice(0, 5);
     const remainingCount = allStyleInconsistencies.length - 5;
-    
+
     let details = displayedInconsistencies.map(item => ({
       url: item.url,
       page: item.page,
-      description: item.description || item.issue
+      description: item.description || item.issue,
     }));
-    
+
     // Add "and X more" message if there are more than 5
     if (remainingCount > 0) {
       details.push({
         url: '',
         page: '',
-        description: `...and ${remainingCount} more. <a href="#reports-nav" style="color: #667eea;">See Aggregated Styles Report below.</a>`
+        description: `...and ${remainingCount} more. <a href="#reports-nav" style="color: #667eea;">See Aggregated Styles Report below.</a>`,
       });
     }
-    
+
     checks.push({
       passed: allStylesConsistent,
-      message: allStylesConsistent 
-        ? 'Typography Styles are consistent across all headings, paragraphs, and buttons' 
+      message: allStylesConsistent
+        ? 'Typography Styles are consistent across all headings, paragraphs, and buttons'
         : `Typography Style Inconsistencies in ${allStyleInconsistencies.length} element type(s)`,
-      details: allStylesConsistent ? [] : details
+      details: allStylesConsistent ? [] : details,
     });
-    
+
     if (allStylesConsistent) passedCount++;
-    
+
     // Check 5: Link Styling Consistency
-    const linkLocations = (data.links && data.links['in-content'] && data.links['in-content'].locations) 
-      ? data.links['in-content'].locations 
-      : [];
-    
+    const linkLocations =
+      data.links && data.links['in-content'] && data.links['in-content'].locations
+        ? data.links['in-content'].locations
+        : [];
+
     let linkStylesConsistent = true;
     let linkVariationCount = 0;
     let linkInconsistencyDetails = [];
-    
+
     if (linkLocations.length > 0) {
       linkVariationCount = StyleComparisonUtils.getVariationCount(linkLocations);
       linkStylesConsistent = linkVariationCount <= 1;
-      
+
       if (!linkStylesConsistent) {
         linkInconsistencyDetails.push({
           url: '',
           page: 'All Pages',
-          description: `Links use ${linkVariationCount} different styles (${linkLocations.length} total instances). <a href="#reports-nav" style="color: #667eea;">See the Aggregated Styles Report below.</a>`
+          description: `Links use ${linkVariationCount} different styles (${linkLocations.length} total instances). <a href="#reports-nav" style="color: #667eea;">See the Aggregated Styles Report below.</a>`,
         });
       }
     }
-    
+
     checks.push({
       passed: linkStylesConsistent,
-      message: linkLocations.length === 0 
-        ? 'No in-content links found to analyze'
-        : linkStylesConsistent 
-          ? 'Link styling is consistent across all pages' 
-          : `Link styling inconsistencies found (${linkVariationCount} variations)`,
-      details: linkInconsistencyDetails
+      message:
+        linkLocations.length === 0
+          ? 'No in-content links found to analyze'
+          : linkStylesConsistent
+            ? 'Link styling is consistent across all pages'
+            : `Link styling inconsistencies found (${linkVariationCount} variations)`,
+      details: linkInconsistencyDetails,
     });
-    
+
     if (linkStylesConsistent) passedCount++;
-    
+
     // Check 6: Missing Alt Text
     const images = data.images || [];
-    
+
     // Helper function to check if image source is likely an icon
-    const isLikelyIconSrc = (src) => {
+    const isLikelyIconSrc = src => {
       if (!src) return false;
-      
+
       // Extract filename without query params
       const cleanUrl = src.split('?')[0].split('#')[0];
       const urlParts = cleanUrl.split('/');
       const filename = urlParts[urlParts.length - 1];
-      
+
       // Check if "icon" appears in filename
       if (filename.toLowerCase().includes('icon')) {
         return true;
       }
-      
+
       // Check if path contains /icons/
       const lowerPath = src.toLowerCase();
-      if (lowerPath.includes('/icons/') || lowerPath.includes('/assets/icons/') || 
-          lowerPath.includes('/images/icons/') || lowerPath.includes('/img/icons/')) {
+      if (
+        lowerPath.includes('/icons/') ||
+        lowerPath.includes('/assets/icons/') ||
+        lowerPath.includes('/images/icons/') ||
+        lowerPath.includes('/img/icons/')
+      ) {
         return true;
       }
-      
+
       return false;
     };
-    
-    const imagesWithoutAlt = images.filter(img => 
-      (!img.alt || img.alt === '(missing alt text)') && 
-      img.src && img.src.trim() !== '' &&
-      !isLikelyIconSrc(img.src)
+
+    const imagesWithoutAlt = images.filter(
+      img =>
+        (!img.alt || img.alt === '(missing alt text)') &&
+        img.src &&
+        img.src.trim() !== '' &&
+        !isLikelyIconSrc(img.src)
     );
     const allHaveAlt = imagesWithoutAlt.length === 0;
-    
+
     const genericImageNames = data.qualityChecks?.genericImageNames || [];
     if (imagesWithoutAlt.length > 5 || genericImageNames.length > 5) {
-      ExportImagesReport.export(data, imagesWithoutAlt, genericImageNames, filenameBrand, this.downloadFile.bind(this));
+      ExportImagesReport.export(
+        data,
+        imagesWithoutAlt,
+        genericImageNames,
+        filenameBrand,
+        this.downloadFile.bind(this)
+      );
       checks.push({
         passed: false,
         message: `${imagesWithoutAlt.length} image(s) missing alt text. See downloaded Images Analysis report.`,
-        details: []
+        details: [],
       });
     } else {
       checks.push({
         passed: allHaveAlt,
-        message: allHaveAlt ? 'All images have alt text' : `${imagesWithoutAlt.length} image(s) missing alt text`,
-        details: allHaveAlt ? [] : imagesWithoutAlt.map(img => ({
-          url: img.url || window.location.href,
-          page: img.navigationName || 'Unknown',
-          description: `Image missing alt text: <a href="${img.src}" target="_blank" style="color: #667eea; text-decoration: underline;">${img.src || 'Unknown source'}</a>`
-        }))
+        message: allHaveAlt
+          ? 'All images have alt text'
+          : `${imagesWithoutAlt.length} image(s) missing alt text`,
+        details: allHaveAlt
+          ? []
+          : imagesWithoutAlt.map(img => ({
+              url: img.url || window.location.href,
+              page: img.navigationName || 'Unknown',
+              description: `Image missing alt text: <a href="${img.src}" target="_blank" style="color: #667eea; text-decoration: underline;">${img.src || 'Unknown source'}</a>`,
+            })),
       });
     }
     if (allHaveAlt) passedCount++;
-    
+
     // Check 7: Generic Image File Names
     const allDescriptiveNames = genericImageNames.length === 0;
-    
+
     if (genericImageNames.length > 5) {
       // Will be included in Images Analysis report
       checks.push({
         passed: false,
         message: `${genericImageNames.length} image(s) have generic file names. See downloaded Images Analysis report.`,
-        details: []
+        details: [],
       });
     } else {
       checks.push({
         passed: allDescriptiveNames,
-        message: allDescriptiveNames ? 'All images have descriptive file names' : `${genericImageNames.length} image(s) have generic file names`,
-        details: allDescriptiveNames ? [] : genericImageNames.map(img => ({
-          url: img.url,
-          page: img.navigationName || 'Unknown',
-          description: `${img.filename} (${img.pattern})`
-        }))
+        message: allDescriptiveNames
+          ? 'All images have descriptive file names'
+          : `${genericImageNames.length} image(s) have generic file names`,
+        details: allDescriptiveNames
+          ? []
+          : genericImageNames.map(img => ({
+              url: img.url,
+              page: img.navigationName || 'Unknown',
+              description: `${img.filename} (${img.pattern})`,
+            })),
       });
     }
     if (allDescriptiveNames) passedCount++;
-    
+
     // Check 8: Color Consistency
     if (data.colorData && data.colorData.colors) {
       const analysis = window.ExportStyleGuideColorsReport.analyzeColorConsistency(data);
       const colorScore = analysis.score;
-      
+
       if (colorScore < 7) {
         checks.push({
           passed: false,
@@ -491,14 +554,14 @@ const ExportHTMLReports = {
           details: analysis.issues.concat(analysis.warnings).map(issue => ({
             url: data.metadata?.url || '',
             page: 'All Pages',
-            description: issue
-          }))
+            description: issue,
+          })),
         });
       } else {
         checks.push({
           passed: true,
           message: `Color Consistency Score: ${colorScore}/10. See Brand Style Guide Colors report for details.<br />Also, includes Quality Check for Accessibility for color contrast between text and background colors.`,
-          details: []
+          details: [],
         });
         passedCount++;
       }
@@ -506,7 +569,7 @@ const ExportHTMLReports = {
       checks.push({
         passed: true,
         message: 'Color analysis data not available',
-        details: []
+        details: [],
       });
       passedCount++;
     }
@@ -522,7 +585,7 @@ const ExportHTMLReports = {
       checks.push({
         passed: true,
         message: 'Mobile Usability was not analyzed',
-        details: []
+        details: [],
       });
       // Note: No passedCount++ here - we exclude this from the calculation entirely
     } else {
@@ -539,23 +602,24 @@ const ExportHTMLReports = {
 
       checks.push({
         passed: !hasMobileIssues,
-        message: mobileIssues.length === 0
-          ? 'Mobile Usability checks passed - no issues detected'
-          : hasMobileIssues
-            ? `Mobile Usability issues found (${mobileErrors.length} errors, ${mobileWarnings.length} warnings)${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} issues. Click the Mobile Report button to export the full report.` : ''}`
-            : `Mobile Usability warnings found (${mobileWarnings.length})${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} warnings. Click the Mobile Report button to export the full report.` : ''}`,
+        message:
+          mobileIssues.length === 0
+            ? 'Mobile Usability checks passed - no issues detected'
+            : hasMobileIssues
+              ? `Mobile Usability issues found (${mobileErrors.length} errors, ${mobileWarnings.length} warnings)${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} issues. Click the Mobile Report button to export the full report.` : ''}`
+              : `Mobile Usability warnings found (${mobileWarnings.length})${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} warnings. Click the Mobile Report button to export the full report.` : ''}`,
         details: displayedIssues.map(issue => ({
           url: issue.url,
           page: issue.navigationName || 'Unknown',
-          description: ExportMobileReport.formatIssueDescription(issue)
-        }))
+          description: ExportMobileReport.formatIssueDescription(issue),
+        })),
       });
 
       if (!hasMobileIssues) passedCount++;
     }
 
     const score = Math.round((passedCount / totalChecks) * 100);
-    
+
     return { score, checks };
   },
 
@@ -563,11 +627,11 @@ const ExportHTMLReports = {
   // QUALITY CHECK REPORT EXPORT
   // ============================================
 
-  exportQualityCheckReport: function(data, checkType, issues, domain, filenameBrand) {
+  exportQualityCheckReport: function (data, checkType, issues, domain, filenameBrand) {
     let reportTitle = '';
     let checkDescription = '';
     let iconEmoji = '';
-    
+
     if (checkType === 'missingH1') {
       iconEmoji = '❌';
       reportTitle = `${domain} Missing H1`;
@@ -585,7 +649,7 @@ const ExportHTMLReports = {
       reportTitle = `${domain} Style Inconsistency`;
       checkDescription = 'Style Inconsistency Issues';
     }
-    
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -628,16 +692,33 @@ const ExportHTMLReports = {
           </tr>
         </thead>
         <tbody>
-          ${issues.sort((a, b) => a.url.localeCompare(b.url)).map(issue => `
+          ${issues
+            .sort((a, b) => a.url.localeCompare(b.url))
+            .map(
+              issue => `
             <tr>
               <td><a href="${issue.url}" target="_blank">${issue.url}</a></td>
               <td>${issue.description || issue.issue || 'Issue detected'}</td>
             </tr>
-          `).join('')}
+          `
+            )
+            .join('')}
         </tbody>
       </table>
     </div>
   </div>
+  <script>
+    // Accordion functionality
+    document.addEventListener('click', function(e) {
+      const header = e.target.closest('.accordion-header');
+      if (header) {
+        const container = header.closest('.accordion-container');
+        if (container) {
+          container.classList.toggle('open');
+        }
+      }
+    });
+  </script>
 </body>
 </html>`;
 
@@ -649,14 +730,14 @@ const ExportHTMLReports = {
   // HTML SECTION GENERATORS WITH NAVIGATION
   // ============================================
 
-  generateHTMLSectionWithSubheadersAndNav: function(sectionName, dataObj, showText, navOrder) {
+  generateHTMLSectionWithSubheadersAndNav: function (sectionName, dataObj, showText, navOrder) {
     if (!dataObj || Object.keys(dataObj).length === 0) {
       return `<p style="color: #718096;">No data found for this section.</p>`;
     }
 
     const self = this;
     let html = '';
-    
+
     // Use ordered entries for Buttons, otherwise use Object.entries
     let entries;
     if (sectionName === 'Buttons') {
@@ -668,63 +749,80 @@ const ExportHTMLReports = {
     } else {
       entries = Object.entries(dataObj);
     }
-    
+
     for (const [itemName, itemData] of entries) {
       if (!itemData.locations || itemData.locations.length === 0) continue;
-      
+
       const anchorId = sectionName === 'Buttons' ? `button-${itemName}` : itemName;
       const nextSectionId = this.getNextSection(anchorId, navOrder);
-      
+
       // Use displayName if available (for Links), otherwise format itemName
       const displayLabel = itemData.displayName || itemName.toUpperCase().replace(/-/g, ' ');
-      
+
       html += `<div style="margin-bottom: 40px;">`;
       html += this.generateSubsectionHeaderWithNav(
-        anchorId, 
-        displayLabel, 
+        anchorId,
+        displayLabel,
         itemData.locations.length,
         nextSectionId
       );
-      
+
       html += `<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #667eea;">`;
       html += `<div class="locations">`;
-      
+
       // Group locations by URL + styleDefinition
       const groupedLocations = this.groupLocationsByUrlAndStyle(itemData.locations);
-      
+
       for (const group of groupedLocations) {
         // Determine if we have multiple style groups for this URL - find all differing properties
-        const allDifferingProps = groupedLocations.length > 1 
-          ? StyleComparisonUtils.getAllDifferingProperties(groupedLocations) 
-          : [];
-        
+        const allDifferingProps =
+          groupedLocations.length > 1
+            ? StyleComparisonUtils.getAllDifferingProperties(groupedLocations)
+            : [];
+
         if (group.instances.length === 1) {
           // Single instance - no accordion needed
           const location = group.instances[0];
-          html += `<div class="location">`;
+          html += `<div class="location" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">`;
+          html += `<div style="flex: 1;">`;
           html += `<div class="location-header">📍 ${self.escapeHtml(location.navigationName || 'Unknown')} — <a href="${self.escapeHtml(location.url)}" target="_blank" style="color: #667eea; text-decoration: underline;">${self.escapeHtml(location.url)}</a></div>`;
-          
+
           if (showText && location.text) {
             const displayText = self.escapeHtml(location.text.substring(0, 150));
             html += `<div class="location-text">"${displayText}${location.text.length > 150 ? '...' : ''}"</div>`;
           }
-          
+
           if (location.styleDefinition) {
             // Highlight differing properties if there are multiple style groups on this page
-            const formattedStyle = allDifferingProps.length > 0
-              ? StyleComparisonUtils.formatStyleWithDifferences(location.styleDefinition, allDifferingProps, self.escapeHtml.bind(self))
-              : StyleComparisonUtils.formatStyleWithoutColors(location.styleDefinition, self.escapeHtml.bind(self));
+            const formattedStyle =
+              allDifferingProps.length > 0
+                ? StyleComparisonUtils.formatStyleWithDifferences(
+                    location.styleDefinition,
+                    allDifferingProps,
+                    self.escapeHtml.bind(self)
+                  )
+                : StyleComparisonUtils.formatStyleWithoutColors(
+                    location.styleDefinition,
+                    self.escapeHtml.bind(self)
+                  );
             html += `<div class="location-style">Style: ${formattedStyle}</div>`;
           }
-          
+          html += `</div>`;
+          if (location.selector) {
+            html += `<a href="${location.url}${location.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(location.selector)}" 
+                        target="_blank" 
+                        style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold; flex-shrink: 0;">
+                        🔍 Locate
+                     </a>`;
+          }
           html += `</div>`;
         } else {
           // Multiple instances with same style - use accordion
           const uniqueId = 'accordion-' + Math.random().toString(36).substr(2, 9);
           const firstLocation = group.instances[0];
-          
+
           html += `<div class="location accordion-container">`;
-          html += `<div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">`;
+          html += `<div class="accordion-header">`;
           html += `<div class="accordion-title">`;
           html += `<span class="accordion-label">📍 ${self.escapeHtml(firstLocation.navigationName || 'Unknown')} — <a href="${self.escapeHtml(firstLocation.url)}" target="_blank" style="color: #667eea; text-decoration: underline;" onclick="event.stopPropagation();">${self.escapeHtml(firstLocation.url)}</a></span>`;
           html += `<span class="accordion-icon">▶</span>`;
@@ -732,55 +830,71 @@ const ExportHTMLReports = {
           html += `</div>`;
           if (firstLocation.styleDefinition) {
             // Highlight differing properties if there are multiple style groups on this page
-            const formattedStyle = allDifferingProps.length > 0
-              ? StyleComparisonUtils.formatStyleWithDifferences(firstLocation.styleDefinition, allDifferingProps, self.escapeHtml.bind(self))
-              : StyleComparisonUtils.formatStyleWithoutColors(firstLocation.styleDefinition, self.escapeHtml.bind(self));
+            const formattedStyle =
+              allDifferingProps.length > 0
+                ? StyleComparisonUtils.formatStyleWithDifferences(
+                    firstLocation.styleDefinition,
+                    allDifferingProps,
+                    self.escapeHtml.bind(self)
+                  )
+                : StyleComparisonUtils.formatStyleWithoutColors(
+                    firstLocation.styleDefinition,
+                    self.escapeHtml.bind(self)
+                  );
             html += `<div class="location-style" style="margin-top: 8px;">Style: ${formattedStyle}</div>`;
           }
           html += `</div>`;
-          
+
           html += `<div class="accordion-content">`;
           for (let i = 0; i < group.instances.length; i++) {
             const location = group.instances[i];
-            html += `<div class="accordion-item">`;
+            html += `<div class="accordion-item" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">`;
+            html += `<div style="display: flex; gap: 10px; flex: 1;">`;
             html += `<div class="accordion-item-number">#${i + 1}</div>`;
-            
+
             if (showText && location.text) {
               const displayText = self.escapeHtml(location.text.substring(0, 150));
               html += `<div class="location-text">"${displayText}${location.text.length > 150 ? '...' : ''}"</div>`;
             }
-            
+            html += `</div>`;
+            if (location.selector) {
+              html += `<a href="${location.url}${location.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(location.selector)}" 
+                          target="_blank" 
+                          style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.7rem; font-weight: bold; flex-shrink: 0;">
+                          🔍 Locate
+                       </a>`;
+            }
             html += `</div>`;
           }
           html += `</div>`;
           html += `</div>`;
         }
       }
-      
+
       html += `</div></div></div>`;
     }
-    
+
     return html;
   },
 
   // Group locations by URL and styleDefinition
-  groupLocationsByUrlAndStyle: function(locations) {
+  groupLocationsByUrlAndStyle: function (locations) {
     const groups = {};
-    
+
     for (const location of locations) {
       const key = (location.url || '') + '|||' + (location.styleDefinition || '');
-      
+
       if (!groups[key]) {
         groups[key] = {
           url: location.url,
           styleDefinition: location.styleDefinition,
-          instances: []
+          instances: [],
         };
       }
-      
+
       groups[key].instances.push(location);
     }
-    
+
     // Convert to array and sort by URL
     return Object.values(groups).sort((a, b) => (a.url || '').localeCompare(b.url || ''));
   },
@@ -789,7 +903,7 @@ const ExportHTMLReports = {
   // MAIN HTML REPORT EXPORT
   // ============================================
 
-  export: function(accumulatedResults, filenameBrand, showSuccess, showError) {
+  export: function (accumulatedResults, filenameBrand, showSuccess, showError) {
     if (!accumulatedResults) {
       customAlert('No data to export. Please analyze a page first.');
       return;
@@ -798,17 +912,21 @@ const ExportHTMLReports = {
     const data = accumulatedResults;
     const domain = data.metadata.domain.replace(/^www\./, '');
     const pagesAnalyzed = data.metadata.pagesAnalyzed || [];
-    
+
     const qualityChecks = this.calculateQualityChecks(data, filenameBrand);
     const qualityScore = qualityChecks.score;
-    const scoreColor = qualityScore === 100 ? '#48bb78' : qualityScore >= 80 ? '#ed8936' : '#e53e3e';
+    const scoreColor =
+      qualityScore === 100 ? '#48bb78' : qualityScore >= 80 ? '#ed8936' : '#e53e3e';
     const self = this;
-    
+
     // Build navigation order for all sections and subsections
     const navOrder = this.buildNavigationOrder(data);
-    
+
     // Generate aggregated styles report content
-    const aggregatedReportContent = ExportAggregatedStylesReport.generate(data, this.escapeHtml.bind(this));
+    const aggregatedReportContent = ExportAggregatedStylesReport.generate(
+      data,
+      this.escapeHtml.bind(this)
+    );
     const aggregatedTOC = ExportAggregatedStylesReport.generateTOC(data);
 
     const html = `<!DOCTYPE html>
@@ -894,29 +1012,31 @@ const ExportHTMLReports = {
       <h2>Quality Score</h2>
       <div class="score-circle">${qualityScore}%</div>
       <div class="quality-checks">
-        ${qualityChecks.checks.map(check => {
-          let checkHtml = `<div class="quality-check ${check.passed ? 'pass' : 'fail'}">${check.message}`;
-          
-          if (check.details && check.details.length > 0) {
-            checkHtml += `<div class="quality-details">`;
-            for (const detail of check.details) {
-              checkHtml += `<div class="quality-detail-item">`;
-              if (detail.page && detail.page !== 'All Pages' && detail.url) {
-                checkHtml += `<a href="${self.escapeHtml(detail.url)}" target="_blank" class="quality-url">${self.escapeHtml(detail.page)}</a> - `;
-              }
-              if (detail.description && detail.description.includes('<a href=')) {
-                checkHtml += detail.description;
-              } else {
-                checkHtml += self.escapeHtml(detail.description);
+        ${qualityChecks.checks
+          .map(check => {
+            let checkHtml = `<div class="quality-check ${check.passed ? 'pass' : 'fail'}">${check.message}`;
+
+            if (check.details && check.details.length > 0) {
+              checkHtml += `<div class="quality-details">`;
+              for (const detail of check.details) {
+                checkHtml += `<div class="quality-detail-item">`;
+                if (detail.page && detail.page !== 'All Pages' && detail.url) {
+                  checkHtml += `<a href="${self.escapeHtml(detail.url)}" target="_blank" class="quality-url">${self.escapeHtml(detail.page)}</a> - `;
+                }
+                if (detail.description && detail.description.includes('<a href=')) {
+                  checkHtml += detail.description;
+                } else {
+                  checkHtml += self.escapeHtml(detail.description);
+                }
+                checkHtml += `</div>`;
               }
               checkHtml += `</div>`;
             }
+
             checkHtml += `</div>`;
-          }
-          
-          checkHtml += `</div>`;
-          return checkHtml;
-        }).join('')}
+            return checkHtml;
+          })
+          .join('')}
       </div><br />
 				<div class="metadata" style="background: #667EEA; padding: 10px; margin-bottom: 20px;"><div class="metadata-item" style="font-size: 0.9rem;">NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization. We also want you to know that Squarespace code is not always easy to analyze. Our coding in this extension includes numerous situations to catch all possibilities for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.</div>
 				</div>
@@ -1005,13 +1125,25 @@ const ExportHTMLReports = {
     
     ${ExportPageByPageReport.generate(data, this.escapeHtml.bind(this))}
   </div>
+  <script>
+    // Accordion functionality
+    document.addEventListener('click', function(e) {
+      const header = e.target.closest('.accordion-header');
+      if (header) {
+        const container = header.closest('.accordion-container');
+        if (container) {
+          container.classList.toggle('open');
+        }
+      }
+    });
+  </script>
 </body>
 </html>`;
 
     const filename = `${domain} ${filenameBrand} website analysis.html`;
     this.downloadFile(html, filename, 'text/html');
-    showSuccess('HTML Report exported successfully!');
-  }
+    showSuccess('✅ Website Analysis report exported successfully!');
+  },
 };
 
 // Make globally available

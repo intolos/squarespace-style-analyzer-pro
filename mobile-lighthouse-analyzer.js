@@ -23,7 +23,7 @@ var MobileLighthouseAnalyzer = (function () {
     'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36';
 
   var LIGHTHOUSE_THRESHOLDS = {
-    minTapTargetSize: 24, // Lighthouse v12+ uses axe-core target-size: 24x24px minimum (WCAG 2.2 Level AA)
+    minTapTargetSize: 16, // User requested 16px as the minimum standard
     minTapTargetSpacing: 8, // Lighthouse uses 8px minimum spacing
     // NOTE: Font-size audit was removed in Lighthouse v12+ (no replacement, no WCAG pixel-based requirement)
   };
@@ -32,13 +32,13 @@ var MobileLighthouseAnalyzer = (function () {
   // MAIN ANALYSIS FUNCTION
   // ============================================
 
-  function analyzePage(tabId, pageUrl) {
+  function analyzePage(tabId, pageUrl, additionalIssues = []) {
     return new Promise(function (resolve, reject) {
-      analyzePageAsync(tabId, pageUrl).then(resolve).catch(reject);
+      analyzePageAsync(tabId, pageUrl, additionalIssues).then(resolve).catch(reject);
     });
   }
 
-  async function analyzePageAsync(tabId, pageUrl) {
+  async function analyzePageAsync(tabId, pageUrl, additionalIssues = []) {
     var results = {
       url: pageUrl, // Use passed URL directly
       viewport: null,
@@ -68,18 +68,21 @@ var MobileLighthouseAnalyzer = (function () {
       // Step 6: Run all checks
       results.viewport = await checkViewport(tabId);
       results.tapTargets = await checkTapTargets(tabId);
-      // Font-size check removed (Lighthouse v12+ removed this audit)
       results.contentWidth = await checkContentWidth(tabId);
       results.imageSizing = await checkImageSizing(tabId);
 
-      // Step 7: Reset viewport to desktop BEFORE detaching
-      await resetToDesktopView(tabId);
+      /* 
+      // DISABLED: Using Option 1 "Live Inspector" instead of static screenshots
+      // Step 7: Reset viewport to a stable desktop view BEFORE detaching
+      await setStableDesktopViewport(tabId);
       await delay(1000); // Give desktop layout time to settle
 
       // Step 8: Capture screenshots in Desktop View
-      if (results.tapTargets.length > 0) {
-        await captureDesktopScreenshots(tabId, results.tapTargets);
+      const allIssuesToScreenshot = results.tapTargets.concat(additionalIssues || []);
+      if (allIssuesToScreenshot.length > 0) {
+        await captureDesktopScreenshots(tabId, allIssuesToScreenshot);
       }
+      */
 
       // Step 9: Detach debugger
       await detachDebugger(tabId);
@@ -130,6 +133,16 @@ var MobileLighthouseAnalyzer = (function () {
   function setMobileUserAgent(tabId) {
     return sendDebuggerCommand(tabId, 'Emulation.setUserAgentOverride', {
       userAgent: MOBILE_USER_AGENT,
+    });
+  }
+
+  function setStableDesktopViewport(tabId) {
+    // Fixed 1280x800 desktop viewport for stable reporting
+    return sendDebuggerCommand(tabId, 'Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
     });
   }
 
@@ -241,11 +254,6 @@ var MobileLighthouseAnalyzer = (function () {
   }
 
   // ============================================
-  // FONT SIZE CHECK - REMOVED
-  // ============================================
-  // Font-size audit was removed in Lighthouse v12+ with no replacement.
-
-  // ============================================
   // CONTENT WIDTH CHECK (Lighthouse: checks for horizontal scroll)
   // ============================================
 
@@ -289,6 +297,7 @@ var MobileLighthouseAnalyzer = (function () {
 
   return {
     analyzePage: analyzePage,
+    captureDesktopScreenshots: captureDesktopScreenshots, // Expose for color analyzer
     LIGHTHOUSE_THRESHOLDS: LIGHTHOUSE_THRESHOLDS,
     MOBILE_USER_AGENT: MOBILE_USER_AGENT,
   };

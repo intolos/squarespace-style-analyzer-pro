@@ -17,8 +17,6 @@ var MobileResultsConverter = (function () {
     // Convert tap target issues
     convertTapTargetIssues(lighthouseResults.tapTargets, issues, pageUrl);
 
-    // Font size check removed (Lighthouse v12+ removed this audit)
-
     // Convert content width issues
     convertContentWidthIssues(lighthouseResults.contentWidth, issues, pageUrl);
 
@@ -118,10 +116,10 @@ var MobileResultsConverter = (function () {
           block: 'interactive-element',
           details: {
             actual: issue.width + 'x' + issue.height + 'px',
-            recommended:
-              '≥' + issue.minRequired + 'x' + issue.minRequired + 'px (accessibility standard)',
+            recommended: '≥' + issue.minRequired + 'x' + issue.minRequired + 'px',
             width: issue.width,
             height: issue.height,
+            fontSize: issue.fontSize,
             href: issue.href || null,
           },
           elementScreenshot: issue.elementScreenshot || null,
@@ -151,12 +149,6 @@ var MobileResultsConverter = (function () {
       }
     }
   }
-
-  // ============================================
-  // FONT SIZE CONVERSION - REMOVED
-  // ============================================
-  // Font-size audit was removed in Lighthouse v12+ with no replacement.
-  // No WCAG pixel-based font size requirement exists.
 
   // ============================================
   // CONTENT WIDTH CONVERSION
@@ -198,6 +190,7 @@ var MobileResultsConverter = (function () {
         navigationName: new URL(pageUrl).pathname,
         section: 'body',
         block: 'image',
+        selector: issue.selector,
         details: {
           src: issue.src,
           displaySize: issue.displaySize,
