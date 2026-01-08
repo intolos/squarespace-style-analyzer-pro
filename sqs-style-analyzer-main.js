@@ -295,6 +295,7 @@
               page: window.location.href,
               pageTitle: document.title || 'Unknown',
               location: selector,
+              selector: selector,
               elementText: elementText,
               section: 'N/A',
               block: 'N/A',

@@ -172,21 +172,18 @@ const ExportImagesReport = {
                 </div>`
                     : ''
                 }
-                <div>
-                  ${
-                    img.selector
-                      ? `
-                  <div class="item-label">Inspect</div>
-                  <div class="item-value">
-                    <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
-                       target="_blank" 
-                       style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
-                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
-                    </a>
-                  </div>`
-                      : ''
-                  }
-                </div>
+                ${
+                  img.selector
+                    ? `
+                <div style="margin-left: auto; align-self: center;">
+                  <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                     target="_blank" 
+                     style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
+                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
+                  </a>
+                </div>`
+                    : ''
+                }
               </div>
             </div>
           `
@@ -236,10 +233,6 @@ const ExportImagesReport = {
                   <div class="item-value"><a href="${img.src}" target="_blank">${img.src}</a></div>
                 </div>
                 <div>
-                  <div class="item-label">Filename</div>
-                  <div class="item-value">${img.filename}</div>
-                </div>
-                <div>
                   <div class="item-label">Pattern</div>
                   <div class="item-value"><span class="pattern-badge">${img.pattern}</span></div>
                 </div>
@@ -256,21 +249,18 @@ const ExportImagesReport = {
                 </div>`
                     : ''
                 }
-                <div>
-                  ${
-                    img.selector
-                      ? `
-                  <div class="item-label">Inspect</div>
-                  <div class="item-value">
-                    <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
-                       target="_blank" 
-                       style="display: inline-block; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
-                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
-                    </a>
-                  </div>`
-                      : ''
-                  }
-                </div>
+                ${
+                  img.selector
+                    ? `
+                <div style="margin-left: auto; align-self: center;">
+                  <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                     target="_blank" 
+                     style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
+                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
+                  </a>
+                </div>`
+                    : ''
+                }
               </div>
             </div>
           `

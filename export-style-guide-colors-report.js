@@ -983,7 +983,7 @@ class ExportStyleGuideColorsReport {
         </p>
       </div>
       <div class="accordion-container">
-        <div class="accordion-header">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open');">
           <div class="accordion-title">
             <span class="accordion-icon">▶</span>
             <span class="accordion-count">${analysis.contrastFailures.length} issues</span>
@@ -1291,7 +1291,7 @@ class ExportStyleGuideColorsReport {
     <div class="section">
       <p style="color: #718096; margin-bottom: 20px;">Shows which colors appear on each page of your site.</p>
       <div class="accordion-container">
-        <div class="accordion-header">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open');">
           <div class="accordion-title">
             <span class="accordion-icon">▶</span>
             <span class="accordion-count">${pageCount} pages</span>
