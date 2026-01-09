@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Page 2 - Full Error Coverage</title>
+    <!-- ERROR: Viewport Blocks Zoom (Mobile Check 3/9) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ERROR: Multiple H1s (Heading Check 2/4) - Three H1 tags -->
+    <header>
+        <h1>Test Page 2 - First H1</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="page2.html">Page 2</a></li>
+                <li><a href="page3.html">Page 3</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1>Second H1 on Same Page</h1>
+        
+        <h2>1. Images Report Errors</h2>
+        <h3>Empty Alt Attribute & Generic Filename</h3>
+        <!-- ERROR: alt="" (empty) + Generic Filename DSC_0002.png -->
+        <img src="DSC_0002.png" alt="" data-image-dimensions="800x600" style="max-width: 100%;">
+        <p>Above image has EMPTY alt text (alt="") and generic filename (DSC_0002.png).</p>
+
+        <h3>Oversized Image for Mobile Optimization</h3>
+        <!-- ERROR: Image Sizing/Optimization (Mobile Check 9/9) -->
+        <!-- naturalWidth/displayWidth = 4000/300 = 13.3x ratio (> 3.5 threshold) -->
+        <img src="huge.png" data-image-dimensions="4000x3000" style="width:300px; height:auto;" alt="Huge oversized image">
+        <p>Above image is 4000x3000 displayed at 300px (13.3x oversized).</p>
+
+        <h1>Third H1 on Same Page</h1>
+
+        <h2>2. Colors Report Errors</h2>
+        <h3>Contrast Failure (Blue on Red)</h3>
+        <!-- ERROR: Contrast Ratio ~2.1:1 -->
+        <div class="contrast-fail-2">
+            This text represents a contrast failure (Blue #0000ff on Red #ff0000).
+        </div>
+
+        <h2>3. Mobile Report Errors</h2>
+        
+        <h3>Touch Target Too Small</h3>
+        <!-- ERROR: Touch Targets Too Small (Mobile Check 5/9) - 10x10px -->
+        <a href="#" style="width:10px; height:10px; display:inline-block; background:#999;"></a>
+        <p>Above link is only 10x10px (threshold is 16px).</p>
+
+        <h3>Touch Target Spacing Issues</h3>
+        <!-- ERROR: Touch Target Spacing (Mobile Check 6/9) -->
+        <!-- Two links 5px apart causes overlapping 24x24px finger areas -->
+        <p>
+            <a href="#link1" style="padding:5px; background:#ddd;">Link 1</a><span style="display:inline-block; width:5px;"></span><a href="#link2" style="padding:5px; background:#ddd;">Link 2</a>
+        </p>
+        <p>Above links are only 5px apart, causing finger area overlap.</p>
+
+        <h3>Content Width Overflow</h3>
+        <!-- ERROR: Content Width Issues + Horizontal Scrolling (Mobile Checks 7/9 + 8/9) -->
+        <pre style="white-space: nowrap; overflow-x: auto; background:#f9f9f9; padding:10px;">
+This is a very long line of code that will definitely overflow the viewport if it is set to 412px wide (mobile). It just keeps going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going and going.
+        </pre>
+
+        <h3>Font Size Too Small</h3>
+        <p style="font-size: 8px;">This text is 8px size (below 12px threshold).</p>
+    </div>
+</body>
+</html>

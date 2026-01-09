@@ -1,0 +1,98 @@
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f4f4f4;
+}
+
+header {
+  background: #333;
+  color: #fff;
+  padding: 10px 0;
+  text-align: center;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  text-align: center;
+}
+
+nav ul li {
+  display: inline;
+  margin: 0 10px;
+}
+
+nav a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.container {
+  background: #fff;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+/* Error Simulation Classes */
+.small-tap-target {
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  background: #ccc;
+  border: 1px solid #999;
+}
+
+.content-overflow {
+  width: 800px;
+  background: pink;
+  border: 1px solid red;
+}
+
+.small-font {
+  font-size: 10px;
+}
+
+.contrast-fail-1 {
+  color: #cccccc;
+  background-color: #ffffff;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.contrast-fail-2 {
+  color: #0000ff;
+  background-color: #ff0000;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.contrast-fail-3 {
+  color: #333333;
+  background-color: #000000;
+  padding: 10px;
+  font-size: 14px;
+}
+
+/* Heading Size Variations for Inconsistency Testing */
+.h2-size-1 {
+  font-size: 20px;
+}
+.h2-size-2 {
+  font-size: 22px;
+}
+.h2-size-3 {
+  font-size: 24px;
+}
+
+.h3-size-1 {
+  font-size: 18px;
+}
+.h3-size-2 {
+  font-size: 19px;
+}
+.h3-size-3 {
+  font-size: 21px;
+}

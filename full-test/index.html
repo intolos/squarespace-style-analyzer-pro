@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Home - Full Error Coverage Page 1</title>
+    <!-- ERROR: Missing Viewport Meta Tag (Mobile Check 1/9) -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ERROR: Missing H1 (Heading Check 1/4) -->
+    <header>
+        <h2>Test Page 1: Home</h2>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="page2.html">Page 2</a></li>
+                <li><a href="page3.html">Page 3</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>1. Images Report Errors</h2>
+        
+        <h3>Missing Alt Text (No alt attribute) & Generic Filename</h3>
+        <!-- ERROR: No alt attribute + Generic Filename IMG_0001.jpg -->
+        <!-- Using data-image-dimensions to simulate 800x600 for extension -->
+        <img src="IMG_0001.jpg" data-image-dimensions="800x600" style="max-width: 100%;">
+        <p>Above image has NO alt attribute and generic filename (IMG_0001.jpg).</p>
+
+        <h3>Oversized Image for Mobile Optimization</h3>
+        <!-- ERROR: Image Sizing/Optimization (Mobile Check 9/9) -->
+        <!-- naturalWidth/displayWidth = 3500/200 = 17.5x ratio (> 3.5 threshold) -->
+        <img src="large.jpg" data-image-dimensions="3500x2000" style="width:200px; height:auto;" alt="Large oversized image">
+        <p>Above image is 3500x2000 displayed at 200px (17.5x oversized).</p>
+
+        <h2>2. Colors Report Errors</h2>
+        <h3>Contrast Failure (Light Gray on White)</h3>
+        <!-- ERROR: Contrast Ratio ~1.6:1 -->
+        <div class="contrast-fail-1">
+            This text represents a contrast failure (Light Gray #cccccc on White #ffffff).
+        </div>
+
+        <h2>3. Mobile Report Errors</h2>
+        
+        <h3>Touch Target Too Small</h3>
+        <!-- ERROR: Touch Targets Too Small (Mobile Check 5/9) - 15x15px -->
+        <button class="small-tap-target" aria-label="Small Button"></button>
+        <p>Above button is only 15x15px (threshold is 16px).</p>
+
+        <h3>Content Width Overflow</h3>
+        <!-- ERROR: Content Width Issues + Horizontal Scrolling (Mobile Checks 7/9 + 8/9) -->
+        <!-- 800px width forces horizontal scroll on 412px mobile viewport -->
+        <div class="content-overflow">
+            This container forces the page to be 800px wide, causing horizontal scrolling on mobile devices (viewport is 412px).
+        </div>
+
+        <h3>Font Size Too Small</h3>
+        <!-- ERROR: Font size < 12px (legacy check, not in main 9 but still tested) -->
+        <p class="small-font">This text is 10px size (below 12px threshold).</p>
+    </div>
+</body>
+</html>

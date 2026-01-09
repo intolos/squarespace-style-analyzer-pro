@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Page 3 - Full Error Coverage</title>
+    <!-- ERROR: Viewport Limits Zoom (Mobile Check 4/9) - maximum-scale=2 (< 5) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="page2.html">Page 2</a></li>
+                <li><a href="page3.html">Page 3</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- ERROR: Broken Heading Hierarchy (Heading Check 3/4) - Instance 1: H1 -> H3 (skips H2) -->
+        <h1>Test Page 3: Hierarchy and Inconsistency Testing</h1>
+        <h3>This H3 comes right after H1 (skipped H2)</h3>
+        
+        <h2>1. Images Report Errors</h2>
+        <h3>Whitespace Alt Attribute & Generic Filename</h3>
+        <!-- ERROR: alt=" " (whitespace only) + Generic Filename Screen Shot... -->
+        <img src="Screen Shot 2023-01-01 at 10.00.00.png" alt=" " data-image-dimensions="800x600" style="max-width: 100%;">
+        <p>Above image has WHITESPACE-ONLY alt text (alt=" ") and generic filename (Screen Shot...).</p>
+
+        <h3>Oversized Image for Mobile Optimization</h3>
+        <!-- ERROR: Image Sizing/Optimization (Mobile Check 9/9) -->
+        <!-- naturalWidth/displayWidth = 2800/150 = 18.7x ratio (> 3.5 threshold) -->
+        <img src="oversized.jpg" data-image-dimensions="2800x2100" style="width:150px; height:auto;" alt="Oversized image">
+        <p>Above image is 2800x2100 displayed at 150px (18.7x oversized).</p>
+
+        <!-- ERROR: Broken Heading Hierarchy - Instance 2: H2 -> H4 (skips H3) -->
+        <h2 class="h2-size-1">2. Colors Report Errors</h2>
+        <h4>This H4 comes right after H2 (skipped H3)</h4>
+        
+        <h3>Contrast Failure (Dark Gray on Black)</h3>
+        <!-- ERROR: Contrast Ratio ~2.5:1 -->
+        <div class="contrast-fail-3">
+            This text represents a contrast failure (Dark Gray #333333 on Black #000000).
+        </div>
+
+        <!-- ERROR: Font Size Inconsistency (Heading Check 4/4) - H2 variations -->
+        <h2 class="h2-size-2">3. Mobile Report Errors (H2 at 22px)</h2>
+        
+        <h3 class="h3-size-1">Touch Target Too Small (H3 at 18px)</h3>
+        <!-- ERROR: Touch Targets Too Small (Mobile Check 5/9) - checkbox ~13px -->
+        <label>
+            <input type="checkbox"> Small Checkbox (default ~13px)
+        </label>
+
+        <h3 class="h3-size-2">Touch Target Spacing Issues (H3 at 19px)</h3>
+        <!-- ERROR: Touch Target Spacing (Mobile Check 6/9) - buttons with no margin -->
+        <button style="padding:8px;">Button 1</button><button style="padding:8px;">Button 2</button>
+        <p>Above buttons have no margin between them, causing finger area overlap.</p>
+
+        <h3 class="h3-size-3">Content Width Overflow (H3 at 21px)</h3>
+        <!-- ERROR: Content Width Issues + Horizontal Scrolling (Mobile Checks 7/9 + 8/9) -->
+        <table style="min-width: 600px; border-collapse: collapse; border: 1px solid #ccc;">
+            <tr>
+                <th style="border: 1px solid #ccc; padding: 8px;">Column 1</th>
+                <th style="border: 1px solid #ccc; padding: 8px;">Column 2</th>
+                <th style="border: 1px solid #ccc; padding: 8px;">Column 3</th>
+                <th style="border: 1px solid #ccc; padding: 8px;">Column 4</th>
+                <th style="border: 1px solid #ccc; padding: 8px;">Column 5</th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;">Data 1</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">Data 2</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">Data 3</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">Data 4</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">Data 5</td>
+            </tr>
+        </table>
+        <p>Above table forces 600px min-width, causing horizontal scroll on 412px mobile.</p>
+
+        <!-- ERROR: Broken Heading Hierarchy - Instance 3: H4 -> H6 (skips H5) -->
+        <h2 class="h2-size-3">4. Heading Hierarchy Test (H2 at 24px)</h2>
+        <h4>Font Size Testing Section</h4>
+        <h6>This H6 comes right after H4 (skipped H5)</h6>
+        
+        <p style="font-size: 11px;">This text is 11px size (below 12px threshold).</p>
+    </div>
+</body>
+</html>
