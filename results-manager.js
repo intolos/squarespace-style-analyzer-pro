@@ -26,18 +26,32 @@ const ResultsManager = {
   // RESULTS MERGING
   // ============================================
 
+  // Normalize pathname for consistent comparison
+  // Removes trailing slashes and ensures consistent format
+  normalizePath: function (pathname) {
+    if (!pathname) return '';
+    // Remove trailing slash (except for root path '/')
+    let normalized = pathname.replace(/\/+$/, '');
+    // Ensure we always have at least '/'
+    if (normalized === '') normalized = '/';
+    return normalized;
+  },
+
   // Merge new page results into accumulated results
   // Returns the merged results object
   mergeResults: function (accumulatedResults, newResults) {
     // If no accumulated results, use new results as base
     if (!accumulatedResults) {
       const merged = { ...newResults };
-      merged.metadata.pagesAnalyzed = [newResults.metadata.pathname];
+      merged.metadata.pagesAnalyzed = [this.normalizePath(newResults.metadata.pathname)];
       return { merged: merged, alreadyAnalyzed: false };
     }
 
-    // Check if page was already analyzed
-    if (accumulatedResults.metadata.pagesAnalyzed.includes(newResults.metadata.pathname)) {
+    // Normalize the new pathname for comparison
+    const normalizedNewPath = this.normalizePath(newResults.metadata.pathname);
+
+    // Check if page was already analyzed (using normalized paths)
+    if (accumulatedResults.metadata.pagesAnalyzed.includes(normalizedNewPath)) {
       return {
         merged: accumulatedResults,
         alreadyAnalyzed: true,
@@ -269,8 +283,10 @@ const ResultsManager = {
         accumulatedResults.qualityChecks[check].concat(newCheckData);
     }
 
-    // Add page to analyzed list
-    accumulatedResults.metadata.pagesAnalyzed.push(newResults.metadata.pathname);
+    // Add page to analyzed list (using normalized path)
+    accumulatedResults.metadata.pagesAnalyzed.push(
+      this.normalizePath(newResults.metadata.pathname)
+    );
 
     return { merged: accumulatedResults, alreadyAnalyzed: false };
   },
