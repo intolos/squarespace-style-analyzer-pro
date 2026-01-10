@@ -85,7 +85,7 @@ const ExportImagesReport = {
     .accordion-item { padding: 12px 15px; border-top: 1px solid #e2e8f0; }
     .accordion-item:hover { background: #f7fafc; }
     .item-row { display: grid; grid-template-columns: 1fr 200px 120px 150px 100px; gap: 15px; align-items: start; }
-    .item-row.alt-text { grid-template-columns: 1fr 150px 100px; }
+    .item-row.alt-text { grid-template-columns: 1fr 150px 120px 100px; }
     .item-label { font-size: 0.75rem; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
     .item-value { font-size: 0.9rem; color: #2d3748; word-break: break-all; }
     .item-value a { color: #667eea; text-decoration: none; }
@@ -163,27 +163,29 @@ const ExportImagesReport = {
                   <div class="item-label">Location</div>
                   <div class="item-value">${img.section || 'N/A'}${img.block ? ' / ' + img.block : ''}</div>
                 </div>
-                ${
-                  img.width && img.height
-                    ? `
                 <div>
+                  ${
+                    img.width && img.height
+                      ? `
                   <div class="item-label">Dimensions</div>
-                  <div class="item-value">${img.width}x${img.height}px</div>
-                </div>`
-                    : ''
-                }
-                ${
-                  img.selector
-                    ? `
-                <div style="margin-left: auto; align-self: center;">
-                  <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
-                     target="_blank" 
-                     style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
-                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
-                  </a>
-                </div>`
-                    : ''
-                }
+                  <div class="item-value">${img.width}x${img.height}px</div>`
+                      : ''
+                  }
+                </div>
+                <div>
+                  ${
+                    img.selector
+                      ? `
+                  <div style="display: flex; justify-content: flex-end; align-items: center; height: 100%;">
+                    <a href="${img.url}${img.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                       target="_blank" 
+                       style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
+                    </a>
+                  </div>`
+                      : ''
+                  }
+                </div>
               </div>
             </div>
           `

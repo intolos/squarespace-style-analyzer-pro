@@ -347,16 +347,37 @@ const ExportPageByPageReport = {
         <ul style="list-style: none; padding-left: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
     `;
 
+    // Pre-calculate H1 issues for efficiency
+    const missingH1Pages = (data.qualityChecks?.missingH1 || []).map(item =>
+      this.normalizeUrl(item.url)
+    );
+    const multipleH1Map = {};
+    (data.qualityChecks?.multipleH1 || []).forEach(item => {
+      multipleH1Map[this.normalizeUrl(item.url)] = item.count;
+    });
+
     for (let i = 0; i < pageUrls.length; i++) {
       const pageUrl = pageUrls[i];
       const pageData = pageDataMap[pageUrl];
       const pageName = pageData.navigationName || pageData.path || 'Unknown';
       const totalItems = this.countPageItems(pageData);
 
+      const hasNoH1 = missingH1Pages.includes(this.normalizeUrl(pageUrl));
+      const multipleH1Count = multipleH1Map[this.normalizeUrl(pageUrl)] || 0;
+
+      let errorBadge = '';
+      if (hasNoH1 && multipleH1Count > 0) {
+        errorBadge = ` <span style="color: #e53e3e; font-weight: bold; font-size: 0.8rem;">(No H1, Multiple H1: ${multipleH1Count})</span>`;
+      } else if (hasNoH1) {
+        errorBadge = ` <span style="color: #e53e3e; font-weight: bold; font-size: 0.8rem;">(No H1)</span>`;
+      } else if (multipleH1Count > 0) {
+        errorBadge = ` <span style="color: #e53e3e; font-weight: bold; font-size: 0.8rem;">(Multiple H1: ${multipleH1Count})</span>`;
+      }
+
       html += `
         <li style="margin: 0;">
           <a href="#page-${i}" style="color: #667eea; text-decoration: none; display: block; padding: 8px 12px; background: white; border-radius: 6px; border: 1px solid #e2e8f0; transition: all 0.2s;">
-            <strong>${escapeHtmlFn(pageName)}</strong>
+            <strong>${escapeHtmlFn(pageName)}</strong>${errorBadge}
             <div style="font-size: 0.8rem; color: #a0aec0;">${totalItems} items — ${escapeHtmlFn(pageData.fullUrl)}</div>
           </a>
         </li>

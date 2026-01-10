@@ -24,14 +24,13 @@
         
         <h3>Missing Alt Text (No alt attribute) & Generic Filename</h3>
         <!-- ERROR: No alt attribute + Generic Filename IMG_0001.jpg -->
-        <!-- Using data-image-dimensions to simulate 800x600 for extension -->
-        <img src="IMG_0001.jpg" data-image-dimensions="800x600" style="max-width: 100%;">
-        <p>Above image has NO alt attribute and generic filename (IMG_0001.jpg).</p>
+        <img src="IMG_0001.jpg" style="max-width: 100%;">
+        <p>Above image has NO alt attribute and generic filename (IMG_0001.jpg). It is a <a href="#">link inside a paragraph</a> to test link styling.</p>
 
         <h3>Oversized Image for Mobile Optimization</h3>
         <!-- ERROR: Image Sizing/Optimization (Mobile Check 9/9) -->
-        <!-- naturalWidth/displayWidth = 3500/200 = 17.5x ratio (> 3.5 threshold) -->
-        <img src="large.jpg" data-image-dimensions="3500x2000" style="width:200px; height:auto;" alt="Large oversized image">
+        <!-- 3500x2000 displayed at 200px = 17.5x ratio -->
+        <img src="large.jpg" style="width:200px; height:auto;" alt="Large oversized image">
         <p>Above image is 3500x2000 displayed at 200px (17.5x oversized).</p>
 
         <h2>2. Colors Report Errors</h2>
@@ -48,15 +47,19 @@
         <button class="small-tap-target" aria-label="Small Button"></button>
         <p>Above button is only 15x15px (threshold is 16px).</p>
 
+        <h3>Touch Target Spacing (Overlapping)</h3>
+        <!-- ERROR: Touch Target Spacing (Mobile Check 6/9) - 0px margin -->
+        <button style="padding:10px;">Btn A</button><button style="padding:10px; margin-left:-5px;">Btn B</button>
+        <p>Buttons overlap by 5px.</p>
+
         <h3>Content Width Overflow</h3>
         <!-- ERROR: Content Width Issues + Horizontal Scrolling (Mobile Checks 7/9 + 8/9) -->
-        <!-- 800px width forces horizontal scroll on 412px mobile viewport -->
-        <div class="content-overflow">
-            This container forces the page to be 800px wide, causing horizontal scrolling on mobile devices (viewport is 412px).
+        <!-- 1200px width forces horizontal scroll on mobile -->
+        <div class="content-overflow" style="width: 1200px;">
+            This container forces the page to be 1200px wide, causing horizontal scrolling on mobile devices (viewport is 412px).
         </div>
 
         <h3>Font Size Too Small</h3>
-        <!-- ERROR: Font size < 12px (legacy check, not in main 9 but still tested) -->
         <p class="small-font">This text is 10px size (below 12px threshold).</p>
     </div>
 </body>
