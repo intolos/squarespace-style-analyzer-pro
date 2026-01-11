@@ -29,7 +29,7 @@ const DomainAnalysisUI = {
         document.getElementById('analyzeDomainBtn').style.display = 'none';
         document.getElementById('cancelDomainBtn').style.display = 'block';
 
-        this.updateDomainProgress(data.domainAnalysisProgress);
+        this.updateDomainProgress(data.domainAnalysisProgress, data.isPremium);
         this.startProgressPolling(analyzer);
         this.checkForCompletion(analyzer, currentDomain, analyzer.isNewDomain);
       }
@@ -87,7 +87,8 @@ const DomainAnalysisUI = {
       // Free users flow
       if (
         !(await customConfirm(
-          `Analyze entire domain: ${currentDomain}\n\nThis will automatically analyze up to 10 pages found in the sitemap.\n\nYou can close this popup and continue working - the analysis will run in the background.\n\nContinue?`
+          `This will automatically analyze up to 10 pages found in the sitemap.\n\nYou can close this popup and continue working - the analysis will run in the background.\n\nIn the Premium version, the full domain is analyzed without page limitation. It includes an extra feature of being able to select pages for analysis. This is specifically helpful for larger websites where you are able to select groups of pages to analyze your entire site in sections if desired to save time.\n\nContinue?`,
+          'Analyze Entire Domain'
         ))
       ) {
         return;
@@ -247,6 +248,12 @@ const DomainAnalysisUI = {
 
     const maxPages = analyzer.isPremium ? 500 : 10;
 
+    // Reverted to original text as requested
+    const progressHeader = document.querySelector('#domainProgress h4');
+    if (progressHeader) {
+      progressHeader.textContent = '🔄 Analyzing Domain...';
+    }
+
     chrome.runtime.sendMessage({
       action: 'startDomainAnalysis',
       data: {
@@ -267,12 +274,15 @@ const DomainAnalysisUI = {
   // PROGRESS TRACKING
   // ============================================
 
-  startProgressPolling: function (analyzer) {
+  startProgressPolling: async function (analyzer) {
     this.stopProgressPolling();
+    // Fetch premium status once for the polling loop
+    const { isPremium } = await chrome.storage.local.get(['isPremium']);
+
     this.progressInterval = setInterval(async () => {
       const data = await chrome.storage.local.get(['domainAnalysisProgress']);
       if (data.domainAnalysisProgress) {
-        this.updateDomainProgress(data.domainAnalysisProgress);
+        this.updateDomainProgress(data.domainAnalysisProgress, isPremium);
       }
     }, 1000);
   },
@@ -284,17 +294,23 @@ const DomainAnalysisUI = {
     }
   },
 
-  updateDomainProgress: function (progress) {
+  updateDomainProgress: function (progress, isPremium) {
     const fill = document.getElementById('domainProgressFill');
     const text = document.getElementById('domainProgressText');
     const url = document.getElementById('domainProgressUrl');
 
     if (fill) {
-      fill.style.width = progress.percent + '%';
-      fill.textContent = Math.round(progress.percent) + '%';
+      fill.style.width = (progress.percent || 0) + '%';
+      fill.textContent = Math.round(progress.percent || 0) + '%';
     }
     if (text) text.textContent = `Page ${progress.current} of ${progress.total}`;
-    if (url) url.textContent = progress.url || 'Analyzing...';
+    if (url) {
+      let content = progress.url || 'Analyzing...';
+      if (!isPremium) {
+        content += ' (estimated 3-4 minutes)';
+      }
+      url.textContent = content;
+    }
   },
 
   checkForCompletion: function (analyzer, currentDomain, isNewDomain, mobileOnly = false) {
@@ -403,7 +419,7 @@ const DomainAnalysisUI = {
       }
 
       // Automatically export reports for any quality check errors
-      analyzer.autoExportReportsForQualityIssues();
+      // analyzer.autoExportReportsForQualityIssues();
       analyzer.trackUsage('domain_analysis_completed');
     }
 

@@ -494,8 +494,8 @@
 
         // Retry logic to handle slow-loading Squarespace components
         let attempts = 0;
-        const maxAttempts = 3;
-        const retryInterval = 1000;
+        const maxAttempts = 25;
+        const retryInterval = 200;
 
         const performInspection = () => {
           // Remove existing highlights
@@ -600,8 +600,8 @@
           }, 300);
         };
 
-        // Initial delay
-        setTimeout(performInspection, 1000);
+        // Start immediately
+        performInspection();
       }
     } catch (e) {
       console.warn('SSA: Error during auto-inspection', e);

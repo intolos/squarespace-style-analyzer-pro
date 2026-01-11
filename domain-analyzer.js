@@ -320,6 +320,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
   var self = this; // Capture this for use in nested functions
 
   for (var attempt = 0; attempt < timeouts.length; attempt++) {
+    if (self.shouldCancel) throw new Error('Analysis cancelled by user');
     var currentTimeout = timeouts[attempt];
     var timeoutSeconds = currentTimeout / 1000;
 
@@ -518,6 +519,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                       }
                     }, additionalDelay);
                   } catch (error) {
+                    if (self.shouldCancel) return;
                     setTimeout(async function () {
                       try {
                         var response;
@@ -709,6 +711,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
 
       if (attempt < timeouts.length - 1) {
         console.log('Retrying with ' + timeouts[attempt + 1] / 1000 + 's timeout...');
+        if (self.shouldCancel) throw new Error('Analysis cancelled by user');
         continue;
       }
     }

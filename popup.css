@@ -904,6 +904,7 @@ body {
   margin: 0 0 15px 0;
   font-size: 1.3rem;
   color: #2d3748;
+  text-align: center;
 }
 
 .custom-modal p {
@@ -972,6 +973,9 @@ body {
 
 .custom-modal-alert {
   white-space: pre-line;
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 .upgrade-buttons-row {

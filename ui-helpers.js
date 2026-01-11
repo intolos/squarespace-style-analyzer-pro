@@ -27,7 +27,7 @@ const UIHelpers = {
     });
   },
 
-  customConfirm: function (message) {
+  customConfirm: function (message, titleText = 'Confirm') {
     return new Promise(resolve => {
       const overlay = document.getElementById('customModalOverlay');
       const title = document.getElementById('customModalTitle');
@@ -35,7 +35,7 @@ const UIHelpers = {
       const input = document.getElementById('customModalInput');
       const buttons = document.getElementById('customModalButtons');
 
-      title.textContent = 'Confirm';
+      title.textContent = titleText;
       msg.textContent = message;
       input.style.display = 'none';
 

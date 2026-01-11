@@ -414,6 +414,7 @@ async function startDomainAnalysisInBackground(data) {
     domainAnalysisProgress: {
       current: 0,
       total: 0,
+      percent: 0,
       currentUrl: 'Fetching sitemap...',
     },
   });
@@ -574,6 +575,7 @@ async function startDomainAnalysisWithUrlsInBackground(data) {
     domainAnalysisProgress: {
       current: 0,
       total: urls.length,
+      percent: 0,
       currentUrl: 'Starting analysis...',
     },
   });

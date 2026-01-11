@@ -276,11 +276,20 @@ const ExportMobileReport = {
                     .map(
                       (issue, idx) => `
                     <div class="issue-item ${issue.severity}" style="margin-left: 0;">
-                      <div class="issue-header">
+                        <div style="flex: 1;">
+                          ${
+                            (issue.type === 'touch-target-too-small' ||
+                              issue.type === 'touch-target-spacing') &&
+                            issue.text
+                              ? `<span class="issue-element">#${idx + 1} - Link text: ${escapeHtmlFn(issue.text)}</span>`
+                              : `<span class="issue-element">#${idx + 1} - ${issue.element}</span>`
+                          }
+                          <span class="issue-severity ${issue.severity}">${issue.severity}</span>
+                        </div>
                         ${
                           issue.selector
                             ? `
-                          <div style="margin-right: 15px;">
+                          <div style="margin-left: 15px;">
                             <a href="${issue.url}${issue.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(issue.selector)}" 
                                target="_blank" 
                                class="live-inspect-btn"
@@ -293,16 +302,6 @@ const ExportMobileReport = {
                         `
                             : ''
                         }
-                        <div style="flex: 1;">
-                          ${
-                            (issue.type === 'touch-target-too-small' ||
-                              issue.type === 'touch-target-spacing') &&
-                            issue.text
-                              ? `<span class="issue-element">#${idx + 1} - Link text: ${escapeHtmlFn(issue.text)}</span>`
-                              : `<span class="issue-element">#${idx + 1} - ${issue.element}</span>`
-                          }
-                          <span class="issue-severity ${issue.severity}">${issue.severity}</span>
-                        </div>
                       </div>
                       ${
                         (issue.type === 'touch-target-too-small' ||
