@@ -110,6 +110,10 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
           results.push(pageResult);
         }
       } catch (error) {
+        if (this.shouldCancel || error.message === 'Analysis cancelled by user') {
+          console.log('Analysis cancelled by user during page analysis. Breaking...');
+          break;
+        }
         console.error('Failed to analyze ' + url + ':', error.message);
         this.failedPages.push({
           url: url,
@@ -128,10 +132,12 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
 
     if (mergedResults) {
       mergedResults.failedPages = this.failedPages;
+      if (this.shouldCancel) mergedResults.cancelled = true;
     }
 
     return {
       success: true,
+      cancelled: this.shouldCancel,
       data: mergedResults,
       stats: {
         totalPages: urlsToAnalyze.length,
@@ -141,6 +147,28 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
       },
     };
   } catch (error) {
+    if (this.shouldCancel || error.message === 'Analysis cancelled by user') {
+      console.log('Analysis loop interrupted by cancellation. Returning partial results.');
+
+      var mergedResults = this.mergeAllResults(results);
+      if (mergedResults) {
+        mergedResults.failedPages = this.failedPages;
+        mergedResults.cancelled = true;
+      }
+
+      return {
+        success: true,
+        cancelled: true,
+        data: mergedResults,
+        stats: {
+          totalPages: urlsToAnalyze ? urlsToAnalyze.length : 0,
+          successfulPages: results ? results.length : 0,
+          failedPages: this.failedPages ? this.failedPages.length : 0,
+          failedPagesList: this.failedPages || [],
+        },
+      };
+    }
+    console.error('Core analysis error:', error);
     throw error;
   } finally {
     this.isAnalyzing = false;
@@ -379,10 +407,12 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
 
                           try {
                             // Step 1: Run Lighthouse mobile analysis
+                            if (self.shouldCancel) throw new Error('Analysis cancelled by user');
                             const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(
                               tabId,
                               url
                             );
+                            if (self.shouldCancel) throw new Error('Analysis cancelled by user');
                             console.log('Lighthouse results:', lighthouseResults);
 
                             if (self.options.mobileOnly) {
@@ -611,6 +641,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
 
                               // Ensure content script is ready
                               await self.waitForContentScript(tabId);
+                              if (self.shouldCancel) throw new Error('Analysis cancelled by user');
 
                               const designResponse = await chrome.tabs.sendMessage(tabId, {
                                 action: 'analyzeStyles',
@@ -653,6 +684,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
 
                           // Ensure content script is ready
                           await self.waitForContentScript(tabId);
+                          if (self.shouldCancel) throw new Error('Analysis cancelled by user');
 
                           response = await chrome.tabs.sendMessage(tabId, {
                             action: 'analyzeStyles',
@@ -1078,8 +1110,20 @@ DomainAnalyzer.prototype.cancelAnalysis = function () {
 };
 
 DomainAnalyzer.prototype.delay = function (ms) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, ms);
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    var startTime = Date.now();
+    var checkInterval = setInterval(function () {
+      if (self.shouldCancel) {
+        clearInterval(checkInterval);
+        reject(new Error('Analysis cancelled by user'));
+        return;
+      }
+      if (Date.now() - startTime >= ms) {
+        clearInterval(checkInterval);
+        resolve();
+      }
+    }, 100);
   });
 };
 

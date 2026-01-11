@@ -355,40 +355,55 @@ const DomainAnalysisUI = {
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
 
-    if (result && result.success && result.data) {
-      // ALWAYS save results first
-      analyzer.accumulatedResults = result.data;
+    if (result && result.success) {
+      // Handle the case where result.data is null (e.g. cancelled with 0 pages completed)
+      const data = result.data || {
+        metadata: { url: currentDomain },
+        headings: {},
+        paragraphs: {},
+        buttons: {},
+        links: {},
+      };
+
+      // Save results
+      analyzer.accumulatedResults = data;
       await analyzer.saveAccumulatedResults();
+
+      // Display results section even for empty/cancelled results to show the state
+      analyzer.displayResults();
 
       // For mobile-only analysis, just display results (NO auto-export)
       if (mobileOnly) {
-        analyzer.displayResults();
+        if (!result.cancelled) {
+          if (!analyzer.isPremium && isNewDomain) {
+            analyzer.analyzedDomains.push(currentDomain);
+            analyzer.usageCount = analyzer.usageCount + 1;
+            await analyzer.saveUserData();
+            analyzer.updateUI();
+          }
 
-        if (!analyzer.isPremium && isNewDomain) {
-          analyzer.analyzedDomains.push(currentDomain);
-          analyzer.usageCount = analyzer.usageCount + 1;
-          await analyzer.saveUserData();
-          analyzer.updateUI();
-        }
-
-        const mobileIssues = result.data.mobileIssues?.issues || [];
-        if (mobileIssues.length > 0) {
-          analyzer.showSuccess(
-            `✅ Mobile analysis complete! Found ${mobileIssues.length} issue${mobileIssues.length === 1 ? '' : 's'}. Click the Mobile Report button to export.`
-          );
+          const mobileIssues = data.mobileIssues?.issues || [];
+          if (mobileIssues.length > 0) {
+            analyzer.showSuccess(
+              `✅ Mobile analysis complete! Found ${mobileIssues.length} issue${mobileIssues.length === 1 ? '' : 's'}. Click the Mobile Report button to export.`
+            );
+          } else {
+            analyzer.showSuccess(
+              '✅ Mobile analysis complete! No issues found. Click the Mobile Report button to view the report.'
+            );
+          }
         } else {
+          // Cancelled during mobile analysis
+          const pagesAnalyzed = result.stats ? result.stats.successfulPages : 0;
           analyzer.showSuccess(
-            '✅ Mobile analysis complete! No issues found. Click the Mobile Report button to view the report.'
+            `Analysis cancelled. ${pagesAnalyzed} page${pagesAnalyzed === 1 ? '' : 's'} analyzed before cancellation.`
           );
         }
-
         return;
       }
 
-      // For non-mobileOnly analysis, continue normally
-      analyzer.displayResults();
-
-      if (!analyzer.isPremium && isNewDomain) {
+      // Normal analysis (with or without mobile)
+      if (!result.cancelled && !analyzer.isPremium && isNewDomain) {
         analyzer.analyzedDomains.push(currentDomain);
         analyzer.usageCount = analyzer.usageCount + 1;
         await analyzer.saveUserData();
@@ -397,7 +412,7 @@ const DomainAnalysisUI = {
 
       // Show appropriate message based on whether it was cancelled
       if (result.cancelled) {
-        const pagesAnalyzed = result.stats.successfulPages;
+        const pagesAnalyzed = result.stats ? result.stats.successfulPages : 0;
         if (pagesAnalyzed > 0) {
           analyzer.showSuccess(
             `Analysis cancelled. Successfully analyzed ${pagesAnalyzed} page${pagesAnalyzed === 1 ? '' : 's'} before cancellation. Results are available for export.`
@@ -407,19 +422,17 @@ const DomainAnalysisUI = {
         }
       } else {
         // Normal completion message with failure count if any pages failed
-        if (result.stats.failedPages > 0) {
+        if (result.stats && result.stats.failedPages > 0) {
           analyzer.showSuccess(
             `Analyzed ${result.stats.successfulPages} of ${result.stats.totalPages} pages successfully (${result.stats.failedPages} failed). This can occur due to differences in how pages load during automated analysis versus in a browser. After reviewing your CSV file, you can retry each failed page individually using the 'Analyze This Page' button.`
           );
         } else {
           analyzer.showSuccess(
-            `Domain analysis complete! Analyzed ${result.stats.successfulPages} of ${result.stats.totalPages} pages successfully.`
+            `Domain analysis complete! Analyzed ${result.stats ? result.stats.successfulPages : ''} of ${result.stats ? result.stats.totalPages : ''} pages successfully.`
           );
         }
       }
 
-      // Automatically export reports for any quality check errors
-      // analyzer.autoExportReportsForQualityIssues();
       analyzer.trackUsage('domain_analysis_completed');
     }
 

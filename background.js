@@ -6,6 +6,8 @@ importScripts('mobile-lighthouse-analyzer.js');
 importScripts('mobile-results-converter.js');
 
 let domainAnalyzer = null;
+let lastScreenshotTime = 0;
+const SCREENSHOT_MIN_INTERVAL = 500; // ms between captures to stay under Chrome quota
 
 chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason === 'install') {
@@ -384,6 +386,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === 'captureScreenshot') {
     (async () => {
       try {
+        // Simple rate limiting
+        const now = Date.now();
+        const timeSinceLast = now - lastScreenshotTime;
+        if (timeSinceLast < SCREENSHOT_MIN_INTERVAL) {
+          await new Promise(resolve =>
+            setTimeout(resolve, SCREENSHOT_MIN_INTERVAL - timeSinceLast)
+          );
+        }
+        lastScreenshotTime = Date.now();
+
         const dataUrl = await chrome.tabs.captureVisibleTab(null, {
           format: 'png',
           quality: 100,

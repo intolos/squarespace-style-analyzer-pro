@@ -333,7 +333,14 @@ const ResultsManager = {
 
   // Display results in the popup UI
   displayResults: function (accumulatedResults) {
-    if (!accumulatedResults) return;
+    const resultsSectionEl = document.getElementById('resultsSection');
+    const pagesAnalyzedInfoEl = document.getElementById('pagesAnalyzedInfo');
+
+    if (!accumulatedResults) {
+      if (resultsSectionEl) resultsSectionEl.style.display = 'none';
+      if (pagesAnalyzedInfoEl) pagesAnalyzedInfoEl.style.display = 'none';
+      return;
+    }
 
     const counts = this.getCounts(accumulatedResults);
 
@@ -342,8 +349,6 @@ const ResultsManager = {
     const paragraphsCountEl = document.getElementById('paragraphsCount');
     const buttonsCountEl = document.getElementById('buttonsCount');
     const pagesCountEl = document.getElementById('pagesCount');
-    const pagesAnalyzedInfoEl = document.getElementById('pagesAnalyzedInfo');
-    const resultsSectionEl = document.getElementById('resultsSection');
 
     if (headingsCountEl) headingsCountEl.textContent = counts.headings;
     if (paragraphsCountEl) paragraphsCountEl.textContent = counts.paragraphs;
