@@ -287,6 +287,8 @@ class SquarespaceAnalyzer {
         'singlePageProgressText',
         'singlePageAnalysisResults',
         'singlePageAnalysisError',
+        'domainAnalysisMobileOnly',
+        'domainAnalysisUseMobileViewport',
       ]);
 
       // Show the analyze buttons again after reset

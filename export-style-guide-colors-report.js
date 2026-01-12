@@ -392,6 +392,44 @@ class ExportStyleGuideColorsReport {
     const colors = data.colorData.colors;
     const allColors = Object.keys(colors);
 
+    // Reconstruct devToolsColorSummary if missing (common in merged domain results)
+    if (!data.devToolsColorSummary) {
+      console.log('SSA: Reconstructing devToolsColorSummary for Style Guide...');
+      data.devToolsColorSummary = {
+        summary: { count: allColors.length, colors: allColors.sort() },
+        background: { count: 0, colors: [] },
+        text: { count: 0, colors: [] },
+        fill: { count: 0, colors: [] },
+        border: { count: 0, colors: [] },
+      };
+
+      for (const hex in colors) {
+        const usedAs = colors[hex].usedAs || [];
+        if (usedAs.includes('background')) {
+          data.devToolsColorSummary.background.colors.push(hex);
+          data.devToolsColorSummary.background.count++;
+        }
+        if (usedAs.includes('text')) {
+          data.devToolsColorSummary.text.colors.push(hex);
+          data.devToolsColorSummary.text.count++;
+        }
+        if (usedAs.includes('fill')) {
+          data.devToolsColorSummary.fill.colors.push(hex);
+          data.devToolsColorSummary.fill.count++;
+        }
+        if (usedAs.includes('border')) {
+          data.devToolsColorSummary.border.colors.push(hex);
+          data.devToolsColorSummary.border.count++;
+        }
+      }
+
+      // Sort sub-categories
+      data.devToolsColorSummary.background.colors.sort();
+      data.devToolsColorSummary.text.colors.sort();
+      data.devToolsColorSummary.fill.colors.sort();
+      data.devToolsColorSummary.border.colors.sort();
+    }
+
     // Build dynamic section order based on what data exists
     const sectionOrder = [];
     if (analysis.issues.length > 0) sectionOrder.push('issues-section');

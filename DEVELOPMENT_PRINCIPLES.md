@@ -455,6 +455,27 @@ const scale = Math.min(1, maxSize / Math.max(rect.width, rect.height));
 
 - [ ] Have I asked questions to clarify product requirements, technical requirements, engineering principles, and hard constraints?
 
+## Before Writing ANY Fix:
+
+1. **REPRODUCE & OBSERVE**
+   - [ ] Can I see the broken behavior myself?
+   - [ ] What does the ACTUAL output look like (HTML/DOM/console)?
+   - [ ] How does it differ from EXPECTED output?
+
+2. **COMPARE WORKING VS BROKEN**
+   - [ ] Is there a working example I can compare against?
+   - [ ] What is DIFFERENT between working and broken?
+   - [ ] Have I read the actual generated output, not just the source?
+
+3. **DIAGNOSE BEFORE FIXING**
+   - [ ] Do I know the ROOT CAUSE, or am I guessing?
+   - [ ] Can I explain WHY the bug happens?
+   - [ ] Have I verified my diagnosis by reading the actual output?
+
+**IF YOU CANNOT CHECK ALL BOXES: STOP. ASK FOR OUTPUT/EXAMPLES.**
+
+Never implement a fix based on assumptions. Always diagnose first.
+
 ## If You Cannot Check ALL Boxes: STOP
 
 Ask for guidance before proceeding. Never make assumptions.
@@ -470,6 +491,16 @@ Ask for guidance before proceeding. Never make assumptions.
 3. **Document which principles apply** to your specific task
 4. **Explain your approach** in terms of these principles
 5. **If uncertain, ask** - Never assume
+
+## Planning Best Practices:
+
+**Keep Plans Focused and Current**
+
+- Plans should only include work that is **not yet complete**
+- Once a task is finished, remove it from the plan file
+- Don't include repetitive context or information about completed work
+- Each plan should be concise and actionable - focused only on what needs to be done next
+- Users don't want to re-read descriptions of work that's already been completed
 
 ## Accountability:
 

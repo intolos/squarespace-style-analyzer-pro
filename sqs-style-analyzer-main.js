@@ -68,23 +68,49 @@
                 continue;
               }
 
-              // Capture thumbnail (20px padding) and context (200px padding)
-              const elementThumbnail = await captureElementScreenshot(
-                fullPageScreenshot,
-                element,
-                20
-              );
-              const elementContext = await captureElementScreenshot(
-                fullPageScreenshot,
-                element,
-                200
-              );
+              // Check if element is in current viewport
+              let rect = element.getBoundingClientRect();
+              const isOutsideViewport =
+                rect.top < 0 ||
+                rect.top > window.innerHeight ||
+                rect.bottom < 0 ||
+                rect.bottom > window.innerHeight;
 
-              // Add screenshots to issue
-              if (elementThumbnail || elementContext) {
-                issue.elementScreenshot = elementThumbnail;
-                issue.elementContext = elementContext;
-                capturedCount++;
+              let issueScreenshot = fullPageScreenshot;
+
+              // If outside viewport, scroll and refresh screenshot ONCE for this element
+              if (isOutsideViewport) {
+                element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' });
+                await new Promise(resolve => setTimeout(resolve, 150));
+                rect = element.getBoundingClientRect();
+
+                const response = await chrome.runtime.sendMessage({ action: 'captureScreenshot' });
+                if (response && response.success) {
+                  issueScreenshot = response.screenshot;
+                }
+              }
+
+              if (issueScreenshot && rect.width > 0 && rect.height > 0) {
+                // Generate both screenshots from the same (possibly refreshed) base screenshot
+                // Thumbnail (20px padding)
+                issue.elementScreenshot = await captureElementScreenshot(
+                  issueScreenshot,
+                  element,
+                  20,
+                  false // Don't allow internal re-scroll/re-capture
+                );
+
+                // Context (200px padding)
+                issue.elementContext = await captureElementScreenshot(
+                  issueScreenshot,
+                  element,
+                  200,
+                  false // Don't allow internal re-scroll/re-capture
+                );
+
+                if (issue.elementScreenshot || issue.elementContext) {
+                  capturedCount++;
+                }
               }
             } catch (error) {
               console.error('Failed to capture screenshot for mobile issue:', error);
@@ -108,27 +134,36 @@
    * @param {string} fullScreenshot - Base64 data URL of full page
    * @param {Element} element - DOM element to crop
    * @param {number} paddingPx - Padding around element in pixels (default 20)
+   * @param {boolean} allowReshoot - Whether to allow re-scrolling and re-capturing if outside viewport (default true)
    * @returns {Promise<string>} Base64 data URL of cropped element screenshot
    */
-  async function captureElementScreenshot(fullScreenshot, element, paddingPx = 20) {
+  async function captureElementScreenshot(
+    fullScreenshot,
+    element,
+    paddingPx = 20,
+    allowReshoot = true
+  ) {
     if (!element) return null;
 
     try {
       let rect = element.getBoundingClientRect();
-      const isOutsideViewport =
-        rect.top < 0 ||
-        rect.top > window.innerHeight ||
-        rect.bottom < 0 ||
-        rect.bottom > window.innerHeight;
 
-      if (isOutsideViewport) {
-        element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' });
-        await new Promise(resolve => setTimeout(resolve, 100));
-        rect = element.getBoundingClientRect();
+      if (allowReshoot) {
+        const isOutsideViewport =
+          rect.top < 0 ||
+          rect.top > window.innerHeight ||
+          rect.bottom < 0 ||
+          rect.bottom > window.innerHeight;
 
-        const response = await chrome.runtime.sendMessage({ action: 'captureScreenshot' });
-        if (!response || !response.success) return null;
-        fullScreenshot = response.screenshot;
+        if (isOutsideViewport) {
+          element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' });
+          await new Promise(resolve => setTimeout(resolve, 100));
+          rect = element.getBoundingClientRect();
+
+          const response = await chrome.runtime.sendMessage({ action: 'captureScreenshot' });
+          if (!response || !response.success) return null;
+          fullScreenshot = response.screenshot;
+        }
       }
 
       if (rect.width === 0 || rect.height === 0) return null;

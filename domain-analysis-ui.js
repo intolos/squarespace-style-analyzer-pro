@@ -12,6 +12,8 @@ const DomainAnalysisUI = {
       'domainAnalysisComplete',
       'domainAnalysisProgress',
       'isPremium',
+      'domainAnalysisMobileOnly',
+      'domainAnalysisUseMobileViewport',
     ]);
 
     if (data.domainAnalysisProgress && !data.domainAnalysisComplete) {
@@ -31,7 +33,13 @@ const DomainAnalysisUI = {
 
         this.updateDomainProgress(data.domainAnalysisProgress, data.isPremium);
         this.startProgressPolling(analyzer);
-        this.checkForCompletion(analyzer, currentDomain, analyzer.isNewDomain);
+        this.checkForCompletion(
+          analyzer,
+          currentDomain,
+          analyzer.isNewDomain,
+          data.domainAnalysisMobileOnly || false,
+          data.domainAnalysisUseMobileViewport || false
+        );
       }
     }
   },
@@ -207,7 +215,14 @@ const DomainAnalysisUI = {
       'domainAnalysisComplete',
       'domainAnalysisResults',
       'domainAnalysisError',
+      'domainAnalysisMobileOnly',
+      'domainAnalysisUseMobileViewport',
     ]);
+
+    chrome.storage.local.set({
+      domainAnalysisMobileOnly: mobileOnly,
+      domainAnalysisUseMobileViewport: useMobileViewport,
+    });
 
     chrome.runtime.sendMessage({
       action: 'startDomainAnalysisWithUrls',
@@ -222,7 +237,7 @@ const DomainAnalysisUI = {
     });
 
     this.startProgressPolling(analyzer);
-    this.checkForCompletion(analyzer, currentDomain, isNewDomain, mobileOnly);
+    this.checkForCompletion(analyzer, currentDomain, isNewDomain, mobileOnly, useMobileViewport);
   },
 
   // Start analysis with mobile choice (Free users)
@@ -244,7 +259,14 @@ const DomainAnalysisUI = {
       'domainAnalysisResults',
       'domainAnalysisError',
       'domainAnalysisProgress',
+      'domainAnalysisMobileOnly',
+      'domainAnalysisUseMobileViewport',
     ]);
+
+    chrome.storage.local.set({
+      domainAnalysisMobileOnly: mobileOnly,
+      domainAnalysisUseMobileViewport: useMobileViewport,
+    });
 
     const maxPages = analyzer.isPremium ? 500 : 10;
 
@@ -267,7 +289,7 @@ const DomainAnalysisUI = {
     });
 
     this.startProgressPolling(analyzer);
-    this.checkForCompletion(analyzer, currentDomain, isNewDomain, mobileOnly);
+    this.checkForCompletion(analyzer, currentDomain, isNewDomain, mobileOnly, useMobileViewport);
   },
 
   // ============================================
@@ -311,9 +333,21 @@ const DomainAnalysisUI = {
       }
       url.textContent = content;
     }
+
+    // Track last progress update for hang detection
+    this.lastProgressUpdate = Date.now();
   },
 
-  checkForCompletion: function (analyzer, currentDomain, isNewDomain, mobileOnly = false) {
+  checkForCompletion: function (
+    analyzer,
+    currentDomain,
+    isNewDomain,
+    mobileOnly = false,
+    useMobileViewport = false
+  ) {
+    // Initialize last progress update timestamp
+    this.lastProgressUpdate = Date.now();
+
     this.completionInterval = setInterval(async () => {
       const data = await chrome.storage.local.get([
         'domainAnalysisComplete',
@@ -329,8 +363,20 @@ const DomainAnalysisUI = {
           resultsData.domainAnalysisResults,
           currentDomain,
           isNewDomain,
-          mobileOnly
+          mobileOnly,
+          useMobileViewport
         );
+      } else {
+        // Check for hang - if no progress update for 10 seconds after cancellation was requested
+        if (this.cancellationRequested && Date.now() - this.lastProgressUpdate > 10000) {
+          console.warn('No progress update for 10 seconds after cancellation - forcing cleanup');
+          this.handleHangDetected(analyzer);
+        }
+        // Also check for general hang - no progress for 30 seconds during normal operation
+        else if (!this.cancellationRequested && Date.now() - this.lastProgressUpdate > 30000) {
+          console.warn('No progress update for 30 seconds - analysis may be stuck');
+          this.handleHangDetected(analyzer);
+        }
       }
     }, 2000);
   },
@@ -340,11 +386,19 @@ const DomainAnalysisUI = {
     result,
     currentDomain,
     isNewDomain,
-    mobileOnly = false
+    mobileOnly = false,
+    useMobileViewport = false
   ) {
     clearInterval(this.completionInterval);
     this.stopProgressPolling();
     analyzer.isDomainAnalyzing = false;
+
+    // Clear cancellation flags and timeout
+    if (this.cancellationTimeout) {
+      clearTimeout(this.cancellationTimeout);
+      this.cancellationTimeout = null;
+    }
+    this.cancellationRequested = false;
 
     // Force hide progress, show buttons
     const progressEl = document.getElementById('domainProgress');
@@ -356,20 +410,67 @@ const DomainAnalysisUI = {
     if (cancelBtn) cancelBtn.style.display = 'none';
 
     if (result && result.success) {
-      // Handle the case where result.data is null (e.g. cancelled with 0 pages completed)
+      // Ensure we have at least a skeleton data object so ResultsManager doesn't hide the section
       const data = result.data || {
-        metadata: { url: currentDomain },
-        headings: {},
-        paragraphs: {},
-        buttons: {},
-        links: {},
+        metadata: {
+          url: currentDomain,
+          domain: currentDomain,
+          pagesAnalyzed: [],
+          timestamp: new Date().toISOString(),
+        },
+        headings: {
+          'heading-1': { locations: [] },
+          'heading-2': { locations: [] },
+          'heading-3': { locations: [] },
+          'heading-4': { locations: [] },
+        },
+        paragraphs: {
+          'paragraph-1': { locations: [] },
+          'paragraph-2': { locations: [] },
+          'paragraph-3': { locations: [] },
+          'paragraph-4': { locations: [] },
+        },
+        buttons: {
+          primary: { locations: [] },
+          secondary: { locations: [] },
+          tertiary: { locations: [] },
+          other: { locations: [] },
+        },
+        links: { 'in-content': { locations: [] } },
+        siteStyles: {},
+        mobileIssues:
+          mobileOnly || useMobileViewport
+            ? {
+                viewportMeta: { exists: true, content: 'Analysis cancelled', isProper: false },
+                issues: [],
+              }
+            : { issues: [] },
+        squarespaceThemeStyles: {},
       };
+
+      // Patch mobile data if it was requested but is missing/incomplete in the actual data
+      if (mobileOnly || useMobileViewport) {
+        if (!data.mobileIssues) data.mobileIssues = { issues: [] };
+        if (!data.mobileIssues.viewportMeta) data.mobileIssues.viewportMeta = {};
+        if (
+          data.mobileIssues.viewportMeta.content === null ||
+          data.mobileIssues.viewportMeta.content === undefined
+        ) {
+          data.mobileIssues.viewportMeta.content = 'Requested (incomplete)';
+          data.mobileIssues.viewportMeta.exists = true;
+        }
+      }
 
       // Save results
       analyzer.accumulatedResults = data;
       await analyzer.saveAccumulatedResults();
 
       // Display results section even for empty/cancelled results to show the state
+      const resultsSection = document.getElementById('resultsSection');
+      const pagesAnalyzedInfo = document.getElementById('pagesAnalyzedInfo');
+      if (resultsSection) resultsSection.style.display = 'block';
+      if (pagesAnalyzedInfo) pagesAnalyzedInfo.style.display = 'block';
+
       analyzer.displayResults();
 
       // For mobile-only analysis, just display results (NO auto-export)
@@ -407,7 +508,6 @@ const DomainAnalysisUI = {
         analyzer.analyzedDomains.push(currentDomain);
         analyzer.usageCount = analyzer.usageCount + 1;
         await analyzer.saveUserData();
-        analyzer.updateUI();
       }
 
       // Show appropriate message based on whether it was cancelled
@@ -433,6 +533,11 @@ const DomainAnalysisUI = {
         }
       }
 
+      // Re-force visibility just in case showSuccess or something else interfered
+      if (resultsSection) resultsSection.style.setProperty('display', 'block', 'important');
+      if (pagesAnalyzedInfo) pagesAnalyzedInfo.style.setProperty('display', 'block', 'important');
+
+      analyzer.updateUI();
       analyzer.trackUsage('domain_analysis_completed');
     }
 
@@ -440,6 +545,8 @@ const DomainAnalysisUI = {
       'domainAnalysisComplete',
       'domainAnalysisResults',
       'domainAnalysisProgress',
+      'domainAnalysisMobileOnly',
+      'domainAnalysisUseMobileViewport',
     ]);
   },
 
@@ -447,6 +554,13 @@ const DomainAnalysisUI = {
     clearInterval(this.completionInterval);
     this.stopProgressPolling();
     analyzer.isDomainAnalyzing = false;
+
+    // Clear cancellation flags and timeout
+    if (this.cancellationTimeout) {
+      clearTimeout(this.cancellationTimeout);
+      this.cancellationTimeout = null;
+    }
+    this.cancellationRequested = false;
 
     document.getElementById('domainProgress').style.display = 'none';
     document.getElementById('analyzeBtn').style.display = 'block';
@@ -463,7 +577,79 @@ const DomainAnalysisUI = {
     chrome.storage.local.remove(['domainAnalysisError']);
   },
 
+  handleHangDetected: async function (analyzer) {
+    console.warn('Hang detected - forcing UI cleanup and showing partial results');
+
+    // Stop all polling intervals
+    clearInterval(this.completionInterval);
+    clearInterval(this.progressInterval);
+    this.stopProgressPolling();
+    analyzer.isDomainAnalyzing = false;
+
+    // Hide progress bar and cancel button
+    const progressEl = document.getElementById('domainProgress');
+    const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
+    const cancelBtn = document.getElementById('cancelDomainBtn');
+
+    if (progressEl) progressEl.style.display = 'none';
+    if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
+    // Try to fetch any partial results from storage
+    const storageData = await chrome.storage.local.get(['domainAnalysisResults']);
+    const partialResults = storageData.domainAnalysisResults;
+
+    if (partialResults && partialResults.data) {
+      // We have partial results - save and display them
+      analyzer.accumulatedResults = partialResults.data;
+      await analyzer.saveAccumulatedResults();
+
+      const resultsSection = document.getElementById('resultsSection');
+      const pagesAnalyzedInfo = document.getElementById('pagesAnalyzedInfo');
+      if (resultsSection) resultsSection.style.display = 'block';
+      if (pagesAnalyzedInfo) pagesAnalyzedInfo.style.display = 'block';
+
+      analyzer.displayResults();
+
+      const pagesAnalyzed = partialResults.stats ? partialResults.stats.successfulPages : 0;
+      if (pagesAnalyzed > 0) {
+        analyzer.showSuccess(
+          `Analysis cancelled. Showing results for ${pagesAnalyzed} page${pagesAnalyzed === 1 ? '' : 's'} analyzed before cancellation.`
+        );
+      } else {
+        analyzer.showSuccess('Analysis cancelled before any pages completed.');
+      }
+    } else {
+      // No results found
+      analyzer.showSuccess('Analysis cancelled before any pages completed.');
+    }
+
+    // Clean up storage
+    chrome.storage.local.remove([
+      'domainAnalysisComplete',
+      'domainAnalysisResults',
+      'domainAnalysisProgress',
+      'domainAnalysisError',
+      'domainAnalysisMobileOnly',
+      'domainAnalysisUseMobileViewport',
+    ]);
+  },
+
   cancelDomainAnalysis: function (analyzer) {
+    // Set flag that cancellation was requested
+    this.cancellationRequested = true;
+
+    // Set a 5-second timeout as fallback - if background doesn't respond, force cleanup
+    if (this.cancellationTimeout) {
+      clearTimeout(this.cancellationTimeout);
+    }
+    this.cancellationTimeout = setTimeout(() => {
+      if (this.cancellationRequested) {
+        console.warn('Cancellation timeout (5s) - forcing UI cleanup');
+        this.handleHangDetected(analyzer);
+      }
+    }, 5000);
+
     chrome.runtime.sendMessage({ action: 'cancelDomainAnalysis' });
     // We don't call handleDomainAnalysisError here anymore because we want the
     // background analyzer to finish merging what it has and trigger

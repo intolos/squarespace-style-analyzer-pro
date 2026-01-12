@@ -337,8 +337,9 @@ const ResultsManager = {
     const pagesAnalyzedInfoEl = document.getElementById('pagesAnalyzedInfo');
 
     if (!accumulatedResults) {
-      if (resultsSectionEl) resultsSectionEl.style.display = 'none';
-      if (pagesAnalyzedInfoEl) pagesAnalyzedInfoEl.style.display = 'none';
+      if (resultsSectionEl) resultsSectionEl.style.setProperty('display', 'none', 'important');
+      if (pagesAnalyzedInfoEl)
+        pagesAnalyzedInfoEl.style.setProperty('display', 'none', 'important');
       return;
     }
 
@@ -356,8 +357,8 @@ const ResultsManager = {
     if (pagesCountEl) pagesCountEl.textContent = counts.pages;
 
     // Show results sections
-    if (pagesAnalyzedInfoEl) pagesAnalyzedInfoEl.style.display = 'block';
-    if (resultsSectionEl) resultsSectionEl.style.display = 'block';
+    if (pagesAnalyzedInfoEl) pagesAnalyzedInfoEl.style.setProperty('display', 'block', 'important');
+    if (resultsSectionEl) resultsSectionEl.style.setProperty('display', 'block', 'important');
   },
 
   // Hide results UI

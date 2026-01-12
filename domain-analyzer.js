@@ -4,6 +4,7 @@ function DomainAnalyzer() {
   this.shouldCancel = false;
   this.currentProgress = { current: 0, total: 0, currentUrl: '' };
   this.failedPages = [];
+  this.openTabs = []; // Track open tabs for emergency cleanup on cancellation
 }
 
 DomainAnalyzer.prototype.waitForContentScript = async function (tabId, maxRetries = 5) {
@@ -37,11 +38,8 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
   this.shouldCancel = false;
   this.failedPages = [];
 
-  var settings = {
-    maxPages: options.maxPages || 100,
-    delayBetweenPages: options.delayBetweenPages || 2000,
-    isPremium: options.isPremium || false,
-  };
+  var results = [];
+  var urlsToAnalyze = [];
 
   var settings = {
     maxPages: options.maxPages || 100,
@@ -62,8 +60,8 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
       throw new Error('No sitemap found. Please use page-by-page analysis instead.');
     }
 
-    var urlsToAnalyze = sitemapUrls;
     var totalPagesInSitemap = sitemapUrls.length;
+    urlsToAnalyze = sitemapUrls;
 
     if (!settings.isPremium && sitemapUrls.length > 10) {
       urlsToAnalyze = sitemapUrls.slice(0, 10);
@@ -73,8 +71,6 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
 
     this.currentProgress.total = urlsToAnalyze.length;
     this.currentProgress.totalInSitemap = totalPagesInSitemap;
-
-    var results = [];
     for (var i = 0; i < urlsToAnalyze.length; i++) {
       if (this.shouldCancel) {
         console.log('Analysis cancelled by user. Returning partial results...');
@@ -346,6 +342,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
   var timeouts = [15000, 20000, 25000];
   var lastError = null;
   var self = this; // Capture this for use in nested functions
+  var currentTabId = null; // Track tab at function scope for cleanup
 
   for (var attempt = 0; attempt < timeouts.length; attempt++) {
     if (self.shouldCancel) throw new Error('Analysis cancelled by user');
@@ -359,12 +356,24 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
             new Error('Timeout - page took longer than ' + timeoutSeconds + ' seconds to load')
           );
         }, currentTimeout);
+        var checkReady = null; // Track interval at Promise scope
 
         chrome.tabs.create({ url: url, active: false }, function (tab) {
           var tabId = tab.id;
+          currentTabId = tabId; // Track for emergency cleanup
+          self.openTabs.push(tabId); // Add to emergency cleanup list
 
-          var checkReady = setInterval(async function () {
+          checkReady = setInterval(async function () {
             try {
+              // Check for cancellation immediately
+              if (self.shouldCancel) {
+                clearInterval(checkReady);
+                clearTimeout(timeoutId);
+                chrome.tabs.remove(tabId).catch(() => {});
+                reject(new Error('Analysis cancelled by user'));
+                return;
+              }
+
               var currentTab = await chrome.tabs.get(tabId);
 
               if (currentTab.status === 'complete') {
@@ -373,6 +382,13 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
 
                 setTimeout(async function () {
                   try {
+                    // Check cancellation after first delay
+                    if (self.shouldCancel) {
+                      chrome.tabs.remove(tabId).catch(() => {});
+                      reject(new Error('Analysis cancelled by user'));
+                      return;
+                    }
+
                     var isSquarespace = await chrome.scripting.executeScript({
                       target: { tabId: tabId },
                       func: function () {
@@ -387,10 +403,23 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                       },
                     });
 
+                    // Check cancellation after Squarespace detection
+                    if (self.shouldCancel) {
+                      chrome.tabs.remove(tabId).catch(() => {});
+                      reject(new Error('Analysis cancelled by user'));
+                      return;
+                    }
+
                     var additionalDelay =
                       isSquarespace && isSquarespace[0] && isSquarespace[0].result ? 3000 : 1000;
 
                     setTimeout(async function () {
+                      // Check cancellation after additional delay
+                      if (self.shouldCancel) {
+                        chrome.tabs.remove(tabId).catch(() => {});
+                        reject(new Error('Analysis cancelled by user'));
+                        return;
+                      }
                       try {
                         var response;
 
@@ -524,6 +553,9 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                           }
 
                           chrome.tabs.remove(tabId);
+                          // Remove from tracking
+                          var tabIndex = self.openTabs.indexOf(tabId);
+                          if (tabIndex > -1) self.openTabs.splice(tabIndex, 1);
                         } else {
                           console.log(
                             '💻 DOMAIN-ANALYZER: Taking DESKTOP path (analyzeStyles only)'
@@ -536,6 +568,9 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                             action: 'analyzeStyles',
                           });
                           chrome.tabs.remove(tabId);
+                          // Remove from tracking
+                          var tabIndex = self.openTabs.indexOf(tabId);
+                          if (tabIndex > -1) self.openTabs.splice(tabIndex, 1);
                         }
 
                         if (response && response.success) {
@@ -545,6 +580,9 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                         }
                       } catch (error) {
                         chrome.tabs.remove(tabId);
+                        // Remove from tracking
+                        var tabIndex = self.openTabs.indexOf(tabId);
+                        if (tabIndex > -1) self.openTabs.splice(tabIndex, 1);
                         reject(error);
                       }
                     }, additionalDelay);
@@ -677,6 +715,9 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                           }
 
                           chrome.tabs.remove(tabId);
+                          // Remove from tracking
+                          var tabIndex = self.openTabs.indexOf(tabId);
+                          if (tabIndex > -1) self.openTabs.splice(tabIndex, 1);
                         } else {
                           console.log(
                             '💻 DOMAIN-ANALYZER: Taking DESKTOP path (analyzeStyles only - retry)'
@@ -690,6 +731,9 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                             action: 'analyzeStyles',
                           });
                           chrome.tabs.remove(tabId);
+                          // Remove from tracking
+                          var tabIndex = self.openTabs.indexOf(tabId);
+                          if (tabIndex > -1) self.openTabs.splice(tabIndex, 1);
                         }
 
                         if (response && response.success) {
@@ -699,6 +743,9 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                         }
                       } catch (error) {
                         chrome.tabs.remove(tabId);
+                        // Remove from tracking
+                        var tabIndex = self.openTabs.indexOf(tabId);
+                        if (tabIndex > -1) self.openTabs.splice(tabIndex, 1);
                         reject(error);
                       }
                     }, 2000);
@@ -1107,6 +1154,17 @@ DomainAnalyzer.prototype.notifyProgress = function () {
 
 DomainAnalyzer.prototype.cancelAnalysis = function () {
   this.shouldCancel = true;
+
+  // Force close any open tabs
+  if (this.openTabs && this.openTabs.length > 0) {
+    console.log('Force closing', this.openTabs.length, 'open tabs');
+    this.openTabs.forEach(tabId => {
+      chrome.tabs.remove(tabId).catch(err => {
+        console.log('Tab already closed:', tabId);
+      });
+    });
+    this.openTabs = [];
+  }
 };
 
 DomainAnalyzer.prototype.delay = function (ms) {

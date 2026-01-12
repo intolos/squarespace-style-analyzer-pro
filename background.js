@@ -7,7 +7,7 @@ importScripts('mobile-results-converter.js');
 
 let domainAnalyzer = null;
 let lastScreenshotTime = 0;
-const SCREENSHOT_MIN_INTERVAL = 500; // ms between captures to stay under Chrome quota
+const SCREENSHOT_MIN_INTERVAL = 750; // ms between captures to stay under Chrome quota
 
 chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason === 'install') {
@@ -264,7 +264,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     console.log('Analyzing domain...');
     (async () => {
       try {
-        const domainAnalyzer = new DomainAnalyzer();
+        domainAnalyzer = new DomainAnalyzer();
         const result = await domainAnalyzer.analyzeDomain(request.domain, {
           maxPages: request.maxPages || 10,
           delayBetweenPages: 2000,
@@ -386,15 +386,22 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === 'captureScreenshot') {
     (async () => {
       try {
-        // Simple rate limiting
+        // Robust reservation-based rate limiting
         const now = Date.now();
-        const timeSinceLast = now - lastScreenshotTime;
-        if (timeSinceLast < SCREENSHOT_MIN_INTERVAL) {
-          await new Promise(resolve =>
-            setTimeout(resolve, SCREENSHOT_MIN_INTERVAL - timeSinceLast)
-          );
+        let waitTime = 0;
+
+        // If another capture happened too recently, reserve a future slot
+        if (now - lastScreenshotTime < SCREENSHOT_MIN_INTERVAL) {
+          lastScreenshotTime += SCREENSHOT_MIN_INTERVAL;
+          waitTime = lastScreenshotTime - now;
+        } else {
+          // Current time is safe, but we update lastScreenshotTime to now to "reserve" it
+          lastScreenshotTime = now;
         }
-        lastScreenshotTime = Date.now();
+
+        if (waitTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
 
         const dataUrl = await chrome.tabs.captureVisibleTab(null, {
           format: 'png',

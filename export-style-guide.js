@@ -64,7 +64,6 @@ const ExportStyleGuide = {
 
     const filename = `${domain} ${filenameBrand} brand style guide typography.html`;
     downloadFile(html, filename, 'text/html');
-    showSuccess('Brand Style Guides for Typography and Colors generated successfully!');
 
     // Automatically generate colors report with a delay to avoid collision
     setTimeout(() => {

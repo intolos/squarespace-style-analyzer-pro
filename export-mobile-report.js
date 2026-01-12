@@ -41,6 +41,14 @@ const ExportMobileReport = {
     return labels[type] || type;
   },
 
+  // Add break opportunities after HTML entities to allow long escaped strings to wrap
+  addBreakOpportunities: function (text) {
+    // Insert zero-width space (Unicode U+200B) after HTML entities to allow line breaks
+    // Matches both named entities (&lt;) and numeric entities (&#8203;)
+    // CRITICAL: Use actual Unicode character \u200B, not HTML entity string '&#8203;'
+    return text.replace(/(&[a-zA-Z]+;|&#[0-9]+;)/g, '$1\u200B');
+  },
+
   // Export the mobile usability report
   export: function (data, issues, domain, filenameBrand, escapeHtmlFn, downloadFileFn) {
     const self = this;
@@ -265,7 +273,7 @@ const ExportMobileReport = {
               <div class="accordion-container">
                 <div class="accordion-header">
                   <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <span><strong>${escapeHtmlFn(pageName)}</strong> — 
+                    <span><strong>${escapeHtmlFn(pageName)}</strong> —
                     <a href="${escapeHtmlFn(pageData.url)}" target="_blank" onclick="event.stopPropagation();">${escapeHtmlFn(pageData.url)}</a></span>
                     <span class="accordion-icon">▶</span>
                     <span class="accordion-count">${pageIssues.length} issue${pageIssues.length === 1 ? '' : 's'}</span>
@@ -275,7 +283,7 @@ const ExportMobileReport = {
                   ${pageIssues
                     .map(
                       (issue, idx) => `
-                    <div class="issue-item ${issue.severity}" style="margin-left: 0;">
+                    <div class="issue-item ${issue.severity}" style="margin-left: 0; display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                           ${
                             (issue.type === 'touch-target-too-small' ||
@@ -290,8 +298,8 @@ const ExportMobileReport = {
                           issue.selector
                             ? `
                           <div style="margin-left: 15px;">
-                            <a href="${issue.url}${issue.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(issue.selector)}" 
-                               target="_blank" 
+                            <a href="${issue.url}${issue.url.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(issue.selector)}"
+                               target="_blank"
                                class="live-inspect-btn"
                                style="display: inline-block; padding: 8px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; transition: background 0.2s;"
                                onmouseover="this.style.background='#5a67d8'"
@@ -302,7 +310,7 @@ const ExportMobileReport = {
                         `
                             : ''
                         }
-                      </div>
+
                       ${
                         (issue.type === 'touch-target-too-small' ||
                           issue.type === 'touch-target-spacing') &&
@@ -334,7 +342,7 @@ const ExportMobileReport = {
                            </div>`
                           : `<div class="issue-details">
                              <strong>Actual:</strong> ${escapeHtmlFn(issue.details?.actual || 'N/A')}<br>
-                             <strong>${issue.details?.recommended ? 'Recommended' : 'Required'}:</strong> ${escapeHtmlFn(issue.details?.recommended || issue.details?.required || 'N/A')}
+                             <strong>${issue.details?.recommended ? 'Recommended' : 'Required'}:</strong> ${self.addBreakOpportunities(escapeHtmlFn(issue.details?.recommended || issue.details?.required || 'N/A'))}
                            </div>`
                       }
                     </div>
