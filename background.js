@@ -386,6 +386,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === 'captureScreenshot') {
     (async () => {
       try {
+        // Get the window ID from the sender (the tab requesting the screenshot)
+        let windowId = null;
+        if (sender && sender.tab && sender.tab.windowId) {
+          windowId = sender.tab.windowId;
+          console.log('[Screenshot] Using window ID from sender:', windowId);
+        } else {
+          console.log('[Screenshot] No sender window ID, using current window');
+        }
+
         // Robust reservation-based rate limiting
         const now = Date.now();
         let waitTime = 0;
@@ -403,7 +412,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
-        const dataUrl = await chrome.tabs.captureVisibleTab(null, {
+        // Capture from the specific window where the background tab is
+        const dataUrl = await chrome.tabs.captureVisibleTab(windowId, {
           format: 'png',
           quality: 100,
         });
@@ -573,7 +583,11 @@ async function checkLicenseStatus() {
 
 // Resume polling on startup if there's a pending session
 chrome.storage.local.get(['pendingSessionId', 'pendingProductId'], data => {
-  if (data.pendingSessionId && data.pendingProductId) {
+  if (chrome.runtime.lastError) {
+    console.warn('Background: Error checking pending session:', chrome.runtime.lastError);
+    return;
+  }
+  if (data && data.pendingSessionId && data.pendingProductId) {
     console.log('Background: Found pending session on startup, resuming polling');
     checkLicenseStatus();
   }

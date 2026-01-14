@@ -320,6 +320,9 @@
 
           // Only add if we have valid data
           if (elementThumbnail || elementContext) {
+            // Generate stable selector using our helper
+            const stableSelector = ContentScriptHelpers.generateSelector(element);
+
             axeContrastIssues.push({
               textColor: data.fgColor || 'unknown',
               backgroundColor: data.bgColor || 'unknown',
@@ -329,8 +332,8 @@
               isLargeText: data.fontSize >= 18 || (data.fontSize >= 14 && data.fontWeight >= 700),
               page: window.location.href,
               pageTitle: document.title || 'Unknown',
-              location: selector,
-              selector: selector,
+              location: stableSelector,
+              selector: stableSelector,
               elementText: elementText,
               section: 'N/A',
               block: 'N/A',
@@ -519,25 +522,25 @@
   }
 
   // --- Live Inspector Support ---
+  let inspectionStarted = false;
+
   function checkUrlForInspection() {
+    if (inspectionStarted) return;
+
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const selector = urlParams.get('ssa-inspect-selector');
 
       if (selector) {
+        inspectionStarted = true;
         console.log('SSA Live Inspector: Highlighting element', selector);
 
-        // Retry logic to handle slow-loading Squarespace components
         let attempts = 0;
         const maxAttempts = 25;
         const retryInterval = 200;
 
         const performInspection = () => {
-          // Remove existing highlights
-          const existingHighlights = document.querySelectorAll('.ssa-inspector-highlight');
-          existingHighlights.forEach(h => h.remove());
-
-          let el = document.querySelector(selector);
+          const el = document.querySelector(selector);
 
           if (!el) {
             attempts++;
@@ -550,92 +553,69 @@
             return;
           }
 
-          // Case Found: Apply highlight
           console.log('SSA: Element found!', el);
 
-          // Carousel Support: If the element itself is hidden or has 0 size,
-          // look for its closest visible ancestor to scroll into view.
-          let scrollTarget = el;
-          const rect = el.getBoundingClientRect();
-          const comp = window.getComputedStyle(el);
+          // Create highlight with FIXED positioning (viewport-relative)
+          const highlight = document.createElement('div');
+          highlight.className = 'ssa-inspector-highlight';
+          highlight.style.position = 'fixed';
+          highlight.style.border = '4px solid #f56565';
+          highlight.style.backgroundColor = 'rgba(245, 101, 101, 0.15)';
+          highlight.style.zIndex = '2147483647';
+          highlight.style.pointerEvents = 'none';
+          highlight.style.borderRadius = '4px';
+          highlight.style.boxShadow = '0 0 15px rgba(245, 101, 101, 0.5)';
 
-          const isNotVisible =
-            rect.width <= 1 ||
-            rect.height <= 1 ||
-            comp.display === 'none' ||
-            comp.visibility === 'hidden' ||
-            parseFloat(comp.opacity) < 0.1;
+          // Update position to match element's current viewport position
+          const updatePosition = () => {
+            const rect = el.getBoundingClientRect();
+            highlight.style.top = rect.top + 'px';
+            highlight.style.left = rect.left + 'px';
+            highlight.style.width = rect.width + 'px';
+            highlight.style.height = rect.height + 'px';
+          };
 
-          if (isNotVisible) {
-            console.log('SSA: Element is obscured, searching for visible container...');
-            let parent = el.parentElement;
-            while (parent && parent !== document.body) {
-              const pRect = parent.getBoundingClientRect();
-              const pComp = window.getComputedStyle(parent);
-              if (
-                pRect.width > 20 &&
-                pRect.height > 20 &&
-                pComp.display !== 'none' &&
-                pComp.visibility !== 'hidden' &&
-                parseFloat(pComp.opacity) > 0.5
-              ) {
-                scrollTarget = parent;
-                break;
-              }
-              parent = parent.parentElement;
+          // Set initial position and append
+          updatePosition();
+          document.body.appendChild(highlight);
+
+          // Scroll element into view
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          // Continuously update position using requestAnimationFrame - FOREVER until removed
+          let isActive = true;
+          const animationLoop = () => {
+            if (isActive) {
+              updatePosition();
+              requestAnimationFrame(animationLoop);
             }
-          }
+          };
+          requestAnimationFrame(animationLoop);
 
-          // Scroll element (or nearest visible parent) into view
-          scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Pulse animation
+          highlight.animate(
+            [{ transform: 'scale(1)' }, { transform: 'scale(1.02)' }, { transform: 'scale(1)' }],
+            { duration: 600, iterations: 2 }
+          );
 
-          // Wait just a bit for scroll to finish before calculating final position
-          setTimeout(() => {
-            const rectFinal = el.getBoundingClientRect();
-            const highlightRect =
-              rectFinal.width > 0 && rectFinal.height > 0
-                ? rectFinal
-                : scrollTarget.getBoundingClientRect();
+          // Wait for explicit USER INTERACTION to remove highlight
+          // This eliminates guessing about "scroll events vs programmatic scroll"
+          // We listen for: wheel (mouse), touchmove (mobile), keydown (keyboard)
+          const removeHighlight = () => {
+            if (!isActive) return;
+            isActive = false;
+            highlight.remove();
+            window.removeEventListener('wheel', removeHighlight);
+            window.removeEventListener('touchmove', removeHighlight);
+            window.removeEventListener('keydown', removeHighlight);
+          };
 
-            const highlight = document.createElement('div');
-            highlight.className = 'ssa-inspector-highlight';
-
-            const scrollY = window.scrollY;
-            const scrollX = window.scrollX;
-
-            highlight.style.position = 'absolute';
-            highlight.style.top = highlightRect.top + scrollY + 'px';
-            highlight.style.left = highlightRect.left + scrollX + 'px';
-            highlight.style.width = highlightRect.width + 'px';
-            highlight.style.height = highlightRect.height + 'px';
-            highlight.style.border = '4px solid #f56565';
-            highlight.style.backgroundColor = 'rgba(245, 101, 101, 0.15)';
-            highlight.style.zIndex = '2147483647';
-            highlight.style.pointerEvents = 'none';
-            highlight.style.borderRadius = '4px';
-            highlight.style.boxShadow = '0 0 15px rgba(245, 101, 101, 0.5)';
-            highlight.style.opacity = '1';
-
-            highlight.animate(
-              [
-                { opacity: 0, transform: 'scale(1)' },
-                { opacity: 1, transform: 'scale(1.02)' },
-                { opacity: 0.5, transform: 'scale(1)' },
-                { opacity: 1, transform: 'scale(1.02)' },
-                { opacity: 1, transform: 'scale(1)' },
-              ],
-              {
-                duration: 2500,
-                iterations: 1,
-                fill: 'forwards',
-              }
-            );
-
-            document.body.appendChild(highlight);
-          }, 300);
+          // Use 'capture' phase to detect interaction immediately
+          window.addEventListener('wheel', removeHighlight, { passive: true, capture: true });
+          window.addEventListener('touchmove', removeHighlight, { passive: true, capture: true });
+          window.addEventListener('keydown', removeHighlight, { passive: true, capture: true });
         };
 
-        // Start immediately
         performInspection();
       }
     } catch (e) {

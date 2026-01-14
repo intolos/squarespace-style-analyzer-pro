@@ -1060,7 +1060,7 @@ class ExportStyleGuideColorsReport {
                  onmouseover="this.style.background='#5a67d8'; this.style.transform='translateY(-1px)';"
                  onmouseout="this.style.background='#667eea'; this.style.transform='translateY(0)';">
                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                 Locate on Page
+                 Locate
               </a>
             </div>
             `

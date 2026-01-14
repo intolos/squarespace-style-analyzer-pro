@@ -173,20 +173,65 @@ var ContentScriptHelpers = (function () {
     return document.title || currentPath.replace(/\//g, '').replace(/-/g, ' ') || 'Home';
   }
 
+  // Helper: Check if an ID or class name appears to be dynamically generated (unstable across page reloads)
+  function isDynamicId(id) {
+    console.log('[SSA isDynamicId] Called with:', id);
+    if (!id) return false;
+
+    // Common patterns for dynamic IDs/classes:
+    // - Contains timestamps (sequences of 10+ digits)
+    // - Starts with common framework prefixes + numbers/timestamps
+    // - Contains UUIDs or random strings
+    // - Common dynamic state classes
+
+    // Squarespace: yui_3_17_2_1_1768298935906_135
+    if (/^yui_/.test(id)) return true;
+
+    // React: react-id-123, __react_123
+    if (/^(react-|__react)/.test(id)) return true;
+
+    // Angular: ng-123, _ngcontent-123
+    if (/^(ng-|_ngcontent-)/.test(id)) return true;
+
+    // Vue: v-123, data-v-123
+    if (/^(v-\w+|data-v-)/.test(id)) return true;
+
+    // Generic: Contains long number sequences (likely timestamps)
+    if (/\d{10,}/.test(id)) return true;
+
+    // Generic: Ends with long random-looking strings (abc123def456)
+    if (/[a-f0-9]{8,}$/i.test(id)) return true;
+
+    // Common dynamic state classes (added/removed by JavaScript)
+    var dynamicStateClasses = [
+      'loaded', 'loading', 'active', 'inactive', 'visible', 'hidden',
+      'open', 'closed', 'expanded', 'collapsed', 'selected', 'disabled',
+      'focused', 'hover', 'error', 'success', 'warning', 'current',
+      'show', 'hide', 'in', 'out', 'on', 'off', 'fade', 'fadeIn', 'fadeOut'
+    ];
+    if (dynamicStateClasses.includes(id.toLowerCase())) return true;
+
+    return false;
+  }
+
   function generateSelector(element) {
     if (!element) return '';
 
     try {
-      // Step 1: Use ID if truly unique and stable
+      // Step 1: Use ID if truly unique and stable (not dynamically generated)
       if (element.id && typeof element.id === 'string') {
         const id = element.id.trim();
+        console.log('[SSA generateSelector] Checking element ID:', id, 'isDynamic?', isDynamicId(id));
         if (
           id &&
           !id.includes(' ') &&
-          !id.startsWith('yui_') &&
+          !isDynamicId(id) &&
           document.querySelectorAll('#' + CSS.escape(id)).length === 1
         ) {
+          console.log('[SSA generateSelector] Using stable ID:', id);
           return '#' + CSS.escape(id);
+        } else if (isDynamicId(id)) {
+          console.log('[SSA generateSelector] Rejected dynamic ID at step 1:', id);
         }
       }
 
@@ -203,22 +248,33 @@ var ContentScriptHelpers = (function () {
         var nodeName = current.tagName.toLowerCase();
         var selector = nodeName;
 
+        // Check if this element has a stable ID
+        var hasStableId = false;
         if (
           current.id &&
           typeof current.id === 'string' &&
-          !current.id.startsWith('yui_') &&
+          !isDynamicId(current.id) &&
           !current.id.includes(' ')
         ) {
+          console.log('[SSA generateSelector] Adding stable ID to path:', current.id);
           selector += '#' + CSS.escape(current.id);
-          path.unshift(selector);
-          if (document.querySelectorAll(path.join(' > ')).length === 1) break;
+          hasStableId = true;
         } else {
-          // Add first class if it seems stable
+          // Debug: Log if we're skipping a dynamic ID
+          if (current.id && isDynamicId(current.id)) {
+            console.log('[SSA generateSelector] Skipping dynamic ID in path:', current.id, 'for element:', current.tagName);
+          }
+          // No stable ID - add first stable class
           if (current.className && typeof current.className === 'string') {
             var classes = current.className
               .trim()
               .split(/\s+/)
-              .filter(c => c.length > 0 && !c.includes(':') && !c.startsWith('yui_'));
+              .filter(function(c) {
+                // Filter out pseudo-class selectors, dynamic classes, and empty strings
+                return c.length > 0 &&
+                       !c.includes(':') &&
+                       !isDynamicId(c); // Use same dynamic detection for classes
+              });
             if (classes.length > 0) {
               selector += '.' + CSS.escape(classes[0]);
             }
@@ -234,11 +290,23 @@ var ContentScriptHelpers = (function () {
         }
 
         path.unshift(selector);
-        if (document.querySelectorAll(path.join(' > ')).length === 1) break;
+        console.log('[SSA generateSelector] Current path:', path.join(' > '));
+
+        // Check if selector is unique
+        var isUnique = document.querySelectorAll(path.join(' > ')).length === 1;
+        if (isUnique) {
+          console.log('[SSA generateSelector] Found unique selector:', path.join(' > '));
+          break;
+        }
+
+        // If we found a stable ID but it's not unique enough, continue up the tree
+        // But if the ID is stable and the path including it IS unique, we already broke above
         current = current.parentElement;
       }
 
-      return path.join(' > ');
+      const finalSelector = path.join(' > ');
+      console.log('[SSA generateSelector] Final selector:', finalSelector);
+      return finalSelector;
     } catch (e) {
       return element.tagName.toLowerCase();
     }

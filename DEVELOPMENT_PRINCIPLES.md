@@ -474,7 +474,7 @@ const scale = Math.min(1, maxSize / Math.max(rect.width, rect.height));
 
 **IF YOU CANNOT CHECK ALL BOXES: STOP. ASK FOR OUTPUT/EXAMPLES.**
 
-Never implement a fix based on assumptions. Always diagnose first.
+Never implement a fix based on assumptions. Always diagnose first. Never blame the user for not properly generating a new report. Never say that Chrome caches data.
 
 ## If You Cannot Check ALL Boxes: STOP
 

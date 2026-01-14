@@ -283,7 +283,8 @@ const ExportMobileReport = {
                   ${pageIssues
                     .map(
                       (issue, idx) => `
-                    <div class="issue-item ${issue.severity}" style="margin-left: 0; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div class="issue-item ${issue.severity}" style="margin-left: 0;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                           ${
                             (issue.type === 'touch-target-too-small' ||
@@ -310,6 +311,7 @@ const ExportMobileReport = {
                         `
                             : ''
                         }
+                      </div>
 
                       ${
                         (issue.type === 'touch-target-too-small' ||
