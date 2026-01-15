@@ -1,4 +1,8 @@
 // domain-analyzer.js
+
+// Set to true for verbose console logging during development
+const DEBUG_DA = false;
+
 function DomainAnalyzer() {
   this.isAnalyzing = false;
   this.shouldCancel = false;
@@ -73,7 +77,7 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
     this.currentProgress.totalInSitemap = totalPagesInSitemap;
     for (var i = 0; i < urlsToAnalyze.length; i++) {
       if (this.shouldCancel) {
-        console.log('Analysis cancelled by user. Returning partial results...');
+        if (DEBUG_DA) console.log('Analysis cancelled by user. Returning partial results...');
         var mergedResults = this.mergeAllResults(results);
         if (mergedResults) {
           mergedResults.failedPages = this.failedPages;
@@ -107,7 +111,7 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
         }
       } catch (error) {
         if (this.shouldCancel || error.message === 'Analysis cancelled by user') {
-          console.log('Analysis cancelled by user during page analysis. Breaking...');
+          if (DEBUG_DA) console.log('Analysis cancelled by user during page analysis. Breaking...');
           break;
         }
         console.error('Failed to analyze ' + url + ':', error.message);
@@ -144,7 +148,7 @@ DomainAnalyzer.prototype.analyzeDomain = async function (domain, options) {
     };
   } catch (error) {
     if (this.shouldCancel || error.message === 'Analysis cancelled by user') {
-      console.log('Analysis loop interrupted by cancellation. Returning partial results.');
+      if (DEBUG_DA) console.log('Analysis loop interrupted by cancellation. Returning partial results.');
 
       var mergedResults = this.mergeAllResults(results);
       if (mergedResults) {
@@ -200,7 +204,7 @@ DomainAnalyzer.prototype.analyzeUrlList = async function (urls, options) {
     var results = [];
     for (var i = 0; i < urls.length; i++) {
       if (this.shouldCancel) {
-        console.log('Analysis cancelled by user. Returning partial results...');
+        if (DEBUG_DA) console.log('Analysis cancelled by user. Returning partial results...');
         var mergedResults = this.mergeAllResults(results);
         if (mergedResults) {
           mergedResults.failedPages = this.failedPages;
@@ -418,7 +422,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                       try {
                         var response;
 
-                        console.log('🔍 DOMAIN-ANALYZER: Analyzing page with options:', {
+                        if (DEBUG_DA) console.log('🔍 DOMAIN-ANALYZER: Analyzing page with options:', {
                           useMobileViewport: self.options.useMobileViewport,
                           mobileOnly: self.options.mobileOnly,
                           url: url,
@@ -437,11 +441,11 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                               url
                             );
                             if (self.shouldCancel) throw new Error('Analysis cancelled by user');
-                            console.log('Lighthouse results:', lighthouseResults);
+                            if (DEBUG_DA) console.log('Lighthouse results:', lighthouseResults);
 
                             if (self.options.mobileOnly) {
                               // Mobile-only: Skip design analysis
-                              console.log('Mobile-only mode: Skipping design analysis');
+                              if (DEBUG_DA) console.log('Mobile-only mode: Skipping design analysis');
 
                               const pageUrl = lighthouseResults.url || url;
                               const domain = new URL(pageUrl).hostname.replace('www.', '');
@@ -509,7 +513,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                               );
                             } else {
                               // Full analysis WITH mobile
-                              console.log('Running design element analysis...');
+                              if (DEBUG_DA) console.log('Running design element analysis...');
 
                               // Ensure content script is ready
                               await self.waitForContentScript(tabId);
@@ -598,11 +602,11 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                               tabId,
                               url
                             );
-                            console.log('Lighthouse results:', lighthouseResults);
+                            if (DEBUG_DA) console.log('Lighthouse results:', lighthouseResults);
 
                             if (self.options.mobileOnly) {
                               // Mobile-only: Skip design analysis
-                              console.log('Mobile-only mode: Skipping design analysis');
+                              if (DEBUG_DA) console.log('Mobile-only mode: Skipping design analysis');
 
                               const pageUrl = lighthouseResults.url || url;
                               const domain = new URL(pageUrl).hostname.replace('www.', '');
@@ -670,7 +674,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
                               );
                             } else {
                               // Full analysis WITH mobile
-                              console.log('Running design element analysis...');
+                              if (DEBUG_DA) console.log('Running design element analysis...');
 
                               // Ensure content script is ready
                               await self.waitForContentScript(tabId);
@@ -784,7 +788,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
       );
 
       if (attempt < timeouts.length - 1) {
-        console.log('Retrying with ' + timeouts[attempt + 1] / 1000 + 's timeout...');
+        if (DEBUG_DA) console.log('Retrying with ' + timeouts[attempt + 1] / 1000 + 's timeout...');
         if (self.shouldCancel) throw new Error('Analysis cancelled by user');
         continue;
       }
@@ -797,7 +801,7 @@ DomainAnalyzer.prototype.analyzePageInBackground = async function (url, timeout)
 DomainAnalyzer.prototype.mergeAllResults = function (results) {
   if (results.length === 0) return null;
 
-  console.log('🔍 MERGE: Merging', results.length, 'results');
+  if (DEBUG_DA) console.log('🔍 MERGE: Merging', results.length, 'results');
   console.log(
     '🔍 MERGE: Sample result[0] structure:',
     results[0]
@@ -1152,10 +1156,10 @@ DomainAnalyzer.prototype.cancelAnalysis = function () {
 
   // Force close any open tabs
   if (this.openTabs && this.openTabs.length > 0) {
-    console.log('Force closing', this.openTabs.length, 'open tabs');
+    if (DEBUG_DA) console.log('Force closing', this.openTabs.length, 'open tabs');
     this.openTabs.forEach(tabId => {
       chrome.tabs.remove(tabId).catch(err => {
-        console.log('Tab already closed:', tabId);
+        if (DEBUG_DA) console.log('Tab already closed:', tabId);
       });
     });
     this.openTabs = [];

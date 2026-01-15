@@ -51,27 +51,18 @@ The mobile-only response object template (lines 459-508) is duplicated verbatim 
 
 ---
 
-### 3. Excessive Debug Console Logging
+### 3. ~~Excessive Debug Console Logging~~ ✅ FIXED
 
-**Files**: Multiple (230+ console.log statements)  
-**Impact**: Performance in production, console clutter
+**Status**: Fixed on 2026-01-15
 
-Key offenders:
-| File | Count | Notes |
-|------|-------|-------|
-| `domain-analysis-manager.js` | 35+ | Emoji-heavy debug logs |
-| `content-script-helpers.js` | 10 | Verbose selector debugging |
-| `page-selection-ui.js` | 8+ | DEBUG: prefixed logs |
-| `domain-analyzer.js` | 20+ | Analysis flow logging |
+Added DEBUG flags to control verbose logging:
 
-**Fix**: Implement debug flag or use conditional logging:
+- `DEBUG_DAM` in domain-analysis-manager.js (29 logs wrapped)
+- `DEBUG_PSU` in page-selection-ui.js (9 logs wrapped)
+- `DEBUG_CSH` in content-script-helpers.js (7 logs wrapped)
+- `DEBUG_DA` in domain-analyzer.js (15 logs wrapped)
 
-```javascript
-const DEBUG = false; // or check chrome.runtime.isDev
-if (DEBUG) console.log(...);
-```
-
-**Effort**: Low (1 hour)
+All flags default to `false`. Set to `true` during development to see verbose output.
 
 ---
 

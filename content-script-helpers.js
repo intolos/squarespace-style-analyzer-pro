@@ -4,6 +4,8 @@
 var ContentScriptHelpers = (function () {
   'use strict';
 
+  // Set to true for verbose console logging during development
+  const DEBUG_CSH = false;
   // ============================================
   // COLOR TRACKING UTILITIES
   // ============================================
@@ -175,7 +177,7 @@ var ContentScriptHelpers = (function () {
 
   // Helper: Check if an ID or class name appears to be dynamically generated (unstable across page reloads)
   function isDynamicId(id) {
-    console.log('[SSA isDynamicId] Called with:', id);
+    if (DEBUG_CSH) console.log('[SSA isDynamicId] Called with:', id);
     if (!id) return false;
 
     // Common patterns for dynamic IDs/classes:
@@ -204,10 +206,33 @@ var ContentScriptHelpers = (function () {
 
     // Common dynamic state classes (added/removed by JavaScript)
     var dynamicStateClasses = [
-      'loaded', 'loading', 'active', 'inactive', 'visible', 'hidden',
-      'open', 'closed', 'expanded', 'collapsed', 'selected', 'disabled',
-      'focused', 'hover', 'error', 'success', 'warning', 'current',
-      'show', 'hide', 'in', 'out', 'on', 'off', 'fade', 'fadeIn', 'fadeOut'
+      'loaded',
+      'loading',
+      'active',
+      'inactive',
+      'visible',
+      'hidden',
+      'open',
+      'closed',
+      'expanded',
+      'collapsed',
+      'selected',
+      'disabled',
+      'focused',
+      'hover',
+      'error',
+      'success',
+      'warning',
+      'current',
+      'show',
+      'hide',
+      'in',
+      'out',
+      'on',
+      'off',
+      'fade',
+      'fadeIn',
+      'fadeOut',
     ];
     if (dynamicStateClasses.includes(id.toLowerCase())) return true;
 
@@ -221,17 +246,22 @@ var ContentScriptHelpers = (function () {
       // Step 1: Use ID if truly unique and stable (not dynamically generated)
       if (element.id && typeof element.id === 'string') {
         const id = element.id.trim();
-        console.log('[SSA generateSelector] Checking element ID:', id, 'isDynamic?', isDynamicId(id));
+        console.log(
+          '[SSA generateSelector] Checking element ID:',
+          id,
+          'isDynamic?',
+          isDynamicId(id)
+        );
         if (
           id &&
           !id.includes(' ') &&
           !isDynamicId(id) &&
           document.querySelectorAll('#' + CSS.escape(id)).length === 1
         ) {
-          console.log('[SSA generateSelector] Using stable ID:', id);
+          if (DEBUG_CSH) console.log('[SSA generateSelector] Using stable ID:', id);
           return '#' + CSS.escape(id);
         } else if (isDynamicId(id)) {
-          console.log('[SSA generateSelector] Rejected dynamic ID at step 1:', id);
+          if (DEBUG_CSH) console.log('[SSA generateSelector] Rejected dynamic ID at step 1:', id);
         }
       }
 
@@ -256,24 +286,27 @@ var ContentScriptHelpers = (function () {
           !isDynamicId(current.id) &&
           !current.id.includes(' ')
         ) {
-          console.log('[SSA generateSelector] Adding stable ID to path:', current.id);
+          if (DEBUG_CSH) console.log('[SSA generateSelector] Adding stable ID to path:', current.id);
           selector += '#' + CSS.escape(current.id);
           hasStableId = true;
         } else {
           // Debug: Log if we're skipping a dynamic ID
           if (current.id && isDynamicId(current.id)) {
-            console.log('[SSA generateSelector] Skipping dynamic ID in path:', current.id, 'for element:', current.tagName);
+            console.log(
+              '[SSA generateSelector] Skipping dynamic ID in path:',
+              current.id,
+              'for element:',
+              current.tagName
+            );
           }
           // No stable ID - add first stable class
           if (current.className && typeof current.className === 'string') {
             var classes = current.className
               .trim()
               .split(/\s+/)
-              .filter(function(c) {
+              .filter(function (c) {
                 // Filter out pseudo-class selectors, dynamic classes, and empty strings
-                return c.length > 0 &&
-                       !c.includes(':') &&
-                       !isDynamicId(c); // Use same dynamic detection for classes
+                return c.length > 0 && !c.includes(':') && !isDynamicId(c); // Use same dynamic detection for classes
               });
             if (classes.length > 0) {
               selector += '.' + CSS.escape(classes[0]);
@@ -290,12 +323,12 @@ var ContentScriptHelpers = (function () {
         }
 
         path.unshift(selector);
-        console.log('[SSA generateSelector] Current path:', path.join(' > '));
+        if (DEBUG_CSH) console.log('[SSA generateSelector] Current path:', path.join(' > '));
 
         // Check if selector is unique
         var isUnique = document.querySelectorAll(path.join(' > ')).length === 1;
         if (isUnique) {
-          console.log('[SSA generateSelector] Found unique selector:', path.join(' > '));
+          if (DEBUG_CSH) console.log('[SSA generateSelector] Found unique selector:', path.join(' > '));
           break;
         }
 
@@ -305,7 +338,7 @@ var ContentScriptHelpers = (function () {
       }
 
       const finalSelector = path.join(' > ');
-      console.log('[SSA generateSelector] Final selector:', finalSelector);
+      if (DEBUG_CSH) console.log('[SSA generateSelector] Final selector:', finalSelector);
       return finalSelector;
     } catch (e) {
       return element.tagName.toLowerCase();
