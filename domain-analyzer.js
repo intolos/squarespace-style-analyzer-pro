@@ -188,11 +188,6 @@ DomainAnalyzer.prototype.analyzeUrlList = async function (urls, options) {
     isPremium: options.isPremium || false,
   };
 
-  var settings = {
-    delayBetweenPages: options.delayBetweenPages || 2000,
-    isPremium: options.isPremium || false,
-  };
-
   // Store options for use in analyzePageInBackground
   this.options = {
     useMobileViewport: options.useMobileViewport || false,
