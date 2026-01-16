@@ -1,0 +1,221 @@
+import { AnalyzerController } from './domainAnalysisUI';
+import { ResultsManager } from '../managers/resultsManager';
+
+export const SinglePageAnalysisUI = {
+  pollInterval: null as any,
+  isHandlingCompletion: false,
+
+  /**
+   * Main method to analyze the current active site page
+   */
+  async analyzeSite(analyzer: AnalyzerController): Promise<void> {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+    const currentDomain = new URL(tab.url as string).hostname;
+
+    const isNewDomain = !analyzer.analyzedDomains.includes(currentDomain);
+
+    if (!analyzer.isPremium && isNewDomain && analyzer.usageCount >= 3) {
+      analyzer.showError(
+        'Please upgrade to analyze more websites. You have used your 3 free websites.'
+      );
+      return;
+    }
+
+    // Show generic loading state
+    // In WXT/ESM we might need to access DOM elements directly or via helper if showLoading isn't enough
+    analyzer.hideMessages();
+    const loadingEl = document.getElementById('loading');
+    const loadingStatusEl = document.getElementById('loadingStatus');
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (loadingStatusEl) loadingStatusEl.textContent = 'Analyzing page...';
+
+    // Clear previous persistent state
+    await chrome.storage.local.remove([
+      'singlePageAnalysisStatus',
+      'singlePageProgressText',
+      'singlePageAnalysisResults',
+      'singlePageAnalysisError',
+    ]);
+
+    try {
+      console.log('Starting page analysis...');
+
+      if (
+        !tab ||
+        !tab.url ||
+        tab.url.startsWith('chrome://') ||
+        tab.url.startsWith('chrome-extension://')
+      ) {
+        throw new Error(
+          'Cannot analyze Chrome internal pages. Please navigate to a regular website.'
+        );
+      }
+
+      // Start polling immediately
+      this.pollForCompletion(analyzer);
+
+      // "Analyze This Page" always includes mobile analysis
+      const response = await chrome.runtime.sendMessage({
+        action: 'analyzeMobileViewport',
+        url: tab.url,
+        viewportWidth: 375,
+      });
+
+      if (response && response.success) {
+        this.handleCompletion(analyzer, response.data);
+      } else if (response && !response.success) {
+        throw new Error(response.error);
+      }
+    } catch (error: any) {
+      console.error('Error:', error);
+      this.stopPolling();
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      if (
+        error.message.includes('receiving end') ||
+        error.message.includes('Receiving end') ||
+        error.message.includes('Could not establish connection')
+      ) {
+        analyzer.showError(
+          'Could not connect to the page. Please refresh the web page, and wait until it has completely loaded, and try again.'
+        );
+      } else {
+        analyzer.showError('Analysis failed: ' + error.message);
+      }
+
+      chrome.storage.local.set({
+        singlePageAnalysisStatus: 'error',
+        singlePageAnalysisError: error.message,
+      });
+    }
+  },
+
+  /**
+   * Check for ongoing analysis on popup open
+   */
+  async checkOngoingAnalysis(analyzer: AnalyzerController): Promise<void> {
+    const data = await chrome.storage.local.get([
+      'singlePageAnalysisStatus',
+      'singlePageProgressText',
+      'singlePageAnalysisResults',
+      'singlePageAnalysisError',
+    ]);
+
+    if (data.singlePageAnalysisStatus === 'in-progress') {
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'flex';
+
+      if (data.singlePageProgressText) {
+        const statusEl = document.getElementById('loadingStatus');
+        if (statusEl) statusEl.textContent = data.singlePageProgressText;
+      }
+
+      // Start polling for completion
+      this.pollForCompletion(analyzer);
+    } else if (data.singlePageAnalysisStatus === 'complete' && data.singlePageAnalysisResults) {
+      this.handleCompletion(analyzer, data.singlePageAnalysisResults);
+    } else if (data.singlePageAnalysisStatus === 'error' && data.singlePageAnalysisError) {
+      analyzer.showError('Analysis failed: ' + data.singlePageAnalysisError);
+      chrome.storage.local.remove(['singlePageAnalysisStatus', 'singlePageAnalysisError']);
+    }
+  },
+
+  pollForCompletion(analyzer: AnalyzerController): void {
+    this.stopPolling();
+
+    this.pollInterval = setInterval(async () => {
+      const data = await chrome.storage.local.get([
+        'singlePageAnalysisStatus',
+        'singlePageProgressText',
+        'singlePageAnalysisResults',
+        'singlePageAnalysisError',
+      ]);
+
+      if (data.singlePageAnalysisStatus === 'complete' && data.singlePageAnalysisResults) {
+        this.stopPolling();
+        this.handleCompletion(analyzer, data.singlePageAnalysisResults);
+      } else if (data.singlePageAnalysisStatus === 'error' && data.singlePageAnalysisError) {
+        this.stopPolling();
+        const loadingEl = document.getElementById('loading');
+        if (loadingEl) loadingEl.style.display = 'none';
+
+        analyzer.showError('Analysis failed: ' + data.singlePageAnalysisError);
+        chrome.storage.local.remove(['singlePageAnalysisStatus', 'singlePageAnalysisError']);
+      } else if (data.singlePageAnalysisStatus === 'in-progress' && data.singlePageProgressText) {
+        const statusEl = document.getElementById('loadingStatus');
+        if (statusEl) statusEl.textContent = data.singlePageProgressText;
+      }
+    }, 1000);
+  },
+
+  stopPolling(): void {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+  },
+
+  async handleCompletion(analyzer: AnalyzerController, results: any): Promise<void> {
+    if (this.isHandlingCompletion) return;
+    this.isHandlingCompletion = true;
+
+    try {
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      // Get current domain for usage tracking
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const currentDomain = tabs[0] ? new URL(tabs[0].url as string).hostname : '';
+      const isNewDomain = currentDomain && !analyzer.analyzedDomains.includes(currentDomain);
+
+      // We need to merge results into analyzer's accumulatedResults
+      // The AnalyzerController interface defines accumulatedResults, but relies on updateUI to show it?
+      // Actually `AnalyzerController` has distinct methods.
+
+      const mergeResult = ResultsManager.mergeResults(analyzer.accumulatedResults, results);
+
+      if (mergeResult.alreadyAnalyzed) {
+        // Handle already analyzed case?
+        // Original code: shows alert, returns false.
+        // But here we are in a 'success' callback flow usually.
+        // If it's already analyzed, we might still want to show it, or just notify.
+        // But let's follow the standard pattern:
+        // AnalyzerController should probably expose a "mergeResults" method if it needs specific UI logic,
+        // but here we can just update the data.
+      }
+
+      analyzer.accumulatedResults = mergeResult.merged || mergeResult;
+      await analyzer.saveAccumulatedResults();
+
+      analyzer.displayResults();
+
+      if (!analyzer.isPremium && isNewDomain) {
+        analyzer.analyzedDomains.push(currentDomain);
+        analyzer.usageCount = analyzer.usageCount + 1;
+        await analyzer.saveUserData();
+        analyzer.updateUI();
+        analyzer.showSuccess(
+          'Website analyzed! You have used ' + analyzer.usageCount + ' of 3 free websites.'
+        );
+      } else if (!analyzer.isPremium) {
+        analyzer.showSuccess('Page analyzed!');
+      } else {
+        analyzer.showSuccess(
+          'Page analyzed successfully! Navigate to another page to add more data, or export your results.'
+        );
+      }
+
+      analyzer.trackUsage('analysis_completed');
+
+      chrome.storage.local.remove([
+        'singlePageAnalysisStatus',
+        'singlePageProgressText',
+        'singlePageAnalysisResults',
+        'singlePageAnalysisError',
+      ]);
+    } finally {
+      this.isHandlingCompletion = false;
+    }
+  },
+};

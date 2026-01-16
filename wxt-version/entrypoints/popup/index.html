@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎨 Style Analyzer Pro</h1>
+      <p id="uiAuditTitle">Professional Squarespace Design Audit</p>
+    </div>
+    
+    <div class="card">
+      <div id="notSquarespace" class="not-squarespace" style="display: none;">
+        <strong id="uiNotSqsTitle">⚠️ Not a Squarespace Site</strong><br>
+        <span id="uiNotSqsDescription">This extension works on all websites. However, it has over 15 Squarespace-specific factors. To analyze this site, use the standard procedures.</span>
+      </div>
+      
+      <!-- Loading spinner shown on initial load -->
+      <div id="initialLoader" style="display: flex; align-items: center; justify-content: center; min-height: 200px;">
+        <div class="spinner"></div>
+      </div>
+      
+      <div id="mainInterface" style="display: none;">
+        <div id="statusSection" class="status-section">
+          <div class="usage-counter">
+            <span id="usageCount">0</span> of 3 free websites analyzed
+          </div>
+          <div class="usage-bar">
+            <div id="usageProgress" class="usage-progress" style="width: 0%;"></div>
+          </div>
+        </div>
+        
+        <div id="siteInfo" class="site-info" style="display: none;">
+          <strong>Current Site:</strong> <span id="currentUrl"></span>
+        </div>
+
+        <div id="pageSelectionModal" class="page-selection-modal">
+          <h4>📊 Select Sections to Analyze</h4>
+          <div id="pagesFound" class="pages-found"></div>
+          
+          <div id="navigationSections" class="navigation-sections">
+            <!-- Dynamically populated with checkboxes -->
+          </div>
+          
+          <div class="selection-summary">
+            <div id="selectionCount" class="selection-count">
+              <strong>0 pages</strong> selected across <strong>0 sections</strong>
+            </div>
+          </div>
+          
+          <div id="timeEstimate" class="time-estimate"></div>
+          
+          <div class="modal-buttons" style="flex-direction: column;">
+            <button id="confirmWithoutMobile" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">🚀 Analyze Without Mobile</button>
+            <button id="confirmWithMobile" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">📱 Analyze With Mobile <span id="mobileTimeAddition"></span></button>
+            <button id="confirmOnlyMobile" class="btn" style="background: #0891b2; color: white; margin-bottom: 12px; width: 100%;">📱 Only Mobile Analysis</button>
+            <button id="cancelPageSelection" class="btn btn-secondary" style="width: 100%;">Cancel</button>
+          </div>
+        </div>
+        
+        <div class="multi-page-info">
+          <strong>📚 Multi-Page Analysis:</strong>
+          To analyze individual pages of a website, please use the following procedure:
+          <br>1. Click "Analyze This Page" on current page
+          <br>2. Navigate to next page
+          <br>3. Click "Analyze This Page" again to add that page
+          <br>4. Repeat for all pages you'd like to analyze
+          <br>5. Export combined results
+          <br>6. When finished with a website, click the "Reset" button to clear the data to analyze another site.
+        </div>
+
+        <div class="domain-info">
+          <strong>🌐 Analyze Entire Domain:</strong>
+          Click "Analyze Entire Domain" to analyze pages using the site's sitemap. Free users get 10 pages. Premium gets full domain analysis with unlimited pages. Once the analysis starts, you can close this popup and continue working - the analysis will run in the background.
+        </div>
+
+        <div id="domainProgress" class="domain-progress">
+          <h4>🔄 Analyzing Domain...</h4>
+          <p style="font-size: 0.85rem; color: #2c5282; margin: 0 0 10px 0; text-align: center;">
+            Tabs will rapidly open and close in your browser as pages are analyzed. Please do not interfere with this process. You can close this popup and the analysis will continue in the background.
+          </p>
+          <div class="domain-progress-bar">
+            <div id="domainProgressFill" class="domain-progress-fill">0%</div>
+          </div>
+          <div id="domainProgressText" class="domain-progress-text">Page 0 of 0</div>
+          <div id="domainProgressUrl" class="domain-progress-url">Preparing...</div>
+        </div>
+        
+        <div id="pagesAnalyzedInfo" class="pages-analyzed" style="display: none;">
+          <strong>📄 Pages Analyzed:</strong> <span id="pagesCount">0</span>
+        </div>
+        
+        <div id="resultsSection" class="results-section">
+          <div class="result-summary">
+            <div class="result-item">
+              <span class="result-label">Headings Found:</span>
+              <span id="headingsCount" class="result-count">0</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Paragraphs Found:</span>
+              <span id="paragraphsCount" class="result-count">0</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Buttons Found:</span>
+              <span id="buttonsCount" class="result-count">0</span>
+            </div>
+          </div>
+          
+          <div class="export-buttons">
+            <button id="exportHtmlBtn" class="btn btn-info" style="grid-column: 1 / -1;">
+              📊 Audit Reports
+            </button>
+
+            <button id="exportStyleGuideBtn" class="btn btn-warning">
+              🎨 Style Guides
+            </button>
+
+            <button id="exportMobileReportBtn" class="btn btn-mobile">
+              📱 Mobile Report
+            </button>
+
+            <button id="exportCsvBtn" class="btn btn-success">
+              💾 Export CSV File
+            </button>
+
+            <button id="resetBtn" class="btn btn-secondary">
+              🔄 Reset
+            </button>
+          </div>
+        </div>
+        
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <span id="loadingStatus">Analyzing page...</span>
+        </div>
+
+        <div id="mobileAnalysisSection" style="margin: 20px 0; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+          <h4 style="margin: 0 0 10px 0; color: #0369a1; font-size: 0.85rem;">📱 Mobile Usability Analysis</h4>
+          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">
+            Analyze pages using Google Lighthouse standards (412×823px mobile viewport, mobile user agent). 
+            Adds ~2 seconds per page.
+          </p>
+          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">
+            Uses Chrome DevTools Protocol for accurate mobile testing. Requires debugger permission of "Read and change all your data on all websites" but does not alter anything on your site.</p>
+          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">Clicking "Analyze This Page" will always include Mobile Analysis for that page. After clicking "Analyze Entire Domain", you will see options to include Mobile Analysis or not.</p>
+        </div>
+
+        <div id="actionButtonsContainer">
+          <button id="analyzeBtn" class="btn btn-primary">
+            🔍 Analyze This Page
+          </button>
+
+          <button id="analyzeDomainBtn" class="btn btn-domain">
+            🌐 Analyze Entire Domain
+          </button>
+          
+          <div id="mobileAnalysisChoice" style="display: none; margin-top: 15px;">
+            <button id="startWithoutMobileBtn" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">
+              🚀 Analyze Without Mobile Analysis
+            </button>
+            <button id="startWithMobileBtn" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">
+              📱 Analyze With Mobile Analysis <span id="mobileTimeAddition"></span>
+            </button>
+            <button id="startOnlyMobileBtn" class="btn" style="background: #0891b2; color: white; margin-bottom: 8px; width: 100%;">
+              📱 Only Mobile Analysis
+            </button>
+          </div>
+
+          <button id="cancelDomainBtn" class="btn btn-cancel" style="display: none;">
+            ❌ Cancel Domain Analysis
+          </button>
+        </div>
+
+        <div id="upgradeNotice" class="upgrade-notice" style="display: none;">
+          <h3>🚀 Upgrade Required</h3>
+          <p>You've used your 3 free analyses. Upgrade to continue analyzing unlimited sites!</p>
+        </div>
+        
+	    <div id="statusText">Checking license status…</div>
+
+        <div id="premiumButtonsGroup">
+          <div class="upgrade-buttons-row">
+            <button id="upgradeButton" class="btn btn-success">
+              $19.99/Year for Unlimited Use
+            </button>
+            <button id="upgradeButtonLifetime" class="btn btn-lifetime">
+              $29.99 Lifetime for Unlimited Use Forever
+            </button>
+          </div>
+
+          <div id="premiumStatusMessage" style="display: none; padding: 8px 12px; margin-bottom: 8px; border-radius: 6px; font-size: 0.85rem; text-align: center;"></div>
+          
+          <button id="checkStatusButton" class="btn btn-info" style="margin-top: 0px; font-size: 0.85rem; padding: 10px 16px; background: #63b3ed;">
+            📋 Check Premium Status
+          </button>
+
+          <a id="modifyPremiumButton" href="https://billing.stripe.com/p/login/00w7sKceJ82k8Nk7Ix4gg00" target="_blank" class="btn btn-info" style="display: block; margin-top: 0px; font-size: 0.85rem; padding: 10px 16px; background: #90cdf4; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box;">
+            ⚙️ Modify Premium Details
+          </a>
+        </div>
+        
+        <a id="uiBenefitsLink" href="https://intolos.github.io/squarespace-style-analyzer-pro/benefits/benefits.html" target="_blank" class="btn btn-primary" style="display: block; font-size: 0.85rem; padding: 12px 16px; text-decoration: none;  line-height: 1.4; margin: 15px 0 0 0; box-sizing: border-box;">
+          <center>Click to See</center><span class="feature-icon"><span style="color: #00cc00;">★</span> <!-- Green --></span>Table Comparing Our Design Audit to a SEO Audit,<br /><span class="feature-icon"><span style="color: #00cc00;">★</span> <!-- Green --></span>Summary Table of the Benefits of a Design Audit,<br /> <span class="feature-icon"><span style="color: #00cc00;">★</span> <!-- Green --></span>Details of the Over 70 Aspects of Design Analyzed by this extension.
+        </a>
+        
+        <div class="premium-features">
+          <h4>🌟 Premium Benefits</h4>
+          <ul>            
+            <li>Unlimited website analyses</li>
+            <li>Page-by-page analysis</li>
+            <li>Full domain analysis via sitemap. For larger websites, you are able to select groups of pages, in the Premium feature of page selection, to analyze your entire site in sections if desired to save time.</li>
+            <li>Critical quality checks of over 70 aspects of design</li>
+            <li>Full style detection</li>
+            <li>Color palette extraction</li>
+            <li>Brand Style Guide Typography</li> 
+            <li>Brand Style Guide Colors</li>            
+            <li>Headings analysis</li>
+            <li>Paragraphs analysis</li>
+            <li>Buttons analysis</li>
+            <li>Images alt text analysis</li>
+            <li>Check for generic image filenames</li>
+  
+            <li>CSV export for spreadsheet analysis</li>
+            <li>HTML reports for beautiful presentations for so many design audit analyses in one place you will not find anywhere else</li>
+            <li>Up to 12 reports generated depending on what is discovered on your website</li>
+            <li>Priority support</li>
+            <li>Lifetime updates</li>
+            <li>Note: When you become Premium, the "Analyze This Page" and "Analyze Entire Domain" buttons move to the top of this popup for quick access since you are already familiar with how this extension works.</li>
+          </ul>
+        </div>
+        
+        <div class="use-cases-section">
+
+            <h4 id="uiUseCaseTitle">Why Would You Use Squarespace Style Analyzer Pro?</h4>
+            
+            <div class="use-case-item">
+              <div class="use-case-icon">✅</div>
+              <div class="use-case-content">
+                <h5>Check Your Own Work</h5>
+                <p>Ensure your site follows best practices and brand guidelines before launch and after updates. Check your sites much, much quicker with far more detailed analyses than by checking within the <span id="uiDevPlatform">Squarespace developer platform</span>!</p>
+              </div>
+            </div>
+
+            <div class="use-case-item">
+              <div class="use-case-icon">👥</div>
+              <div class="use-case-content">
+                <h5>Verify Contractor & Employee Work</h5>
+                <p>Check the work of contractors and employees creating websites for you.</p>
+              </div>
+            </div>
+
+            <div class="use-case-item">
+              <div class="use-case-icon">📐</div>
+              <div class="use-case-content">
+                <h5>Enforce Standards</h5>
+                <p>Verify your standards and that of your contractors and employees.</p>
+              </div>
+            </div>
+
+            <div class="use-case-item">
+              <div class="use-case-icon">🔍</div>
+              <div class="use-case-content">
+                <h5>Uncover Design Discrepancies</h5>
+                <p>Discover inconsistencies in your site design within and between pages.</p>
+              </div>
+            </div>
+
+            <div class="use-case-item">
+              <div class="use-case-icon">⚡</div>
+              <div class="use-case-content">
+                <h5 id="uiDetectionTitle">Quick Squarespace Detection</h5>
+                <p>Super quick to see if any website is a <span id="uiSiteType">Squarespace site</span>. Shows a message if it's not.</p>
+              </div>
+            </div>
+            
+            <p class="try-it-text">Try It and See for Yourself</p>
+
+        </div>
+
+        <div class="premium-features">
+					<h4>&#x2665;&#xfe0f; <a id="uiShareLink" href="https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi" target="_blank;">Share this Extension</a> &#x2665;&#xfe0f;</h4>
+					<p style="color: #744210; font-size: 0.85rem;">Right click on the words "Share this Extension" then "copy link address" to copy the link of the Chrome Web Store so you can paste it into a message. Alternatively, click on "Share this Extension" to go to the listing in the Chrome Web Store and copy the website address from there.<br /><strong><em>We appreciate your support.</em></strong></p> 
+			  </div>
+
+        <div class="premium-features" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);">
+          <h4 style="color: #075985;">Questions, Suggestions, Testimonials</h4>
+          <p style="color: #0c4a6e; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0 0; text-align: center;">
+            For any questions and suggestions of other functionality, or other <span id="uiToolsBrand">Squarespace Tools</span>, that you'd like to see, or to generously provide a testimonial that we could use for marketing, please email: 
+            <a href="mailto:webbyinsights@gmail.com" style="color: #0369a1; text-decoration: underline; font-weight: 600;">webbyinsights@gmail.com</a><br />&#x2665;&#xfe0f;<strong><em>We appreciate your support.</em></strong>&#x2665;&#xfe0f;
+          </p>
+        </div>
+
+        <div class="developer-section">
+          <h4 id="uiDevBioTitle">Independent Developer of Squarespace Websites and This Browser Extension</h4>
+          <p id="uiDevBioBody">This browser extension, Squarespace Style Analyzer Pro from Squarespace Tools, was created by Ed Mass, an independent developer of Squarespace websites and browser extensions, who has no employee or contractual affiliation with Squarespace. Ed Mass is a member of Squarespace Circle, a designation for Squarespace website developers.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Modal Overlays -->
+  <div id="customModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+      <h3 id="customModalTitle"></h3>
+      <p id="customModalMessage" class="custom-modal-alert"></p>
+      <input type="text" id="customModalInput" style="display: none;">
+      <div class="custom-modal-buttons" id="customModalButtons"></div>
+    </div>
+  </div>
+  
+  <script type="module" src="main.ts"></script>
+</body>
+</html>

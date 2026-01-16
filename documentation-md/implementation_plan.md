@@ -174,19 +174,19 @@ VITE_ICON_BASE="https://intolos.github.io/website-style-analyzer-pro"
 **wxt.config.ts**
 
 ```typescript
-import { defineConfig } from "wxt";
+import { defineConfig } from 'wxt';
 
 export default defineConfig({
   manifest: {
     name: process.env.VITE_PRODUCT_NAME,
     description:
-      process.env.VITE_IS_SQS_VERSION === "true"
-        ? "Professional design audit tool for Squarespace websites"
-        : "Professional design audit tool for any website",
-    permissions: ["activeTab", "scripting", "storage", "tabs"],
-    host_permissions: ["<all_urls>"],
+      process.env.VITE_IS_SQS_VERSION === 'true'
+        ? 'Professional design audit tool for Squarespace websites'
+        : 'Professional design audit tool for any website',
+    permissions: ['activeTab', 'scripting', 'storage', 'tabs'],
+    host_permissions: ['<all_urls>'],
   },
-  modules: ["@wxt-dev/module-vue"], // Optional: if using Vue
+  modules: ['@wxt-dev/module-vue'], // Optional: if using Vue
 });
 ```
 
@@ -198,7 +198,7 @@ export default defineConfig({
 export const BRANDING = {
   productName: import.meta.env.VITE_PRODUCT_NAME,
   productId: import.meta.env.VITE_PRODUCT_ID,
-  isSqsVersion: import.meta.env.VITE_IS_SQS_VERSION === "true",
+  isSqsVersion: import.meta.env.VITE_IS_SQS_VERSION === 'true',
   apiBase: import.meta.env.VITE_API_BASE,
   iconBase: import.meta.env.VITE_ICON_BASE,
 };
@@ -213,12 +213,7 @@ export const BRANDING = {
 **src/platforms/index.ts**
 
 ```typescript
-export type Platform =
-  | "squarespace"
-  | "wordpress"
-  | "wix"
-  | "webflow"
-  | "generic";
+export type Platform = 'squarespace' | 'wordpress' | 'wix' | 'webflow' | 'generic';
 
 export interface PlatformInfo {
   platform: Platform;
@@ -231,12 +226,12 @@ export function detectPlatform(): PlatformInfo {
   // Squarespace detection
   const isSqs = !!(
     document.querySelector('meta[name="generator"][content*="Squarespace"]') ||
-    document.querySelector(".sqs-block")
+    document.querySelector('.sqs-block')
   );
 
   if (isSqs) {
     return {
-      platform: "squarespace",
+      platform: 'squarespace',
       detected: true,
       elementCount: 15,
       message: `We have detected a Squarespace website. We have automatically included 15 Squarespace-specific elements into our analysis.`,
@@ -246,12 +241,12 @@ export function detectPlatform(): PlatformInfo {
   // WordPress detection
   const isWP = !!(
     document.querySelector('meta[name="generator"][content*="WordPress"]') ||
-    document.querySelector(".wp-block")
+    document.querySelector('.wp-block')
   );
 
   if (isWP) {
     return {
-      platform: "wordpress",
+      platform: 'wordpress',
       detected: true,
       elementCount: 0, // TBD
       message: `We have detected a WordPress website.`,
@@ -260,10 +255,10 @@ export function detectPlatform(): PlatformInfo {
 
   // Generic fallback
   return {
-    platform: "generic",
+    platform: 'generic',
     detected: false,
     elementCount: 0,
-    message: "",
+    message: '',
   };
 }
 ```
@@ -276,17 +271,17 @@ export function detectPlatform(): PlatformInfo {
 export const SQS_BUTTON_SELECTORS = [
   'a[class*="sqs-button"]',
   'a[class*="sqs-block-button"]',
-  ".sqs-block-button-element",
-  ".sqs-button-element--primary",
-  ".sqs-button-element--secondary",
-  ".sqs-button-element--tertiary",
+  '.sqs-block-button-element',
+  '.sqs-button-element--primary',
+  '.sqs-button-element--secondary',
+  '.sqs-button-element--tertiary',
 ];
 
 export const SQS_NAV_SELECTORS = [
   'nav[data-content-field="navigation"]',
-  ".header-nav",
-  ".header-nav-wrapper",
-  ".header-menu",
+  '.header-nav',
+  '.header-nav-wrapper',
+  '.header-menu',
   '[data-nc-group="top"]',
 ];
 
@@ -301,11 +296,11 @@ Migrate files in this order to minimize risk:
 
 | Order | File(s)                           | Priority | Notes             |
 | ----- | --------------------------------- | -------- | ----------------- |
-| 1     | `content-script-helpers.js`       | High     | No external deps  |
-| 2     | `content-script-analyzers.js`     | High     | Uses helpers      |
-| 3     | `content-script-theme-capture.js` | Medium   | Pure functions    |
-| 4     | `color-analyzer.js`               | Medium   | Standalone        |
-| 5     | `export-*.js` (all 5 files)       | Medium   | Template heavy    |
+| 1     | `content-script-helpers.js`       | High     | ✅ Done           |
+| 2     | `content-script-analyzers.js`     | High     | ✅ Done           |
+| 3     | `content-script-theme-capture.js` | Medium   | ✅ Done           |
+| 4     | `color-analyzer.js`               | Medium   | ✅ Done           |
+| 5     | `export-*.js` (all 5 files)       | Medium   | ⏳ 3/5 Done       |
 | 6     | `domain-analyzer.js`              | High     | Complex, refactor |
 | 7     | `domain-analysis-manager.js`      | High     | Core logic        |
 | 8     | `background.js`                   | High     | Service worker    |

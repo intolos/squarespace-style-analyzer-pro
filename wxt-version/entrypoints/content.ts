@@ -1,0 +1,313 @@
+import { defineContentScript } from 'wxt/sandbox';
+import axe from 'axe-core';
+import { createColorTracker, finalizeColorPalette, ColorTracker } from '../src/utils/colorUtils';
+import { getNavigationName, generateSelector } from '../src/utils/domHelpers';
+import { initializeColorData, trackColor, ColorData } from '../src/analyzers/colors'; // ColorAnalyzer methods
+import { captureSquarespaceThemeStyles } from '../src/analyzers/themeCapture';
+import { analyzeButtons } from '../src/analyzers/buttons';
+import { analyzeHeadings, analyzeParagraphs } from '../src/analyzers/typography';
+import { analyzeLinks } from '../src/analyzers/links';
+import { analyzeImages } from '../src/analyzers/images';
+import { scanAllPageColors } from '../src/analyzers/colorScanner';
+import { AnalysisResult } from '../src/types';
+import { LiveInspector } from '../src/utils/inspector';
+import { ScreenshotUtils } from '../src/utils/screenshot';
+
+export default defineContentScript({
+  matches: ['<all_urls>'],
+  main() {
+    console.log('Squarespace Style Analyzer content script loaded (WXT)');
+
+    // Initialize Live Inspector
+    LiveInspector.initialize();
+
+    // Listener for messages
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'ping') {
+        sendResponse({ success: true });
+        return true;
+      }
+
+      if (request.action === 'analyzeStyles') {
+        (async () => {
+          try {
+            const results = await analyzeSquarespaceStyles();
+            sendResponse({ success: true, data: results });
+          } catch (error: any) {
+            console.error('Analysis failed:', error);
+            sendResponse({ success: false, error: error.message });
+          }
+        })();
+        return true;
+      }
+
+      if (request.action === 'captureMobileScreenshots') {
+        (async () => {
+          try {
+            const issues = request.issues || [];
+            console.log('Capturing screenshots for', issues.length, 'mobile issues');
+
+            const screenshotResponse = await chrome.runtime.sendMessage({
+              action: 'captureScreenshot',
+            });
+
+            if (!screenshotResponse || !screenshotResponse.success) {
+              sendResponse({ success: false, capturedCount: 0, issues: issues });
+              return;
+            }
+
+            const fullPageScreenshot = screenshotResponse.screenshot;
+            let capturedCount = 0;
+
+            for (let i = 0; i < issues.length; i++) {
+              const issue = issues[i];
+              if (
+                issue.type !== 'touch-target-too-small' &&
+                issue.type !== 'touch-target-spacing'
+              ) {
+                continue;
+              }
+              if (!issue.selector) continue;
+
+              try {
+                const element = document.querySelector(issue.selector);
+                if (!element) continue;
+
+                // Capture element screenshot with context
+                issue.elementScreenshot = await ScreenshotUtils.captureElementScreenshot(
+                  fullPageScreenshot,
+                  element,
+                  20
+                );
+                issue.elementContext = await ScreenshotUtils.captureElementScreenshot(
+                  fullPageScreenshot,
+                  element,
+                  200
+                );
+
+                if (issue.elementScreenshot || issue.elementContext) {
+                  capturedCount++;
+                }
+              } catch (e) {
+                console.error('Failed to capture mobile issue screenshot:', e);
+              }
+            }
+            sendResponse({ success: true, capturedCount, issues });
+          } catch (error: any) {
+            console.error('Mobile screenshot capture failed:', error);
+            sendResponse({ success: false, error: error.message, issues: request.issues });
+          }
+        })();
+        return true;
+      }
+    });
+
+    async function analyzeSquarespaceStyles(): Promise<AnalysisResult> {
+      console.log('Analysis started');
+
+      // 1. Capture full-page screenshot first
+      let fullPageScreenshot: string | null = null;
+      try {
+        const response = await chrome.runtime.sendMessage({ action: 'captureScreenshot' });
+        if (response && response.success) {
+          fullPageScreenshot = response.screenshot;
+        }
+      } catch (error) {
+        console.warn('Screenshot capture failed:', error);
+      }
+
+      // 2. Run axe-core audit
+      console.log('Running axe-core color-contrast audit...');
+      const axeContrastIssues: any[] = [];
+      try {
+        // @ts-ignore - axe might have type issues depending on version
+        const axeResults = await axe.run(document, {
+          runOnly: ['color-contrast'],
+          resultTypes: ['violations'],
+        });
+
+        // Process violations
+        for (const violation of axeResults.violations) {
+          for (const node of violation.nodes) {
+            const data = node.any?.[0]?.data || {};
+            const selector = node.target?.[0]; // simple selector
+
+            if (!selector) continue;
+
+            let element: HTMLElement | null = null;
+            try {
+              element = document.querySelector(selector);
+            } catch (e) {
+              continue;
+            }
+
+            if (!element) continue;
+
+            // Filter skipped elements (hidden, aria-hidden, disabled, presentation)
+            // Re-implementing filter logic from original
+            const computedStyle = window.getComputedStyle(element);
+            if (
+              computedStyle.display === 'none' ||
+              computedStyle.visibility === 'hidden' ||
+              parseFloat(computedStyle.opacity) === 0 ||
+              element.getAttribute('aria-hidden') === 'true' ||
+              (element as any).disabled ||
+              element.getAttribute('aria-disabled') === 'true' ||
+              ['presentation', 'none'].includes(element.getAttribute('role') || '')
+            ) {
+              continue;
+            }
+
+            // Skip off-screen
+            const rect = element.getBoundingClientRect();
+            if (rect.left < -1000 || rect.top < -5000) continue;
+
+            // Text content
+            let elementText =
+              element.textContent?.trim().substring(0, 100) ||
+              element.getAttribute('aria-label') ||
+              element.getAttribute('title') ||
+              'No text';
+
+            // Screenshots
+            let elementThumbnail: string | null = null;
+            let elementContext: string | null = null;
+
+            if (fullPageScreenshot) {
+              elementThumbnail = await ScreenshotUtils.captureElementScreenshot(
+                fullPageScreenshot,
+                element,
+                20
+              );
+              elementContext = await ScreenshotUtils.captureElementScreenshot(
+                fullPageScreenshot,
+                element,
+                200
+              );
+            }
+
+            if (elementThumbnail || elementContext) {
+              const stableSelector = generateSelector(element);
+              axeContrastIssues.push({
+                textColor: data.fgColor || 'unknown',
+                backgroundColor: data.bgColor || 'unknown',
+                ratio: data.contrastRatio || 0,
+                passes: false,
+                wcagLevel: 'Fail',
+                isLargeText: data.fontSize >= 18 || (data.fontSize >= 14 && data.fontWeight >= 700),
+                page: window.location.href,
+                pageTitle: document.title || 'Unknown',
+                location: stableSelector,
+                selector: stableSelector,
+                elementText: elementText,
+                section: 'N/A', // Could refine
+                block: 'N/A',
+                element: node.html,
+                elementScreenshot: elementThumbnail,
+                elementContext: elementContext,
+                impact: node.impact,
+                message: node.failureSummary,
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('axe-core audit failed:', error);
+      }
+
+      // 3. Initialize Results
+      const results: AnalysisResult = {
+        themeStyles: {
+          typography: { styleDefinition: '', locations: [] },
+          colors: { styleDefinition: '', locations: [] },
+          spacing: { styleDefinition: '', locations: [] },
+          buttons: { styleDefinition: '', locations: [] },
+        },
+        siteStyles: {},
+        buttons: {
+          primary: { locations: [] },
+          secondary: { locations: [] },
+          tertiary: { locations: [] },
+          other: { locations: [] },
+        },
+        links: { 'in-content': { locations: [] } },
+        images: [],
+        colorPalette: { backgrounds: [], text: [], borders: [], all: [] },
+        colorData: initializeColorData(),
+        headings: {
+          'heading-1': { locations: [] },
+          'heading-2': { locations: [] },
+          'heading-3': { locations: [] },
+          'heading-4': { locations: [] },
+          'heading-5': { locations: [] },
+          'heading-6': { locations: [] },
+        },
+        paragraphs: {
+          'paragraph-1': { locations: [] },
+          'paragraph-2': { locations: [] },
+          'paragraph-3': { locations: [] },
+          'paragraph-4': { locations: [] },
+        },
+        qualityChecks: {
+          missingH1: [],
+          multipleH1: [],
+          brokenHeadingHierarchy: [],
+          fontSizeInconsistency: [],
+          missingAltText: [],
+          genericImageNames: [],
+        },
+        mobileIssues: {
+          viewportMeta: { exists: false, content: null, isProper: false },
+          issues: [],
+        },
+        metadata: {
+          url: window.location.href,
+          domain: window.location.hostname,
+          title: document.title || 'Unknown',
+          pathname: window.location.pathname,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      // 4. Initialize Tracking
+      const colorTracker = createColorTracker();
+      // Add processed elements set to prevent duplicate color tracking
+      (results.colorData as any)._processedElements = new Set<Element>();
+
+      // 5. Capture Theme Styles
+      const squarespaceThemeStyles = await captureSquarespaceThemeStyles(
+        colorTracker,
+        results.colorData
+      );
+      results.squarespaceThemeStyles = squarespaceThemeStyles;
+
+      // 6. Get Navigation Name
+      const navigationName = getNavigationName();
+
+      // 7. Store Contrast Issues
+      (results.colorData as any).contrastPairs = axeContrastIssues;
+
+      // 8. Run Analyzers
+      await analyzeButtons(results, navigationName, colorTracker, results.colorData);
+      await analyzeHeadings(results, navigationName, colorTracker, results.colorData);
+      await analyzeParagraphs(
+        results,
+        navigationName,
+        squarespaceThemeStyles,
+        colorTracker,
+        results.colorData
+      );
+      await analyzeLinks(results, navigationName, colorTracker, results.colorData);
+      await analyzeImages(results, navigationName);
+
+      // 9. Scan remaining page colors
+      scanAllPageColors(results.colorData);
+
+      // 10. Finalize
+      results.colorPalette = finalizeColorPalette(colorTracker);
+
+      console.log('Analysis completed');
+      return results;
+    }
+  },
+});
