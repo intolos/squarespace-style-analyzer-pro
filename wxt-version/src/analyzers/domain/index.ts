@@ -130,8 +130,9 @@ export class DomainAnalyzer {
         },
       };
     } catch (error: any) {
-      if (this.abortController.signal.aborted || error.message === 'Analysis cancelled by user') {
-        return this.handleCancellation(results, urlsToAnalyze, 0); // 0 or current index if tracked
+      if (this.abortController?.signal?.aborted || error.message === 'Analysis cancelled by user') {
+        // We don't have the loop index here, so we return 0 or could try to keep track of i outside the loop
+        return this.handleCancellation(results, urlsToAnalyze, this.currentProgress.current - 1);
       }
       console.error('Core analysis error:', error);
       throw error;
@@ -225,8 +226,8 @@ export class DomainAnalyzer {
         },
       };
     } catch (error: any) {
-      if (this.abortController.signal.aborted) {
-        return this.handleCancellation(results, urls, 0);
+      if (this.abortController?.signal?.aborted || error.message === 'Analysis cancelled by user') {
+        return this.handleCancellation(results, urls, this.currentProgress.current - 1);
       }
       throw error;
     } finally {

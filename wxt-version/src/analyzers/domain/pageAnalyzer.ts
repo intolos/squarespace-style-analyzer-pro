@@ -73,11 +73,17 @@ export class PageAnalyzer {
       const cleanup = () => {
         clearTimeout(timeoutId);
         if (checkReadyInterval) clearInterval(checkReadyInterval);
+        if (signal) signal.removeEventListener('abort', onAbort);
         if (tabId !== null) {
           chrome.tabs.remove(tabId).catch(() => {});
           const idx = this.openTabs.indexOf(tabId);
           if (idx > -1) this.openTabs.splice(idx, 1);
         }
+      };
+
+      const onAbort = () => {
+        cleanup();
+        reject(new Error('Analysis cancelled by user'));
       };
 
       // Check cancellation
@@ -87,10 +93,14 @@ export class PageAnalyzer {
         return;
       }
 
+      if (signal) {
+        signal.addEventListener('abort', onAbort);
+      }
+
       // Create tab
       chrome.tabs.create({ url: url, active: false }, tab => {
         if (!tab.id) {
-          clearTimeout(timeoutId);
+          cleanup();
           reject(new Error('Failed to create tab'));
           return;
         }

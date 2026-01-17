@@ -18,11 +18,18 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "test:logic": "vitest run",
+    "test:e2e": "playwright test",
+    "test:ui": "./run-tests-ui.sh"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@vitest/ui": "^4.0.17",
+    "playwright": "^1.57.0",
     "rollup": "^4.55.1",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.17",
     "wxt": "^0.18.5"
   },
   "dependencies": {

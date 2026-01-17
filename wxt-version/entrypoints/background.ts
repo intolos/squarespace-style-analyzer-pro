@@ -8,6 +8,7 @@ export default defineBackground(() => {
 
   // State
   let domainAnalyzer: DomainAnalyzer | null = null;
+  const activeMobileAnalyses = new Map<number, { clonedTabId: number }>();
   let lastScreenshotTime = 0;
   const SCREENSHOT_MIN_INTERVAL = 750; // ms
 
@@ -16,7 +17,18 @@ export default defineBackground(() => {
   let pollingTimeoutId: any = null;
 
   // Installation Handler
-  chrome.runtime.onInstalled.addListener(details => {
+  chrome.runtime.onInstalled.addListener(async details => {
+    // Clear ALL data to start fresh on install or update
+    await chrome.storage.local.remove([
+      'accumulatedResults',
+      'analyzedDomains',
+      'domainAnalysisResults',
+      'singlePageAnalysisResults',
+      'domainAnalysisProgress',
+      'usageCount', // Added to ensure total fresh start
+      'isPremium', // Added to ensure total fresh start
+    ]);
+
     if (details.reason === 'install') {
       chrome.storage.local.set({
         usageCount: 0,
@@ -49,8 +61,28 @@ export default defineBackground(() => {
     }
 
     if (request.action === 'analyzeMobileViewport') {
-      handleMobileAnalysis(request).then(sendResponse);
+      handleMobileAnalysis(request, sender).then(sendResponse);
       return true; // Keep channel open
+    }
+
+    if (request.action === 'cancelSinglePageAnalysis') {
+      (async () => {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tabId = request.tabId || sender?.tab?.id || (tabs[0] ? tabs[0].id : null);
+
+        if (tabId && activeMobileAnalyses.has(tabId)) {
+          const { clonedTabId } = activeMobileAnalyses.get(tabId)!;
+          chrome.tabs.remove(clonedTabId).catch(() => {});
+          activeMobileAnalyses.delete(tabId);
+
+          chrome.storage.local.set({
+            singlePageAnalysisStatus: 'error',
+            singlePageAnalysisError: 'Analysis cancelled by user',
+          });
+        }
+        sendResponse({ success: true });
+      })();
+      return true;
     }
 
     if (request.action === 'analyzeDomain') {
@@ -122,11 +154,12 @@ export default defineBackground(() => {
 
   // --- Handlers ---
 
-  async function handleMobileAnalysis(request: any) {
+  async function handleMobileAnalysis(request: any, sender: chrome.runtime.MessageSender) {
     console.log('Running Zero-Intrusion mobile analysis for URL:', request.url || 'current');
 
     let clonedTabId: number | null = null;
     let targetUrl = request.url;
+    const originalTabId = sender?.tab?.id || 0; // The tab that requested the analysis (or 0 if popup)
 
     const sendProgress = (status: string) => {
       chrome.storage.local.set({
@@ -165,6 +198,19 @@ export default defineBackground(() => {
           resolve();
         }, 15000);
       });
+
+      // Track active analysis so it can be cancelled
+      if (originalTabId) {
+        activeMobileAnalyses.set(originalTabId, { clonedTabId });
+      } else {
+        // Fallback for popup-initiated analysis without tab info
+        // We'll use a temporary key if needed, but usually sender.tab.id is present for content scripts
+        // and for popup we might need to find the active tab.
+        const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTabs[0]) {
+          activeMobileAnalyses.set(activeTabs[0].id!, { clonedTabId });
+        }
+      }
 
       if (mobileOnly) {
         sendProgress('Running mobile usability audit...');
@@ -236,23 +282,46 @@ export default defineBackground(() => {
         // Full Analysis
         console.log('=== FULL BACKGROUND ANALYSIS MODE ===');
         let designResponse: any = null;
-        let retries = 0;
-        const maxRetries = 5;
-
         // Content script should be auto-injected by manifest logic or defineContentScript
         // We wait for it to be ready
+        const maxRetries = 15;
+        const retryInterval = 1000;
+        let retries = 0;
+
         while (retries < maxRetries) {
           try {
             const ping = await chrome.tabs.sendMessage(clonedTabId, { action: 'ping' });
-            if (ping?.success) break;
+            if (ping?.success) {
+              console.log('Background: Content script connected successfully');
+              break;
+            }
           } catch (e) {
             retries++;
-            await new Promise(r => setTimeout(r, 1000));
+            // If we are halfway through retries, try to manually inject the script
+            if (retries === 5) {
+              console.warn(
+                'Background: Content script not responding, attempting manual injection...'
+              );
+              try {
+                await chrome.scripting.executeScript({
+                  target: { tabId: clonedTabId },
+                  files: ['content-scripts/content.js'],
+                });
+                console.log('Background: Manual injection command sent');
+              } catch (injectError) {
+                console.error('Background: Manual injection failed:', injectError);
+              }
+            }
+            await new Promise(r => setTimeout(r, retryInterval));
           }
         }
 
         if (retries >= maxRetries) {
-          console.warn('Content script did not respond, attempting manual fallback or failing');
+          console.error('Background: Failed to connect to content script after multiple attempts');
+          // Decide whether to throw or try one last time
+          throw new Error(
+            'Could not connect to the page. Please refresh the web page, and wait until it has completely loaded, and try again.'
+          );
         }
 
         sendProgress('Scanning page styles and accessibility...');
@@ -297,6 +366,13 @@ export default defineBackground(() => {
       return { success: false, error: error.message };
     } finally {
       if (clonedTabId) chrome.tabs.remove(clonedTabId).catch(() => {});
+      // Cleanup tracking
+      for (const [key, val] of activeMobileAnalyses.entries()) {
+        if (val.clonedTabId === clonedTabId) {
+          activeMobileAnalyses.delete(key);
+          break;
+        }
+      }
     }
   }
 

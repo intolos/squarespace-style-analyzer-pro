@@ -2,6 +2,7 @@
 
 import type { ColorAnalysis } from '../../types';
 import { generateSectionHeader } from '../components';
+import { escapeHtml } from '../../../utils';
 
 export function buildAccessibilitySection(
   analysis: ColorAnalysis,
@@ -56,8 +57,9 @@ export function buildAccessibilitySection(
               ${
                 failure.elementText && failure.elementText !== 'Unknown'
                   ? `
-              <div style="margin-top: 8px; padding: 8px; background: #f7fafc; border-radius: 4px;">
-                <strong>Element Text:</strong> "${failure.elementText}"
+              <div style="margin-top: 10px; padding: 10px; background: ${failure.backgroundColor}; border: 1px solid #e2e8f0; border-radius: 4px; line-height: 1.5;">
+                <strong style="color: #e53e3e;">Element Text:</strong> 
+                <span style="color: ${failure.textColor}; font-weight: 500; font-size: ${failure.fontSize ? failure.fontSize + 'px' : 'inherit'};">${escapeHtml(failure.elementText)}</span>
               </div>
               `
                   : ''
@@ -81,11 +83,11 @@ export function buildAccessibilitySection(
             }
           </div>
           <div class="contrast-location">
+            ${failure.fontSize ? `<strong>Text Size:</strong> ${failure.fontSize}px<br>` : ''}
             <strong>Location:</strong> ${failure.location}<br>
             <strong>Page:</strong> <a href="${failure.page}" target="_blank" style="color: #667eea; text-decoration: underline;">${failure.page}</a><br>
             <strong>Section:</strong> ${failure.section}<br>
-            <strong>Block:</strong> ${failure.block}<br>
-            <strong>Element:</strong> ${failure.element}
+            <strong>Block:</strong> ${failure.block}
           </div>
         </div>
       `

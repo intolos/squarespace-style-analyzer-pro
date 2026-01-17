@@ -71,6 +71,11 @@ export const MobileLighthouseAnalyzer = {
 
   // Debugger Management
   attachDebugger(tabId: number): Promise<void> {
+    if (!chrome.debugger) {
+      return Promise.reject(
+        new Error('Debugger API not available. "debugger" permission might be missing in manifest.')
+      );
+    }
     return chrome.debugger.attach({ tabId: tabId }, '1.3');
   },
 

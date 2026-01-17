@@ -111,8 +111,8 @@ export function exportStyleGuide(
 </body>
 </html>`;
 
-  const filename = `${domain} ${filenameBrand} brand style guide typography.html`;
-  downloadFile(html, filename, 'text/html');
+  const filename = `${domain}-${platformStrings.filenameVariable}-brand-style-guide-typography.html`;
+  downloadFile(filename, html, 'text/html');
 
   // Automatically generate colors report with a delay to avoid collision
   setTimeout(() => {

@@ -59,6 +59,6 @@ export const platformStrings = {
         cancelUrl: 'https://intolos.github.io/website-style-analyzer-pro/benefits/cancel.html',
       },
   favicon: isSqs
-    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/icon32.png'
-    : 'https://intolos.github.io/website-style-analyzer-pro/benefits/icon32.png',
+    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon32.png'
+    : 'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/icon32.png',
 };

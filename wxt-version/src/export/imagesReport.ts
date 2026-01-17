@@ -322,6 +322,6 @@ export function exportImagesReport(
 </body>
 </html>`;
 
-  const filename = `${domain} ${filenameBrand} images analysis.html`;
-  downloadFileFn(html, filename, 'text/html');
+  const filename = `${domain}-${filenameBrand}-images-analysis-report.html`;
+  downloadFileFn(filename, html, 'text/html');
 }

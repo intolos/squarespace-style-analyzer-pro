@@ -106,12 +106,25 @@ export const MobileCheckScripts = {
       if (rect.left > window.innerWidth + horizontalBuffer) continue;
 
       const styles = window.getComputedStyle(el);
+
+      // FILTER 1: Basic Visibility
       if (
         styles.display === 'none' ||
         styles.visibility === 'hidden' ||
         parseFloat(styles.opacity) < 0.01
       )
         continue;
+
+      // FILTER 2: Aria Hidden (Ported from Style Analyzer)
+      if (el.getAttribute('aria-hidden') === 'true') continue;
+
+      // FILTER 3: Presentation Role (Ported from Style Analyzer)
+      const role = el.getAttribute('role');
+      if (role === 'presentation' || role === 'none') continue;
+
+      // FILTER 4: Off-screen checks (Ported/Refined)
+      // Skip if significantly off-screen (likely hidden menu or similar)
+      if (rect.top < -5000 || rect.left < -5000) continue;
 
       // Nested check
       let isNested = false;
@@ -132,17 +145,33 @@ export const MobileCheckScripts = {
 
       if (el.offsetParent === null && el.tagName !== 'BODY') continue;
 
-      // Content check
-      const text = (el.textContent || '').trim();
+      // Content check & Text Extraction (Improved)
+      let text = (el.textContent || '').trim();
       const ariaLabel = el.getAttribute('aria-label') || '';
       const title = el.getAttribute('title') || '';
+
+      // Improve extraction: Check for nested image alt text if main text is empty
+      if (!text && !ariaLabel && !title) {
+        const nestedImg = el.querySelector('img');
+        if (nestedImg && nestedImg.alt) {
+          text = `Image: ${nestedImg.alt}`;
+        } else if (nestedImg) {
+          text = '(Graphical Link)';
+        } else {
+          // Check for background image
+          if (styles.backgroundImage && styles.backgroundImage !== 'none') {
+            text = '(Graphical Link)';
+          }
+        }
+      }
+
       const hasContent = text.length > 0 || ariaLabel.length > 0 || title.length > 0;
 
       if (!hasContent) {
-        const hasImage = el.querySelector('img') !== null;
+        // Re-check SVG presence if we didn't identify content yet
         const hasSVG = el.querySelector('svg') !== null || el.tagName.toLowerCase() === 'svg';
-        const hasBackgroundImage = styles.backgroundImage && styles.backgroundImage !== 'none';
-        if (!hasImage && !hasSVG && !hasBackgroundImage) continue;
+        if (!hasSVG) continue; // Skip if truly empty
+        if (!text) text = '(Icon Link)'; // Label SVG links
       }
 
       let elementId = el.tagName;
@@ -194,16 +223,20 @@ export const MobileCheckScripts = {
         });
       }
 
+      // Final Label Logic
       let label = (text || ariaLabel || title || '').trim().substring(0, 50);
+
+      // Fallback for IMG tags if we haven't caught them above (rare given logic above, but safe)
       if (!label && el.tagName.toLowerCase() === 'img') {
         const img = el as HTMLImageElement;
         label = img.alt || 'Image';
       } else if (!label) {
+        // Only fall back to generic ID if we absolutely have no other text/label
         label = elementId;
       }
 
       rects.push({
-        el: el, // Note: element refs are not strictly serializable but used in loop
+        el: el,
         element: elementId,
         selector: cssSelector,
         clientRects: allClientRects,
@@ -260,6 +293,7 @@ export const MobileCheckScripts = {
           minRequired: minSize,
           left: largestRect.left,
           top: largestRect.top,
+          href: rect.href,
         });
       }
 
@@ -305,6 +339,7 @@ export const MobileCheckScripts = {
                 nearTop: other.top,
                 nearWidth: other.width,
                 nearHeight: other.height,
+                href: rect.href,
               });
             }
           }

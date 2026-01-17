@@ -7,10 +7,10 @@ export class LiveInspector {
   private static inspectionStarted = false;
 
   public static initialize(): void {
-    if (document.readyState === 'complete') {
-      this.checkUrlForInspection();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.checkUrlForInspection());
     } else {
-      window.addEventListener('load', () => this.checkUrlForInspection());
+      this.checkUrlForInspection();
     }
   }
 
@@ -66,7 +66,7 @@ export class LiveInspector {
       highlight.style.cssText = `
         position: fixed;
         border: 4px solid #f56565;
-        background-color: rgba(245, 101, 101, 0.15);
+        background-color: transparent;
         z-index: 2147483647;
         pointer-events: none;
         border-radius: 4px;

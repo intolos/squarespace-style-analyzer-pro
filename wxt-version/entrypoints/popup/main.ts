@@ -233,6 +233,9 @@ class SquarespaceAnalyzer implements AnalyzerController {
       .getElementById('exportMobileReportBtn')
       ?.addEventListener('click', () => this.exportMobileReport());
     document.getElementById('resetBtn')?.addEventListener('click', () => this.resetAnalysis());
+    document
+      .getElementById('cancelSinglePageAnalysisBtn')
+      ?.addEventListener('click', () => this.cancelSinglePageAnalysis());
 
     document
       .getElementById('checkStatusButton')
@@ -282,6 +285,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
   async cancelDomainAnalysis() {
     await DomainAnalysisUI.cancelDomainAnalysis(this);
+  }
+
+  async cancelSinglePageAnalysis() {
+    await SinglePageAnalysisUI.cancelAnalysis(this);
   }
 
   async startDomainAnalysisWithMobileChoice(useMobile: boolean, mobileOnly: boolean) {

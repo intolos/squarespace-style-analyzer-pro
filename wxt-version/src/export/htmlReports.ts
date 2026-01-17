@@ -19,7 +19,7 @@ export function exportQualityCheckReport(
   brand: string
 ): void {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename = `${brand}-${platformStrings.filenameVariable}-quality-check-${checkType}-${timestamp}.html`;
+  const filename = `${domain}-${platformStrings.filenameVariable}-quality-check-${checkType}-${timestamp}.html`;
 
   let title = 'Quality Check Detail';
   let issueHtml = '';
@@ -84,74 +84,65 @@ export function exportQualityCheckReport(
 }
 
 /**
- * Generate the Quality Checks Scorecard HTML
+ * Generate the Quality Checks Scorecard HTML (Legacy Design)
  */
 function generateQualityScorecard(score: number, checks: QualityCheckResult['checks']): string {
-  let scoreColor = '#48bb78'; // Green
-  if (score < 50)
-    scoreColor = '#e53e3e'; // Red
-  else if (score < 80) scoreColor = '#ecc94b'; // Yellow
+  // Determine color based on score (Legacy logic)
+  const scoreColor = score === 100 ? '#48bb78' : score >= 80 ? '#ed8936' : '#e53e3e';
 
   let html = `
-    <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 40px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 20px; margin-bottom: 20px;">
-        <h2 style="margin: 0; color: #2d3748; font-size: 1.8rem;">✅ Quality Checks</h2>
-        <div style="text-align: right;">
-          <div style="font-size: 3rem; font-weight: bold; color: ${scoreColor}; line-height: 1;">${score}%</div>
-          <div style="color: #718096; font-size: 0.9rem; margin-top: 5px;">OVERALL SCORE</div>
-        </div>
-      </div>
+    <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+      <h2 style="margin: 0 0 30px 0; color: #2d3748; font-size: 2rem;">Quality Score</h2>
       
-      <div style="display: grid; gap: 15px;">
+      <div style="width: 150px; height: 150px; border-radius: 50%; background: ${scoreColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; margin: 0 auto 30px;">
+        ${score}%
+      </div>
+
+      <div style="text-align: left; max-width: 600px; margin: 0 auto;">
   `;
 
   for (const check of checks) {
-    const icon = check.passed ? '✅' : '❌';
-    const bg = check.passed ? '#f0fff4' : '#fff5f5';
-    const border = check.passed ? '#c6f6d5' : '#fed7d7';
+    const statusClass = check.passed ? 'pass' : 'fail';
+    const bg = check.passed ? '#c6f6d5' : '#fed7d7';
+    const color = check.passed ? '#22543d' : '#9b2c2c';
+    const icon = check.passed ? '✔' : '✗';
 
     html += `
-      <div style="background: ${bg}; border: 1px solid ${border}; border-radius: 6px; padding: 15px;">
-        <div style="display: flex; align-items: flex-start;">
-          <div style="font-size: 1.2rem; margin-right: 15px; margin-top: 2px;">${icon}</div>
-          <div style="flex: 1;">
-            <div style="font-weight: 600; color: #2d3748; margin-bottom: ${
-              check.details.length > 0 ? '10px' : '0'
-            };">
-              ${check.message}
-            </div>
-            
-            ${
-              check.details.length > 0
-                ? `<div style="font-size: 0.9rem; color: #4a5568; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 4px;">
-                    <ul style="margin: 0; padding-left: 20px;">
-                      ${check.details
-                        .map(
-                          detail => `
-                        <li style="margin-bottom: 4px;">
-                          ${
-                            detail.url
-                              ? `<a href="${detail.url}" target="_blank" style="color: #667eea; text-decoration: underline;">${
-                                  detail.page || 'Link'
-                                }</a>: `
-                              : ''
-                          }
-                          ${detail.description}
-                        </li>
-                      `
-                        )
-                        .join('')}
-                    </ul>
-                  </div>`
-                : ''
-            }
-          </div>
-        </div>
+      <div style="padding: 15px 20px; margin: 10px 0; border-radius: 8px; font-size: 1rem; background: ${bg}; color: ${color};">
+        <span style="margin-right: 10px; font-weight: bold;">${icon}</span>
+        ${check.message}
+        
+        ${
+          check.details && check.details.length > 0
+            ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1); font-size: 0.9rem;">
+                ${check.details
+                  .map(
+                    detail => `
+                  <div style="padding: 6px 0;">
+                    ${
+                      detail.page && detail.page !== 'All Pages' && detail.url
+                        ? `<a href="${detail.url}" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 600;">${detail.page}</a> - `
+                        : ''
+                    }
+                    ${detail.description}
+                  </div>
+                `
+                  )
+                  .join('')}
+               </div>`
+            : ''
+        }
       </div>
     `;
   }
 
   html += `
+      </div>
+      <br />
+      <div style="background: #667EEA; padding: 10px; margin-bottom: 20px; border-radius: 8px; color: white;">
+        <div style="font-size: 0.9rem; text-align: left;">
+          NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization. We also want you to know that Squarespace code is not always easy to analyze. Our coding in this extension includes numerous situations to catch all possibilities for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.
+        </div>
       </div>
     </div>
   `;
@@ -192,16 +183,40 @@ export function exportAnalysisReport(data: ReportData): void {
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f7fafc; }
           .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 0; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-          .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; text-align: center; }
-          h1 { margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; }
-          .subtitle { opacity: 0.9; font-size: 1.1rem; margin-top: 10px; }
+          /* Updated Header to match Images Report */
+          .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; background: transparent; color: #333; box-shadow: none; }
+          .header h1 { font-size: 2.7rem; margin: 0 0 10px 0; color: #2d3748; letter-spacing: normal; font-weight: bold; }
+          .header p { color: #7180D8; font-size: 1.8rem; margin: 5px 0; }
           
+          /* Reports Nav Block */
+          .reports-nav { background: linear-gradient(135deg, #5562D8 0%, #764ba2 100%); padding: 25px; border-radius: 12px; margin-bottom: 40px; text-align: center; }
+          .reports-nav h3 { color: white; margin: 0 0 25px 0; font-size: 1.8rem; font-weight: 800; }
+          .reports-nav-links { display: flex; flex-direction: column; gap: 12px; }
+          .reports-nav-link { font-size: 1.3rem; background: rgba(255,255,255,0.10); padding: 15px 20px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600; transition: all 0.2s ease; display: block; text-align: left; }
+          .reports-nav-link:hover { transform: translateX(5px); }
+          .reports-nav-link span { display: block; font-size: 1.1rem; font-weight: normal; opacity: 0.9; margin-top: 4px; }
+
+          /* Report Titles */
+          .report-title { text-align: center; margin: 60px 0 40px 0; }
+          .report-title h2 { font-size: 2.2rem; color: #667eea; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px; }
+          .report-title h3 { font-size: 2.2rem; color: #667eea; margin: 0; font-weight: 700; letter-spacing: 2px; }
+          .report-divider { margin: 80px 0; text-align: center; position: relative; }
+          .report-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, transparent, #667eea, #764ba2, #667eea, transparent); }
+          .report-divider-icon { background: #f7fafc; padding: 0 30px; position: relative; font-size: 2.5rem; color: #667eea; }
+
+          /* Metadata */
+          .metadata { background: #e9ecef; padding: 25px; border-radius: 8px; margin-bottom: 40px; }
+          .metadata h2 { margin-top: 0; color: #2d3748; }
+          .metadata-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+          .metadata-item { background: white; padding: 15px; border-radius: 6px; }
+          .metadata-label { font-weight: 600; color: #4a5568; margin-bottom: 5px; }
+          .metadata-value { color: #2d3748; }
+
           /* Accordion Styles */
           .accordion-container { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
           .accordion-header { background: white; padding: 15px; cursor: pointer; transition: background 0.2s; user-select: none; }
           .accordion-header:hover { background: #f8f9fa; }
-          .accordion-title { display: flex; align-items: center; justify-content: space-between; font-weight: 600; color: #2d3748; }
+          .accordion-title { display: flex; align-items: center; justify-content: flex-start; gap: 15px; font-weight: 600; color: #2d3748; }
           .accordion-label { display: flex; align-items: center; }
           .accordion-icon { transition: transform 0.2s ease; margin-left: 10px; color: #a0aec0; font-size: 0.8rem; }
           .accordion-count { background: #edf2f7; color: #718096; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 10px; }
@@ -223,29 +238,72 @@ export function exportAnalysisReport(data: ReportData): void {
       </head>
       <body>
         <div class="header">
-          <div class="header-content">
-            <h1>${brand} - ${platformStrings.reportTitle}</h1>
-            <div class="subtitle">Generated on ${date} • ${cleanDomain}</div>
-          </div>
+          <h1>🔬 ${domain} Website Analysis</h1>
+          <p>Professional Design Audit by ${platformStrings.productName}</p>
+          <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
         </div>
 
         <div class="container">
           <!-- Quality Scorecard -->
           ${generateQualityScorecard(score, checks)}
 
+          <div class="metadata">
+            <h2>📋 Analysis Summary</h2>
+            <div class="metadata-grid">
+              <div class="metadata-item">
+                <div class="metadata-label">Domain</div>
+                <div class="metadata-value">${domain}</div>
+              </div>
+              <div class="metadata-item">
+                <div class="metadata-label">Analysis Date</div>
+                <div class="metadata-value">${date}</div>
+              </div>
+            </div>
+            <div style="margin-top: 20px;">
+              <div class="metadata-label">Pages Analyzed:</div>
+              <div class="metadata-value">${data.metadata.pagesAnalyzed ? data.metadata.pagesAnalyzed.join(', ') : 'Current Page'}</div>
+            </div>
+          </div>
+
+          <!-- Reports Navigation -->
+          <div id="reports-nav" class="reports-nav">
+            <h3>📊 Typography Style Consistency Reports</h3>
+            <div class="reports-nav-links">
+              <a href="#aggregated-report" class="reports-nav-link">
+                📈 Typography Styles Consistency Audit — Organized by Styles, Aggregated for All Pages
+                <span>Compare style variations across your entire site</span>
+              </a>
+              <a href="#page-report-start" class="reports-nav-link">
+                📄 Typography Styles Consistency Audit — Organized by Styles Shown on Each Page
+                <span>View styles page-by-page with detailed locations</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- REPORT 1: Aggregated by Styles -->
+          <div id="aggregated-report" class="report-title">
+            <h2>✨ Typography Styles Consistency Audit ✨</h2>
+            <h3>Organized by Styles — Aggregated for All Pages</h3>
+          </div>
+          
           <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 40px;">
-            <h2 style="margin-top: 0; color: #2d3748; font-size: 1.8rem; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #edf2f7;">📊 Aggregated Styles Report</h2>
-            
             ${aggregatedToc}
-            
             ${aggregatedStylesHtml}
           </div>
 
+          <!-- DIVIDER -->
+          <div class="report-divider">
+            <span class="report-divider-icon">◆ ◆ ◆</span>
+          </div>
+
+          <!-- REPORT 2: Page by Page -->
+          <div id="page-report-start" class="report-title">
+             <h2>✨ Typography Styles Consistency Audit ✨</h2>
+             <h3>Organized by Styles Shown on Each Page</h3>
+          </div>
+
           <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h2 style="margin-top: 0; color: #2d3748; font-size: 1.8rem; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #edf2f7;">📄 Page-by-Page Breakdown</h2>
-            
             ${pageByPageToc}
-            
             ${pageByPageHtml}
           </div>
         </div>
@@ -270,9 +328,8 @@ export function exportAnalysisReport(data: ReportData): void {
       </html>
     `;
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     downloadFile(
-      `${brand}-${platformStrings.filenameVariable}-full-analysis-${timestamp}.html`,
+      `${data.metadata.domain.replace(/^www\./, '')}-${platformStrings.filenameVariable}-website-analysis-report.html`,
       fullHtml,
       'text/html'
     );

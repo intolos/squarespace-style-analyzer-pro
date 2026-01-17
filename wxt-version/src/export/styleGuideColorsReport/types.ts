@@ -42,6 +42,7 @@ export interface ContrastFailure {
   location: string;
   element: string;
   elementText?: string;
+  fontSize?: number;
   selector?: string;
 }
 

@@ -322,8 +322,6 @@ export function exportMobileReport(
                       </div>
 
                       ${
-                        (issue.type === 'touch-target-too-small' ||
-                          issue.type === 'touch-target-spacing') &&
                         issue.details?.href
                           ? `<div class="issue-text">Link URL: <a href="${escapeHtmlFn(
                               issue.details.href
@@ -416,6 +414,6 @@ export function exportMobileReport(
 </body>
 </html>`;
 
-  const filename = `${domain} ${filenameBrand} mobile usability.html`;
-  downloadFileFn(html, filename, 'text/html');
+  const filename = `${domain}-${filenameBrand}-mobile-usability-report.html`;
+  downloadFileFn(filename, html, 'text/html');
 }

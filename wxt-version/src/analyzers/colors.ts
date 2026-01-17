@@ -19,9 +19,13 @@ export interface ContrastIssue {
   section: string;
   block: string;
   element: string;
+  elementText: string;
+  fontSize: number;
   coords: {
     top: number;
+    bottom: number;
     left: number;
+    right: number;
     width: number;
     height: number;
   };
@@ -458,7 +462,9 @@ export async function trackContrastPair(
   // Use absolute coordinates including scroll
   const coords = {
     top: rect.top + window.scrollY,
+    bottom: rect.bottom + window.scrollY,
     left: rect.left + window.scrollX,
+    right: rect.right + window.scrollX,
     width: rect.width,
     height: rect.height,
   };
@@ -476,6 +482,8 @@ export async function trackContrastPair(
     section: section,
     block: block,
     element: element.tagName,
+    elementText: element.textContent?.trim() || '',
+    fontSize: Math.round(fontSize),
     coords: coords,
     selector: generateSelector(element),
   };

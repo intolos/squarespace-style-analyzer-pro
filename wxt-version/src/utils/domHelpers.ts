@@ -255,7 +255,7 @@ export function getSectionInfo(element: Element | null): string {
       return 'Navigation';
 
     const sqsSection = parent.getAttribute('data-section-id');
-    if (sqsSection) return 'Section (' + sqsSection.substring(0, 8) + '...)';
+    if (sqsSection) return 'Section (' + sqsSection + ')';
 
     if (tagName === 'section' || id.includes('section') || className.includes('section')) {
       if (id && !id.startsWith('yui_')) return 'Section #' + id;

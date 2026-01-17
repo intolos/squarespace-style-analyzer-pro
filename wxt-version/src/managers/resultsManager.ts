@@ -355,4 +355,58 @@ export const ResultsManager = {
 
     return false;
   },
+
+  // ============================================
+  // UI DISPLAY
+  // ============================================
+
+  displayResults(accumulatedResults: ReportData | null): void {
+    const resultsSectionEl = document.getElementById('resultsSection');
+    const pagesAnalyzedInfoEl = document.getElementById('pagesAnalyzedInfo');
+
+    if (!accumulatedResults) {
+      if (resultsSectionEl) resultsSectionEl.style.setProperty('display', 'none', 'important');
+      if (pagesAnalyzedInfoEl)
+        pagesAnalyzedInfoEl.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    const counts = this.getCounts(accumulatedResults);
+
+    // Update count displays
+    const headingsCountEl = document.getElementById('headingsCount');
+    const paragraphsCountEl = document.getElementById('paragraphsCount');
+    const buttonsCountEl = document.getElementById('buttonsCount');
+    const pagesCountEl = document.getElementById('pagesCount');
+
+    if (headingsCountEl) headingsCountEl.textContent = counts.headings.toString();
+    if (paragraphsCountEl) paragraphsCountEl.textContent = counts.paragraphs.toString();
+    if (buttonsCountEl) buttonsCountEl.textContent = counts.buttons.toString();
+    if (pagesCountEl) pagesCountEl.textContent = counts.pages.toString();
+
+    // Show results sections
+    if (pagesAnalyzedInfoEl) pagesAnalyzedInfoEl.style.setProperty('display', 'block', 'important');
+    if (resultsSectionEl) resultsSectionEl.style.setProperty('display', 'block', 'important');
+  },
+
+  hideResults(): void {
+    const resultsSectionEl = document.getElementById('resultsSection');
+    const pagesAnalyzedInfoEl = document.getElementById('pagesAnalyzedInfo');
+
+    if (resultsSectionEl) resultsSectionEl.style.display = 'none';
+    if (pagesAnalyzedInfoEl) pagesAnalyzedInfoEl.style.display = 'none';
+  },
+
+  async resetAnalysis(
+    showSuccessCallback?: (msg: string) => void,
+    hideMessagesCallback?: () => void
+  ): Promise<boolean> {
+    // In migrated version, we'll use the provided callbacks or standard alerts
+    // For now, let's keep it simple as the confirmation logic is usually in the UI layer
+    // but we can add the basic clearing here.
+    await this.clearAccumulatedResults();
+    this.hideResults();
+    if (hideMessagesCallback) hideMessagesCallback();
+    return true;
+  },
 };

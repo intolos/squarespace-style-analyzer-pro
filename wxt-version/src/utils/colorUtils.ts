@@ -83,8 +83,8 @@ export function calculateLuminance(hexColor: string | null): number {
   if (hex.length !== 6) return 0;
 
   const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 2), 16) / 255;
-  const b = parseInt(hex.substring(4, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
 
   const adjust = (val: number) =>
     val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);

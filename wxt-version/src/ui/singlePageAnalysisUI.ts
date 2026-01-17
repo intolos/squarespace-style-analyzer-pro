@@ -9,10 +9,28 @@ export const SinglePageAnalysisUI = {
    * Main method to analyze the current active site page
    */
   async analyzeSite(analyzer: AnalyzerController): Promise<void> {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const tab = tabs[0];
-    const currentDomain = new URL(tab.url as string).hostname;
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    let tab = tabs.find(t => t.active);
 
+    // If active tab is internal (like the popup itself in Playwright),
+    // find the first available non-internal tab in the current window.
+    if (
+      !tab ||
+      !tab.url ||
+      tab.url.startsWith('chrome://') ||
+      tab.url.startsWith('chrome-extension://')
+    ) {
+      tab = tabs.find(
+        t => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('chrome-extension://')
+      );
+    }
+
+    if (!tab || !tab.url) {
+      analyzer.showError('Cannot find a website to analyze. Please navigate to a regular website.');
+      return;
+    }
+
+    const currentDomain = new URL(tab.url as string).hostname;
     const isNewDomain = !analyzer.analyzedDomains.includes(currentDomain);
 
     if (!analyzer.isPremium && isNewDomain && analyzer.usageCount >= 3) {
@@ -89,6 +107,25 @@ export const SinglePageAnalysisUI = {
         singlePageAnalysisError: error.message,
       });
     }
+  },
+
+  async cancelAnalysis(analyzer: AnalyzerController): Promise<void> {
+    console.log('Cancelling single page analysis...');
+    this.stopPolling();
+
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    await chrome.runtime.sendMessage({ action: 'cancelSinglePageAnalysis' });
+
+    analyzer.showSuccess('Analysis cancelled.');
+
+    await chrome.storage.local.remove([
+      'singlePageAnalysisStatus',
+      'singlePageProgressText',
+      'singlePageAnalysisResults',
+      'singlePageAnalysisError',
+    ]);
   },
 
   /**

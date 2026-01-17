@@ -57,8 +57,8 @@ export const CONTRAST_CHECKER_HTML = `<!DOCTYPE html>
   </div>
   <div class="badges-grid">
     <div class="badge-item"><span class="badge-label">AA Normal</span><span id="statusAANormal" class="badge-status">Pass</span></div>
-    <div class="badge-item"><span class="badge-label">AAA Normal</span><span id="statusAAANormal" class="badge-status">Pass</span></div>
     <div class="badge-item"><span class="badge-label">AA Large</span><span id="statusAALarge" class="badge-status">Pass</span></div>
+    <div class="badge-item"><span class="badge-label">AAA Normal</span><span id="statusAAANormal" class="badge-status">Pass</span></div>
     <div class="badge-item"><span class="badge-label">AAA Large</span><span id="statusAAALarge" class="badge-status">Pass</span></div>
   </div>
   <div class="info">
