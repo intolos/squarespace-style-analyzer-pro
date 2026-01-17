@@ -63,6 +63,7 @@ export function exportQualityCheckReport(
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${brand} - ${title}</title>
+      <link rel="icon" type="image/png" href="${platformStrings.favicon}">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; }
         h1 { color: #2d3748; }
@@ -187,6 +188,7 @@ export function exportAnalysisReport(data: ReportData): void {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${brand} - ${platformStrings.reportTitle}</title>
+        <link rel="icon" type="image/png" href="${platformStrings.favicon}">
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f7fafc; }
           .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }

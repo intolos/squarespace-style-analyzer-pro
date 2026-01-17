@@ -1,3 +1,5 @@
+import { platformStrings } from '../utils/platform';
+
 export function extractFontSize(styleDefinition: string | null): number | null {
   if (!styleDefinition) return null;
   const match = styleDefinition.match(/font-size:\s*([0-9.]+)px/);
@@ -221,20 +223,20 @@ export function exportCSV(
         let category = checkType;
 
         if (checkType === 'missingH1') {
-          errorDescription = 'Missing H1 heading. See Website Analysis report for details.';
+          errorDescription = `Missing H1 heading. See ${platformStrings.reportTitle} for details.`;
         } else if (checkType === 'multipleH1') {
           errorDescription = `Multiple H1 headings (${
             issue.count || 'unknown'
-          } found). See Website Analysis report for details.`;
+          } found). See ${platformStrings.reportTitle} for details.`;
         } else if (checkType === 'brokenHeadingHierarchy') {
           category = 'broken Heading Hierarchy';
           errorDescription =
             (issue.issue || 'Broken heading hierarchy') +
-            '. See Website Analysis report for details.';
+            `. See ${platformStrings.reportTitle} for details.`;
         } else if (checkType === 'fontSizeInconsistency') {
           errorDescription =
             (issue.issue || issue.description || 'Font size inconsistency') +
-            '. See Website Analysis report for details.';
+            `. See ${platformStrings.reportTitle} for details.`;
         } else if (checkType === 'missingAltText') {
           category = 'missing Alt Text on image';
           errorDescription =
@@ -246,13 +248,13 @@ export function exportCSV(
         } else if (checkType === 'styleInconsistency') {
           errorDescription =
             (issue.issue || issue.description || 'Style inconsistency detected') +
-            '. See Website Analysis report for details.';
+            `. See ${platformStrings.reportTitle} for details.`;
         } else {
           // More descriptive fallback
           const typeName = checkType.replace(/([A-Z])/g, ' $1').trim();
           errorDescription =
             (issue.issue || issue.description || issue.text || typeName) +
-            '. See Website Analysis report for details.';
+            `. See ${platformStrings.reportTitle} for details.`;
         }
 
         rows.push({
@@ -276,7 +278,7 @@ export function exportCSV(
     csv += `"${row.url}","${row.navigationName}","${row.type}","${row.category}","${row.text}","${row.styleDefinition}","${row.pageTitle}","${row.section}","${row.block}"\n`;
   }
 
-  const filename = `${domain} ${filenameBrand} website analysis spreadsheet.csv`;
+  const filename = `${domain}-${platformStrings.filenameVariable}-analysis-spreadsheet.csv`;
   downloadFile(csv, filename, 'text/csv');
   showSuccess('CSV exported successfully!');
 }

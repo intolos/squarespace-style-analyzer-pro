@@ -58,4 +58,7 @@ export const platformStrings = {
           'https://intolos.github.io/website-style-analyzer-pro/benefits/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
         cancelUrl: 'https://intolos.github.io/website-style-analyzer-pro/benefits/cancel.html',
       },
+  favicon: isSqs
+    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/icon32.png'
+    : 'https://intolos.github.io/website-style-analyzer-pro/benefits/icon32.png',
 };

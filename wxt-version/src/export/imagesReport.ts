@@ -1,3 +1,5 @@
+import { platformStrings } from '../utils/platform';
+
 export function exportImagesReport(
   data: any,
   imagesWithoutAlt: any[],
@@ -59,7 +61,7 @@ export function exportImagesReport(
 <head>
   <meta charset="utf-8">
   <title>${domain} Images Analysis</title>
-  <link rel="icon" type="image/png" href="https://intolos.github.io/squarespace-style-analyzer-pro/icon32.png">
+  <link rel="icon" type="image/png" href="${platformStrings.favicon}">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -99,7 +101,7 @@ export function exportImagesReport(
   <div class="container">
     <div class="header">
       <h1>🖼️ ${domain} Images Analysis</h1>
-      <p>Professional Design Audit by Squarespace Style Analyzer Pro</p>
+      <p>Professional Design Audit by ${platformStrings.productName}</p>
       <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
     </div>
 

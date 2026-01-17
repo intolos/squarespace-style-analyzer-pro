@@ -1,5 +1,6 @@
 // index.ts - Main export function for color style guide report
 
+import { platformStrings } from '../../utils/platform';
 import type { ReportData } from './types';
 import { analyzeColorConsistency, ensureDevToolsSummary } from './analysis';
 import { COLOR_REPORT_STYLES, ACCORDION_SCRIPT } from './templates/styles';
@@ -89,7 +90,7 @@ export function exportStyleGuideColorsReport(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${domain} Brand Style Guide Colors Including Accessbility for Text Contrast</title>
-  <link rel="icon" type="image/png" href="https://intolos.github.io/squarespace-style-analyzer-pro/icon32.png">
+  <link rel="icon" type="image/png" href="${platformStrings.favicon}">
   <style>
 ${COLOR_REPORT_STYLES}
   </style>

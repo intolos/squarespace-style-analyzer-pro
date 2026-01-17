@@ -1,0 +1,31 @@
+
+> style-analyzer-pro@4.3.0 build:sqs
+> wxt build --mode sqs
+
+
+WXT 0.18.5
+ℹ Building chrome-mv3 for sqs with Vite 5.4.21
+- Preparing...
+x Build failed in 255ms
+
+ ERROR  Could not resolve "../../../utils/platform" from "src/export/styleGuideColorsReport/index.ts"
+file: /Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/export/styleGuideColorsReport/index.ts
+
+  file: src/export/styleGuideColorsReport/index.ts
+  at getRollupError (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+  at error (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
+  at ModuleLoader.handleInvalidResolvedId (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/rollup/dist/es/shared/node-entry.js:21710:24)
+  at /Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/rollup/dist/es/shared/node-entry.js:21670:26
+
+✖ Command failed after 4.669 s
+
+ ERROR  Failed to build popup
+
+  at buildEntrypoints (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:1315:13)
+  at async rebuild (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:3297:21)
+  at async internalBuild (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:3413:32)
+  at async build (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:3487:10)
+  at async /Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:4227:5
+  at async CAC.<anonymous> (/Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:4146:22)
+  at async /Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/node_modules/wxt/dist/cli.js:4297:1
+

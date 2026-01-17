@@ -1,5 +1,6 @@
 // templates/components.ts - Reusable HTML components
 
+import { platformStrings } from '../../../utils/platform';
 import type { ColorAnalysis, ColorData, DevToolsColorSummary } from '../types';
 
 /**
@@ -176,7 +177,7 @@ export function generateHeader(domain: string): string {
       <h1>🎨 ${domain} Brand Style Guide</h1>
       <h1>Colors</h1>
       <h1>Including Accessbility for Text Contrast</h1>
-      <p>Professional Design Audit by Squarespace Style Analyzer Pro</p>
+      <p>Professional Design Audit by ${platformStrings.productName}</p>
       <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
     </div>
   `;

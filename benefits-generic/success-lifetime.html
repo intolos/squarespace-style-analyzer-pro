@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You - Website Style Analyzer Pro</title>
+  <link rel="icon" href="https://intolos.github.io/website-style-analyzer-pro/icon32.png" type="image/png">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  background: white;
+  border-radius: 16px;
+  padding: 60px 40px;
+  max-width: 600px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #2d3748;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+p {
+  font-size: 1.25rem;
+  color: #4a5568;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.highlight {
+  color: #667eea;
+  font-weight: 600;
+}
+
+a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.status {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎉 Thank You for Upgrading!</h1>
+  <p>Your payment was successful. Your subscription to <span class="highlight">Website Style Analyzer Pro</span> is now active.</p>
+  <p>You can now enjoy <strong>Lifetime unlimited use forever</strong>.</p>
+  <div class="note">
+    <p style="margin: 0;"><strong>Next step:</strong> Reopen the browser extension.</p>
+    <p style="margin: 10px 0 0 0; color: #E40606;"><strong>NOTE: The extension should automatically show your premium status. If you still see the "Upgrade" button, click the <strong>"Check Premium Status"</strong> button.</strong><br />(You can keep this page open in case you need to return to it.)</p>
+  </div>
+  <p style="margin-top: 30px; font-size: 1rem;">If you encounter any issues, please contact <a href="mailto:webbyinsights@gmail.com">webbyinsights@gmail.com</a>.</p>
+</div>
+
+<script>
+(async () => {
+  try {
+    // Get session_id from URL
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    
+    if (!sessionId) {
+      return; // Silently skip if no session_id
+    }
+    
+    // Redeem the session with the worker (silent background operation)
+    await fetch('https://squarespace-style-analyzer-pro.eamass.workers.dev/redeem-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId })
+    });
+  } catch (error) {
+    console.error('Redemption error:', error);
+    // Silent failure - user can use Check Premium Status button
+  }
+})();
+</script>
+</body>
+</html>
