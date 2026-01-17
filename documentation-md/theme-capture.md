@@ -1,4 +1,4 @@
-# Theme & Style Capture Documentation (`content-script-theme-capture.js`)
+# Theme & Style Capture Documentation (`src/analyzers/themeCapture.ts`)
 
 ## Overview
 
@@ -42,16 +42,16 @@ Squarespace (and many modern CMSs) hides style definitions in complex, minified 
 
 ## Reconstruction Guide (Code Structure)
 
-```javascript
-var ContentScriptThemeCapture = {
+```typescript
+export const ThemeCapture = {
   // 1. Voting Mechanism
-  getMostCommonHeadingStyle(elements) {
+  getMostCommonHeadingStyle(elements: HTMLElement[]) {
     // Map <FontFamily, Count>
     // Return style of most frequent
   },
 
   // 2. Main Capture
-  captureSquarespaceThemeStyles() {
+  captureThemeStyles(): ThemeStyles {
     // A. Headings (H1-H6)
     //    -> Run Voting -> Save Style
     // B. Paragraphs

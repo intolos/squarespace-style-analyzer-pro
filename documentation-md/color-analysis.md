@@ -1,13 +1,11 @@
-# Color Analysis Documentation (`color-analyzer.js`)
+# Color Analysis Documentation (`src/analyzers/colors.ts`)
 
 ## Overview
 
-This module handles all color-related logic:
+This module handles all color-related logic. It is split into two parts:
 
-- Extracting colors from DOM elements.
-- Calculating contrast ratios (WCAG 2.1).
-- Checking element visibility.
-- Generating color palettes (DevTools style).
+- **Logic Orchestrator:** `src/analyzers/colors.ts`
+- **Pixel Scanner:** `src/analyzers/colorScanner.ts`
 
 ## Critical Logic & "The Why"
 
@@ -54,34 +52,30 @@ We explicitly ignore buttons/links that have:
 
 ## Reconstruction Guide (Code Structure)
 
-```javascript
-const ColorAnalyzer = {
+```typescript
+// Shared logic in src/analyzers/colors.ts
+export const ColorAnalyzer = {
   // 1. Math Helpers
-  rgbToHex(rgb) { ... },
-  calculateLuminance(hex) { ... }, // Relative luminance formula
-  calculateContrastRatio(c1, c2) { ... }, // (L1 + 0.05) / (L2 + 0.05)
+  rgbToHex(rgb: string) { ... },
+  calculateLuminance(hex: string) { ... },
+  calculateContrastRatio(c1: string, c2: string) { ... },
 
   // 2. Core Detection
-  getEffectiveBackgroundColor(el, styles, screenshot) {
+  getEffectiveBackgroundColor(el: HTMLElement, ...): string {
      // Check solid color -> Check screenshot -> Check parents -> Default White
   },
 
-  getBackgroundColorFromCanvas(el, screenshot) {
-     // Canvas logic:
-     // ctx.drawImage(img)
-     // ctx.getImageData(x, y, 1, 1) -> [r,g,b,a]
-     // Average 5x5 grid
-  },
-
-  // 3. Filtering
-  isElementActuallyVisible(el) {
-     // Check opacity, dimensions, and occlusion
-  },
-
-  // 4. Tracking
-  trackContrastPair(...) {
+  // 3. Tracking
+  trackContrastPair(...): void {
      // Main entry point for Report generation
      // Deduplicates elements to avoid noise
+  }
+};
+
+// Specialized logic in src/analyzers/colorScanner.ts
+export const ColorScanner = {
+  getBackgroundColorFromCanvas(el: HTMLElement, screenshot: string): string {
+     // Canvas logic: drawImage -> getImageData -> average 5x5 grid
   }
 };
 ```

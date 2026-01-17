@@ -1,8 +1,12 @@
-# Mobile Analysis Documentation (`mobile-lighthouse-analyzer.js`)
+# Mobile Analysis Documentation (`src/analyzers/mobileLighthouse.ts`)
 
 ## Overview
 
 This module brings "Google-grade" accuracy to mobile testing by using the **Chrome DevTools Protocol (CDP)** instead of just resizing the window. It emulates a real physical device at the engine level.
+
+- **CDP Orchestrator:** `src/analyzers/mobileLighthouse.ts`
+- **In-Page Scripts:** `src/analyzers/mobileScripts.ts`
+- **Results Converter:** `src/analyzers/mobileConverter.ts`
 
 ## Critical Logic & "The Why"
 
@@ -13,7 +17,7 @@ This module brings "Google-grade" accuracy to mobile testing by using the **Chro
 - It doesn't trigger mobile-specific CSS media queries correctly on all sites.
 - It doesn't change the `User-Agent`.
 - It doesn't emulate touch events or pixel density (DPR).
-  **Solution:** `MobileLighthouseAnalyzer` attaches to the tab via CDP (`1.3` protocol).
+  **Solution:** `mobileLighthouse.ts` attaches to the tab via CDP (`1.3` protocol).
 
 ### 2. Device Emulation
 
@@ -35,25 +39,23 @@ Instead of generic "responsiveness" checks, we run specific accessibility/usabil
 
 ### 4. Code Structure & Workflow
 
-```javascript
-/* Workflow */
+```typescript
+/* Workflow in src/analyzers/mobileLighthouse.ts */
+
 // 1. Attach Debugger
 await chrome.debugger.attach({ tabId }, '1.3');
 
 // 2. Emulate Mobile
-await sendCommand('Emulation.setDeviceMetricsOverride', { ... });
-await sendCommand('Emulation.setUserAgentOverride', { ... });
+await sendCDPCommand(tabId, 'Emulation.setDeviceMetricsOverride', { ... });
+await sendCDPCommand(tabId, 'Emulation.setUserAgentOverride', { ... });
 
 // 3. Inject Analysis Scripts
-// We use 'Runtime.evaluate' to run checks inside the mobile context
+// We use 'Runtime.evaluate' to run checks defined in mobileScripts.ts
 const results = await runAudits();
 
-// 4. Capture "Context" (Desktop View)
-// We temporarily reset to Desktop (1280x800) to take screenshots.
-// Why? Users are on Desktop when viewing reports; seeing the "Mobile Issue"
-// in the context of the Desktop layout is often more helpful for locating it.
-await sendCommand('Emulation.clearDeviceMetricsOverride');
-await captureScreenshots();
+// 4. Transform Results
+// Uses mobileConverter.ts to map CDP results to extension issues
+const formattedIssues = MobileConverter.convertToIssues(results);
 
 // 5. Detach
 await chrome.debugger.detach({ tabId });

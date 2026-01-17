@@ -1,12 +1,13 @@
-# Content & Layout Analysis Documentation (`content-script-analyzers.js`)
+# Content & Layout Analysis Documentation (`src/analyzers/`)
 
 ## Overview
 
-This module analyzes the structural and semantic quality of the page content.
+This module analyzes the structural and semantic quality of the page content. It is split into several specialized analyzers:
 
-- **Structure:** Headings (H1-H6), Paragraphs (P1-P4), Lists.
-- **Interactivity:** Buttons, Links.
-- **Assets:** Image filenames and usage.
+- **Headings:** `src/analyzers/headings.ts`
+- **Paragraphs:** `src/analyzers/paragraphs.ts`
+- **Buttons & Links:** `src/analyzers/buttons.ts` & `src/analyzers/links.ts`
+- **Assets:** `src/analyzers/images.ts`
 
 ## Critical Logic & heuristics
 
@@ -62,34 +63,23 @@ This module analyzes the structural and semantic quality of the page content.
 
 ## Reconstruction Guide (Code Structure)
 
-```javascript
-var ContentScriptAnalyzers = {
-  // 1. Buttons
-  analyzeButtons(results, ...) {
-     // Query selectors -> Filter exclusions -> Classify type (Pri/Sec)
-     // Check contrast using colorTracker
-  },
+```typescript
+// Example from src/analyzers/buttons.ts
+export function analyzeButtons(results: AnalysisResults, ...): void {
+   // Query selectors -> Filter exclusions -> Classify type (Pri/Sec)
+   // Check contrast using colorTracker
+}
 
-  // 2. Headings
-  analyzeHeadings(results, ...) {
-     // Query H1-H6
-     // Check H1 sanity (0 or >1)
-     // Check sequence (H2 -> H4 broken?)
-     // Check visual consistency (H2 size variance)
-  },
+// Example from src/analyzers/headings.ts
+export function analyzeHeadings(results: AnalysisResults, ...): void {
+   // Query H1-H6
+   // Check H1 sanity (0 or >1)
+   // Check sequence (H2 -> H4 broken?)
+   // Check visual consistency (H2 size variance)
+}
 
-  // 3. Paragraphs
-  analyzeParagraphs(results, ...) {
-      // Filter list items
-      // Determine Type:
-      //   a. Explicit Class
-      //   b. Context (Hero/Footer)
-      //   c. Size Match (vs Theme Styles)
-  },
-
-  // 4. Images
-  isGenericImageFilename(filename) {
-      // Extensive Regex checks for SEO
-  }
-};
+// Example from src/analyzers/images.ts
+export function isGenericImageFilename(filename: string): string | null {
+    // Extensive Regex checks for SEO
+}
 ```

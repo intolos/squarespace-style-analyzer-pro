@@ -1,8 +1,11 @@
-# Domain Analysis Documentation (`domain-analyzer.js`)
+# Domain Analysis Documentation (`src/analyzers/domain/`)
 
 ## Overview
 
-This is the **Orchestrator** module. It does not perform checking itself; instead, it manages the _process_ of crawling a site, opening background tabs, injecting content scripts, and aggregating results.
+This is the **Orchestrator** module. It manages the process of crawling a site, opening background tabs, injecting content scripts, and aggregating results.
+
+- **Main Orchestrator:** `src/analyzers/domain/index.ts`
+- **Page Analysis Logic:** `src/analyzers/domain/pageAnalyzer.ts`
 
 ## Critical Logic & workflow
 
@@ -18,52 +21,49 @@ This is the **Orchestrator** module. It does not perform checking itself; instea
 
 **Goal:** Process a list of URLs reliably.
 
-- ** throttling:** A configurable `delayBetweenPages` (default 2s) prevents rate-limiting by the server.
-- **Cancellation:** Checks `this.shouldCancel` at every sync point (before fetch, after load, during analysis) to allow immediate user abort.
+- **Throttling:** A configurable `delayBetweenPages` (default 2s) prevents rate-limiting by the server.
+- **Cancellation:** Checks a cancellation flag at every sync point (before fetch, after load, during analysis) to allow immediate user abort.
 
 ### 3. Background Tab Management (`analyzePageInBackground`)
 
 **Goal:** Load a page in a hidden tab to run content scripts.
 
-- **Retry Policy:** If a page fails to load, we retry with increasing timeouts:
-  1.  15 seconds
-  2.  20 seconds
-  3.  25 seconds
-- **Emergency Cleanup:** Tracks `tabId`s in `this.openTabs` to ensure tabs are closed even if the script crashes or is cancelled.
-- **Squarespace Detection:** Before running full analysis, it checks `meta[name="generator"]` or known Squarespace classes (`.sqs-block`) to confirm the site is relevant.
+- **Retry Policy:** If a page fails to load, we retry with increasing timeouts (15s, 20s, 25s).
+- **Emergency Cleanup:** Tracks `tabId`s to ensure tabs are closed even if the script crashes or is cancelled.
+- **Platform Detection:** Before running full analysis, it checks `meta[name="generator"]` or known platform classes to confirm site relevance.
 
 ### 4. Branching Logic (Mobile vs Desktop)
 
 - **Desktop Mode:**
   - Opens tab.
-  - Injects content script (`sqs-style-analyzer-main.js`).
-  - Sends `analyzeStyles` message.
+  - WXT automatically handles content script injection (`entrypoints/content.ts`).
+  - Communicates via `chrome.runtime.sendMessage`.
 - **Mobile Mode:**
-  - Calls `MobileLighthouseAnalyzer.analyzePage` which uses the Debugger API to emulate a mobile device and run Lighthouse audits.
+  - Calls `src/analyzers/mobileLighthouse.ts` which uses the Debugger API to emulate a mobile device and run audits.
 
 ## Reconstruction Guide (Code Structure)
 
-```javascript
-DomainAnalyzer.prototype = {
+```typescript
+// From src/analyzers/domain/index.ts
+export const DomainAnalyzer = {
   // 1. Discovery
-  findSitemap(domain) { ... },
-  fetchAndParseSitemap(url) { ... },
+  async findSitemap(domain: string): Promise<string[]> { ... },
 
   // 2. Orchestration
-  analyzeDomain(domain, options) {
+  async analyzeDomain(domain: string, options: DomainAnalysisOptions): Promise<AnalysisResults> {
      // Get URLs -> Loop
-     // Check Cancel -> analyzePageInBackground(url)
+     // Check Cancel -> analyzePage(url)
      // Merge Results -> Return
   },
-
-  // 3. Execution
-  analyzePageInBackground(url) {
-     // Create hidden tab
-     // Wait for 'complete' status
-     // Check isSquarespace?
-     // IF Mobile: Call MobileLighthouseAnalyzer
-     // ELSE: Send 'analyzeStyles' message to content script
-     // Close tab
-  }
 };
+
+// From src/analyzers/domain/pageAnalyzer.ts
+export async function analyzePage(url: string, ...): Promise<PageAnalysisResult> {
+   // Create hidden tab
+   // Wait for 'complete' status
+   // Check Platform
+   // IF Mobile: Call MobileLighthouseAnalyzer
+   // ELSE: Send 'analyzeStyles' message to content script
+   // Close tab
+}
 ```
