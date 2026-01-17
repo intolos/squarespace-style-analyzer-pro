@@ -37,6 +37,7 @@ Detailed technical logic and analysis heuristics can be found in the [**`documen
 ## 📂 Project Structure
 
 - `wxt-version/`: The current, primary project folder (TypeScript/Vite/WXT).
+- `legacy-extension/`: Contains the legacy version of the extension (.js files, original manifest, etc.).
 - `documentation-md/`: High-level logic and architecture guides.
 - `sqs-test-suite/`: Local test environment for validating analysis accuracy.
-- `[Legacy Files]`: The `.js` files in the root are the legacy version of the extension and are kept for reference but are no longer the primary development path.
+- `[Test Folders]`: Folders like `tests/`, `full-test/`, etc., are kept in the root for ongoing validation.
