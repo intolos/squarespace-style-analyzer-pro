@@ -33,6 +33,17 @@ This file documents critical implementation details, regression traps, and "anti
 
 ---
 
+## 4. License Persistence
+
+### The "Storage Wrapper Stripping" Trap
+
+- **Symptom**: New license details (like `Yearly` vs `Lifetime`) are lost on popup reload, but the basic `isPremium` status persists.
+- **Root Cause**: Updating the schema in `StorageManager.ts` but forgetting to update the `saveUserData()` wrapper in `main.ts` (the UI controller). The wrapper strips unknown fields before passing the object to the storage utility.
+- **Correct Logic**: ALWAYS ensure that any fields added to `StorageManager` are also included in the `saveUserData` call within the main application controller.
+- **Date Fixed**: 2026-01-19
+
+---
+
 ## 3. UI/CSS Regressions
 
 ### Hiding Sections causes Layout Shift
