@@ -607,13 +607,8 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
     try {
       const data = await StorageManager.loadUserData();
-      // ALWAYS prompt, even if we have an email. Use saved email as default.
-      const savedEmail = data.licenseEmail || data.licenseData?.record?.email || '';
-
-      const input = await customPrompt(
-        'Enter your subscription email to check premium status:',
-        savedEmail
-      );
+      // ALWAYS prompt for email (no pre-fill as per user request)
+      const input = await customPrompt('Enter your subscription email to check premium status:');
 
       // If user cancelled (null) or entered empty string, abort
       if (input === null) {

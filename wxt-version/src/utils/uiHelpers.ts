@@ -89,7 +89,7 @@ export const UIHelpers = {
     });
   },
 
-  customPrompt(message: string, defaultValue: string = ''): Promise<string | null> {
+  customPrompt(message: string): Promise<string | null> {
     return new Promise(resolve => {
       const overlay = document.getElementById('customModalOverlay')!;
       const title = document.getElementById('customModalTitle')!;
@@ -100,7 +100,7 @@ export const UIHelpers = {
       title.textContent = 'Input Required';
       msg.textContent = message;
       input.style.display = 'block';
-      input.value = defaultValue;
+      input.value = '';
 
       buttons.innerHTML = `
         <button class="custom-modal-btn custom-modal-btn-secondary" id="customModalCancel">Cancel</button>
