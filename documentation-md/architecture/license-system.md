@@ -1,0 +1,43 @@
+# License System Architecture
+
+## Overview
+
+The License System manages premium access for the generic and Squarespace-specific extensions. It handles subscription verification, local persistence of license details, and the upgrade flow via Stripe.
+
+## Key Components
+
+- `src/managers/licenseManager.ts`: Core logic for API communication, checking license status, creating checkout sessions, and polling.
+- `src/utils/storage.ts`: Handles persistence of user data, including `licenseEmail` and `licenseData`.
+- `entrypoints/popup/main.ts`: UI controller that initiates upgrades, displays status, and coordinates with `LicenseManager` and `StorageManager`.
+- `src/utils/platform.ts`: Contains the extension-specific Stripe Product/Price IDs and API endpoints.
+
+## Operational Logic
+
+### 1. Upgrade Flow
+
+1.  User clicks "Upgrade" (Yearly or Lifetime) in the popup.
+2.  `main.ts` calls `LicenseManager.createCheckoutSession` with the correct Stripe Price ID (sourced from `platform.ts`).
+3.  A Stripe Checkout URL is generated and opened in a new tab.
+4.  The extension starts polling (`startLicensePolling`) in the background and foreground for payment completion.
+
+### 2. Verification Flow
+
+1.  **Polling**: If polling succeeds, the API returns the license record.
+2.  **Manual Check**: User enters email in "Check Status". `LicenseManager.checkLicense(email)` queries the API.
+3.  **Validation**: API validates the email against Stripe active subscriptions or lifetime purchases.
+
+### 3. Persistence & State
+
+- **Save**: On successful verification, `main.ts` passes the result to `StorageManager.saveUserData`.
+- **Important**: `licenseEmail` and `licenseData` (containing `record.expires_at`) **MUST** be saved to `chrome.storage.local` to distinguish between "Yearly" and "Lifetime" status across reloads.
+- **Load**: On popup open, `main.ts` calls `StorageManager.loadUserData` to retrieve the cached license info.
+
+## Data Flow
+
+`API (Cloudflare Worker)` -> `LicenseManager` -> `main.ts (UI)` -> `StorageManager` -> `chrome.storage.local`
+
+## Critical Implementation Details
+
+- **Persistence Fields**: `licenseEmail` and `licenseData` are required in `StorageManager`. Do not rely solely on `isPremium` boolean if you want to display specific subscription types.
+- **Test Helpers**: `enableYearlyTest()` and `enableLifetimeTest()` in `main.ts` simulate this flow by manually constructing the expected data structure and saving it via `StorageManager`.
+- **Stripe IDs**: Defined in `src/utils/platform.ts` and switched based on `isSqs` build flag.
