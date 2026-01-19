@@ -607,22 +607,33 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
     try {
       const data = await StorageManager.loadUserData();
-      let email = data.licenseEmail;
+      // ALWAYS prompt, even if we have an email. Use saved email as default.
+      const savedEmail = data.licenseEmail || data.licenseData?.record?.email || '';
 
-      if (!email) {
-        const input = await customPrompt('Enter your subscription email to check premium status:');
-        if (input) email = input;
-      }
+      const input = await customPrompt(
+        'Enter your subscription email to check premium status:',
+        savedEmail
+      );
 
-      const trimmedEmail = email ? email.trim().toLowerCase() : null;
-
-      if (!trimmedEmail) {
+      // If user cancelled (null) or entered empty string, abort
+      if (input === null) {
+        // Cancelled
         btn.textContent = originalText;
         btn.removeAttribute('disabled');
         return;
       }
 
+      const email = input.trim();
+
+      if (!email) {
+        btn.textContent = originalText;
+        btn.removeAttribute('disabled');
+        return;
+      }
+
+      const trimmedEmail = email.toLowerCase();
       const result = await LicenseManager.checkLicense(trimmedEmail);
+
       if (result && result.valid) {
         // Success - Save data
         await StorageManager.saveUserData({
@@ -635,6 +646,9 @@ class SquarespaceAnalyzer implements AnalyzerController {
         // Update local state
         this.isPremium = true;
         this.licenseData = result;
+
+        // IMPORTANT: Update UI immediately to hide free-tier counters
+        this.updateUI();
 
         // Determine text
         let statusText = '✅ Premium Activated';
@@ -682,7 +696,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
         if (result && result.error) {
           errorMsg += `Error: ${result.error}\n\n`;
         }
-        errorMsg += `No active subscription found for this email.\n\n`;
+        errorMsg += `No active subscription found for email: ${trimmedEmail}\n\n`;
         errorMsg += `The system checked both yearly subscriptions and lifetime licenses.\n\n`;
         errorMsg += `If you recently purchased, please wait a few minutes and try again.\n\n`;
         errorMsg += `If you believe this is an error, please contact support at: webbyinsights@gmail.com`;
@@ -695,6 +709,9 @@ class SquarespaceAnalyzer implements AnalyzerController {
           btn.style.background = '#63b3ed';
           btn.removeAttribute('disabled');
         }, 3000);
+
+        // Ensure UI stays consistant (though likely no change on failure)
+        this.updateUI();
       }
     } catch (e: any) {
       console.error('License check failed:', e);
