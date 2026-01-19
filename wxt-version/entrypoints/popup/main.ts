@@ -42,6 +42,11 @@ class SquarespaceAnalyzer implements AnalyzerController {
     this.bindEvents();
     this.bindDomainAnalysisEvents();
     await this.checkCurrentSite();
+
+    // IMPORTANT: Clear stale error states from previous sessions before checking ongoing analyses
+    // This prevents spurious "Analysis failed" error messages on popup open
+    await chrome.storage.local.remove(['singlePageAnalysisError']);
+
     await this.checkOngoingDomainAnalysis();
     await this.checkOngoingSinglePageAnalysis();
 
@@ -134,7 +139,23 @@ class SquarespaceAnalyzer implements AnalyzerController {
     if (mainInterface) mainInterface.style.display = 'block';
 
     if (this.isPremium) {
-      if (statusSection) statusSection.style.display = 'none';
+      document.body.classList.add('premium-active');
+      if (statusSection) statusSection.remove(); // Remove from DOM completely so it cannot be shown
+
+      // NUCLEAR OPTION: Add MutationObserver to ensure statusSection never reappears
+      // This addresses the user's report that it "appears at the top" even after premium activation
+      if (mainInterface && !(mainInterface as any)._statusObserver) {
+        const observer = new MutationObserver(() => {
+          const zombie = document.getElementById('statusSection');
+          if (zombie) {
+            zombie.remove();
+            // console.log('☢️ Nuclear option: Removed resurrected statusSection');
+          }
+        });
+        observer.observe(mainInterface, { childList: true, subtree: true });
+        (mainInterface as any)._statusObserver = observer;
+      }
+
       if (upgradeNoticeEl) upgradeNoticeEl.style.display = 'none';
       if (statusText) statusText.style.display = 'none';
 
@@ -171,6 +192,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
         checkStatusBtn.setAttribute('disabled', 'true');
       }
     } else {
+      // Explicitly show status section only for non-premium users
       if (statusSection) statusSection.style.display = 'block';
       if (statusText) statusText.style.display = 'block';
 
@@ -610,23 +632,13 @@ class SquarespaceAnalyzer implements AnalyzerController {
       // ALWAYS prompt for email (no pre-fill as per user request)
       const input = await customPrompt('Enter your subscription email to check premium status:');
 
-      // If user cancelled (null) or entered empty string, abort
-      if (input === null) {
-        // Cancelled
+      if (input === null || input.trim() === '') {
         btn.textContent = originalText;
         btn.removeAttribute('disabled');
         return;
       }
 
-      const email = input.trim();
-
-      if (!email) {
-        btn.textContent = originalText;
-        btn.removeAttribute('disabled');
-        return;
-      }
-
-      const trimmedEmail = email.toLowerCase();
+      const trimmedEmail = input.trim().toLowerCase();
       const result = await LicenseManager.checkLicense(trimmedEmail);
 
       if (result && result.valid) {
@@ -701,12 +713,9 @@ class SquarespaceAnalyzer implements AnalyzerController {
         // Reset button after delay
         setTimeout(() => {
           btn.textContent = originalText;
-          btn.style.background = '#63b3ed';
+          btn.style.background = ''; // Revert to CSS class style
           btn.removeAttribute('disabled');
         }, 3000);
-
-        // Ensure UI stays consistant (though likely no change on failure)
-        this.updateUI();
       }
     } catch (e: any) {
       console.error('License check failed:', e);

@@ -45,9 +45,22 @@ export const PageSelectionUI = {
     // Hide main buttons, show modal
     const analyzeBtn = document.getElementById('analyzeBtn');
     const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
+    const statusSection = document.getElementById('statusSection');
+    const siteInfo = document.getElementById('siteInfo');
+
+    // IMPORTANT: Explicitly remove status and site info from DOM to ensure they are gone
+    if (statusSection) statusSection.remove();
+    if (siteInfo) siteInfo.remove();
     if (analyzeBtn) analyzeBtn.style.display = 'none';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'none';
-    modal.style.display = 'block';
+
+    // Move modal to the very top of the container
+    const mainInterface = document.getElementById('mainInterface');
+    if (mainInterface && modal) {
+      mainInterface.insertBefore(modal, mainInterface.firstChild);
+    }
+
+    modal.style.setProperty('display', 'block', 'important');
 
     // Populate navigation sections
     this.populateNavigationSections(groupedUrls);
@@ -307,19 +320,24 @@ export const PageSelectionUI = {
       }</strong>`;
     }
 
-    const minutes = Math.ceil((totalPages * 15) / 60);
+    // Standard analysis time (approx 2s per page)
+    const minutes = Math.ceil((totalPages * 2) / 60);
     const timeEstimate = document.getElementById('timeEstimate');
     if (timeEstimate) {
       timeEstimate.textContent = `⏱️ Estimated time: ~${minutes} minute${minutes === 1 ? '' : 's'}`;
+
       if (totalPages > 500) {
         timeEstimate.textContent += ' (large analysis - you can cancel anytime)';
       }
     }
 
-    const mobileTimeAddition = document.getElementById('mobileTimeAddition');
-    if (mobileTimeAddition && totalPages > 0) {
-      const mobileMinutes = Math.ceil((totalPages * 2) / 60);
-      mobileTimeAddition.innerHTML = `<br>(+ ~${mobileMinutes} min)`;
+    // Mobile analysis time addition (approx 4s per page extra)
+    // IMPORTANT: Ensure we update the correct element
+    const mobileTimeSpan = document.getElementById('mobileTimeAddition');
+    if (mobileTimeSpan) {
+      const mobileMinutes = Math.ceil((totalPages * 4) / 60);
+      mobileTimeSpan.textContent = ` (+ ~${mobileMinutes} min)`;
+      mobileTimeSpan.style.display = 'inline'; // Ensure it is visible
     }
   },
 

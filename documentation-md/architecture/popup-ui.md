@@ -18,8 +18,8 @@ The extension popup provides the primary interface for initiating analyses and v
 
 1.  User clicks **Analyze Entire Domain**.
 2.  `domainAnalysisUI.analyzeDomain()` is triggered.
-3.  **File Selection Modal** (`#pageSelectionModal`) is displayed at the **top** (via `order: -1`).
-4.  **Current Site Info** (`#siteInfo`) is hidden to focus on file selection.
+3.  **File Selection Modal** (`#pageSelectionModal`) is prepended to the top of `#mainInterface` (via JS `insertBefore`) and visually prioritized (via `order: -1`).
+4.  **Current Site Info** (`#siteInfo`) and **Usage Counter** (`#statusSection`) are physically removed from the DOM to focus on file selection.
 5.  After selection, analysis begins.
 
 ### Workflow: Results View
@@ -31,8 +31,10 @@ The extension popup provides the primary interface for initiating analyses and v
 ## Critical Implementation Details
 
 - **Site Info Visibility**: `#siteInfo` is hidden whenever analysis results exist or while an analysis is in progress. It is **only** restored when the user clicks **Reset Extension**.
-- **Modal Positioning**: The File Selection modal is visually prioritized at the top of the popup using CSS Flexbox `order: -1`.
-- **Contrast**: All buttons use dark backgrounds specifically chosen to maintain high text contrast (`#44337a` for Lifetime Premium, `#14532d` for activation, etc.).
+- **Usage Counter Protection**: For premium users, `#statusSection` is hidden by default in HTML, removed from the DOM on popup load, and protected by a `MutationObserver` ("Nuclear Option") in `main.ts` to prevent accidental reappearance.
+- **Modal Positioning**: The File Selection modal is forcibly prepended to the top of its parent container using `mainInterface.insertBefore(modal, mainInterface.firstChild)`.
+- **Contrast**: All buttons use dark backgrounds specifically chosen to maintain high text contrast (`#44337a` for Lifetime Premium, `#22543d` for activation, etc.).
+- **Modal Title Padding**: Custom prompts (alerts/confirms) use `#customModalTitle` with a large `padding-top` (45px) and `display: block` to ensure readability.
 
 ## Regression Traps (DO NOT CHANGE)
 

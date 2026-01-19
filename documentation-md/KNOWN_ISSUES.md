@@ -65,3 +65,46 @@ This file documents critical implementation details, regression traps, and "anti
   - `checkCurrentSite` in `main.ts` should hide it if `accumulatedResults` exists.
   - **ONLY** restore visibility in `resetAnalysis` in `main.ts`.
 - **Date Fixed**: 2026-01-19
+
+## 6. UI Specificity & Positioning (Premium Modals)
+
+### The "Select Sections" Modal Position
+
+- **Symptom**: The "Select Sections" modal appears *below* other elements (like headers, status text, or other containers) despite using CSS `order: -1` and `flex` layouts.
+- **Root Cause**: Specific DOM nesting or race conditions in element creation often prevent CSS `order` from working as expected within the complex popup structure.
+- **Correct Logic**:
+  - **DO**: Use JavaScript to explicitly **prepend** the modal to the parent container (`mainInterface`) using `insertBefore(modal, mainInterface.firstChild)`.
+  - **DO NOT**: Rely solely on CSS `order`.
+- **Date Fixed**: 2026-01-20
+
+### The "Analyze With Mobile" Time Estimate
+
+- **Symptom**: The calculated time estimate (e.g., "+ ~4 mins") is calculated but not visible to the user.
+- **Root Cause**: The container element was either hidden by default or empty.
+- **Correct Logic**:
+  - **DO**: Explicitly set `element.style.display = 'inline'` (or `block`) when updating the `textContent`.
+  - **DO NOT**: Assume the element is visible just because it exists in the DOM.
+- **Date Fixed**: 2026-01-20
+
+### The Custom Modal Title Padding
+
+- **Symptom**: The title of the custom prompt (e.g., "Analyze Entire Domain") has no space above it, making it look cramped.
+- **Root Cause**: The default modal styles had `margin: 0` and no `padding-top` on the `h3` or the specific title ID.
+- **Correct Logic**:
+  - **DO**: Target the specific ID `#customModalTitle` and the class `.custom-modal h3` and apply a large `padding-top` (e.g., `45px`) with `!important`.
+  - **DO**: Ensure the element is set to `display: block !important` to respect the padding.
+- **Date Fixed**: 2026-01-20
+
+## 7. Free-Tier Usage Counter (Status Section) Persistence
+
+### The "Zombie Counter" Flicker
+
+- **Symptom**: The "0 of 3 free websites analyzed" counter briefly appears or persists after a premium license is activated.
+- **Root Cause**: Two main factors:
+  1.  **Flicker on Startup**: The counter was visible by default in the HTML, and would only be hidden once the JavaScript local storage check completed.
+  2.  **Persistence on Activation**: The `checkPremiumStatus` success block updated the storage but did not trigger a UI refresh (`updateUI()`), meaning the counter stayed visible until the popup was closed and reopened.
+- **Correct Logic**:
+  - **DO**: Hide `#statusSection` by default in `popup.html` using `style="display: none;"`.
+  - **DO**: Call `this.updateUI()` immediately after a successful license check/activation.
+  - **DO**: Use a `MutationObserver` in `main.ts` (The "Nuclear Option") to detect and remove the element if any other script or re-render tries to bring it back while in premium mode.
+- **Date Fixed**: 2026-01-20
