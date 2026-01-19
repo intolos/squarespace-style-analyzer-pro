@@ -99,6 +99,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
   }
 
   async saveUserData() {
+    // IMPORTANT: licenseEmail and licenseData MUST be included here even if not
+    // explicitly modified by every UI action. The StorageManager.saveUserData()
+    // call will overwrite the entire record, so omitting these fields will
+    // effectively delete the user's premium details. Fixed 2026-01-19.
     await StorageManager.saveUserData({
       usageCount: this.usageCount,
       isPremium: this.isPremium,

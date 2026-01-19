@@ -30,12 +30,15 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
 - **Purpose**: Preserves session history and context.
 - **Content**: Step-by-step logs of what was done, what was tried, and what failed.
 - **Format**: Session logs, chat dumps (summarized), debug journals.
+- **Filename Convention**: `YYYY-MM-DD-[short-description].md` (e.g., `2026-01-19-license-persistence-fix.md`).
 - **Update Rule**: Save these continuously as you work. Archive them here when a task is done.
 
 ### `documentation-md/task-lists/` (The Plan)
 
 - **Purpose**: Task tracking.
 - **Content**: Checklists of items for specific features or bugs.
+- **Filename Convention**: `YYYY-MM-DD-[short-description].md`.
+- **Update Rule**: Archive your session-specific task list here upon completion.
 
 ### `documentation-md/KNOWN_ISSUES.md` (The Traps)
 
@@ -56,8 +59,10 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
 
 3.  **After Verification**:
     - **Update Architecture**: If you changed how the feature works, update the corresponding file in `architecture/`. Remove old/incorrect info.
-    - **Record Traps**: If you found a subtle bug (e.g., "calling storage listener triggers reload"), add it to `KNOWN_ISSUES.md` and add a generic comment in the code to warn future developers.
-    - **Archive Session**: Move your daily task list/walkthrough to the appropriate folder.
+    - **Record Traps**: If you found a subtle bug, add it to `KNOWN_ISSUES.md`.
+    - **Add "Why" Comments**: If the fix was tricky (>30 mins), add `// IMPORTANT:` comments in the code explaining the rationale.
+    - **Archive Session**: Move your daily task list/walkthrough to the appropriate folder using the `YYYY-MM-DD-description.md` format.
+    - **Final Verification**: Confirm all documentation changes are committed and pushed from the project root.
 
 ## 3. Version Control & Code Commentary
 
