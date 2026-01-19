@@ -252,9 +252,38 @@ class SquarespaceAnalyzer implements AnalyzerController {
       ?.addEventListener('click', () => this.checkPremiumStatus());
 
     // Test buttons
-    /* 
-    window.enablePremiumTest = ... // WXT handles window context differently, avoid globals if possible
-    */
+    (window as any).enableYearlyTest = async () => {
+      console.log('Enabling Yearly Premium Test Mode...');
+      this.isPremium = true;
+      this.licenseData = {
+        valid: true,
+        record: { expires_at: Math.floor(Date.now() / 1000) + 31536000 },
+      };
+      await this.saveUserData();
+      this.updateUI();
+      console.log('✅ Yearly Test Mode Active');
+    };
+
+    (window as any).enableLifetimeTest = async () => {
+      console.log('Enabling Lifetime Premium Test Mode...');
+      this.isPremium = true;
+      this.licenseData = {
+        valid: true,
+        record: { expires_at: null },
+      };
+      await this.saveUserData();
+      this.updateUI();
+      console.log('✅ Lifetime Test Mode Active');
+    };
+
+    (window as any).disablePremiumTest = async () => {
+      console.log('Disabling Premium Test Mode...');
+      this.isPremium = false;
+      this.licenseData = null;
+      await this.saveUserData();
+      this.updateUI();
+      console.log('✅ Test Mode Disabled');
+    };
   }
 
   bindDomainAnalysisEvents() {
