@@ -230,6 +230,130 @@ class SquarespaceAnalyzer implements AnalyzerController {
     // Redundant now that order is static
   }
 
+  resetUpgradeButtons() {
+    const yearlyBtn = document.getElementById('upgradeButton') as HTMLButtonElement;
+    const lifetimeBtn = document.getElementById('upgradeButtonLifetime') as HTMLButtonElement;
+
+    if (yearlyBtn) {
+      yearlyBtn.disabled = false;
+      yearlyBtn.textContent = '$19.99/Year for Unlimited Use';
+      yearlyBtn.innerHTML = '$19.99/Year for Unlimited Use'; // Clear spinner
+    }
+    if (lifetimeBtn) {
+      lifetimeBtn.style.display = 'inline-block';
+      lifetimeBtn.disabled = false;
+      lifetimeBtn.textContent = '$29.99 Lifetime for Unlimited Use Forever';
+      lifetimeBtn.innerHTML = '$29.99 Lifetime for Unlimited Use Forever'; // Clear spinner
+    }
+  }
+
+  async handleUpgradeFlow(isLifetime = false) {
+    const btnId = isLifetime ? 'upgradeButtonLifetime' : 'upgradeButton';
+    const otherBtnId = isLifetime ? 'upgradeButton' : 'upgradeButtonLifetime';
+    const btn = document.getElementById(btnId) as HTMLButtonElement;
+    const otherBtn = document.getElementById(otherBtnId) as HTMLButtonElement;
+    const statusEl = document.getElementById('premiumStatusMessage');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML =
+        '<span class="spinner" style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px; display: inline-block; vertical-align: middle;"></span>Loading...';
+    }
+    if (otherBtn) {
+      otherBtn.disabled = true;
+    }
+
+    try {
+      // Determine IDs from LicenseManager helpers which use platformStrings
+      const priceId = isLifetime
+        ? LicenseManager.PRICE_ID_LIFETIME
+        : LicenseManager.PRICE_ID_YEARLY;
+      const productId = isLifetime
+        ? LicenseManager.PRODUCT_ID_LIFETIME
+        : LicenseManager.PRODUCT_ID_YEARLY;
+
+      console.log('Creating checkout:', { priceId, productId, isLifetime });
+
+      // Create checkout session (user enters email on Stripe)
+      const session = await LicenseManager.createCheckoutSession(null, isLifetime);
+      console.log('Session response:', session);
+
+      if (session && session.url && session.id) {
+        // Open Stripe
+        window.open(session.url, '_blank');
+        if (statusEl) {
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'Checkout opened. Waiting for payment...';
+          statusEl.style.background = '#e3f2fd'; // Light blue
+          statusEl.style.color = '#0c4a6e';
+        }
+
+        // 1. Start background polling (keeps working if popup closes)
+        chrome.runtime.sendMessage({
+          action: 'startLicensePolling',
+          sessionId: session.id,
+          productId: productId,
+        });
+
+        // 2. Also poll from popup for immediate feedback
+        LicenseManager.pollForSessionCompletion(
+          session.id,
+          productId,
+          async data => {
+            if (!data) {
+              // Timeout
+              if (statusEl) {
+                statusEl.textContent =
+                  "Payment not detected (timeout). Use 'Check Premium Status' if you completed payment.";
+                statusEl.style.background = '#fff7ed'; // Light orange
+                statusEl.style.color = '#7c2d12';
+              }
+              this.resetUpgradeButtons();
+              return;
+            }
+
+            // Success!
+            const email = data.email || (data.record && data.record.email);
+            // Save to storage
+            await this.saveUserData();
+            await chrome.storage.local.set({
+              isPremium: true,
+              licenseEmail: email,
+              licenseData: data,
+              lastLicenseCheck: Date.now(),
+            });
+
+            // Update local state
+            this.isPremium = true;
+            this.licenseData = data;
+            this.updateUI();
+
+            // Show success message
+            if (statusEl) {
+              statusEl.textContent = '✅ Subscription active. Premium unlocked!';
+              statusEl.style.background = '#dcfce7'; // Light green
+              statusEl.style.color = '#14532d';
+            }
+
+            customAlert('Premium actived successfully! Thank you for your purchase.');
+          },
+          300000, // 5 min timeout
+          5000 // 5s interval
+        );
+      } else {
+        // Error creating session
+        const msg = session && session.error ? JSON.stringify(session.error) : 'Unknown error';
+        console.error('Checkout failed:', session);
+        customAlert('Error creating checkout session: ' + msg);
+        this.resetUpgradeButtons();
+      }
+    } catch (err: any) {
+      console.error('handleUpgradeFlow error:', err);
+      customAlert('Network error. Please try again later.');
+      this.resetUpgradeButtons();
+    }
+  }
+
   bindEvents() {
     document.getElementById('analyzeBtn')?.addEventListener('click', () => this.analyzeSite());
     document.getElementById('exportCsvBtn')?.addEventListener('click', () => this.exportCSV());
@@ -250,6 +374,13 @@ class SquarespaceAnalyzer implements AnalyzerController {
     document
       .getElementById('checkStatusButton')
       ?.addEventListener('click', () => this.checkPremiumStatus());
+
+    document.getElementById('upgradeButton')?.addEventListener('click', () => {
+      this.handleUpgradeFlow(false);
+    });
+    document.getElementById('upgradeButtonLifetime')?.addEventListener('click', () => {
+      this.handleUpgradeFlow(true);
+    });
 
     // Test buttons
     (window as any).enableYearlyTest = async () => {
