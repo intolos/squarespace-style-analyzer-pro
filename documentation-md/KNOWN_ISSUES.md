@@ -50,4 +50,18 @@ This file documents critical implementation details, regression traps, and "anti
 
 - **Symptom**: Hiding the `statusSection` makes the entire popup height collapse, causing scroll jumps.
 - **Correct Logic**: Use `visibility: hidden` instead of `display: none` if space preservation is needed, OR ensure the container has a minimum height.
-- **Current State**: The UI flow is carefully ordered. Be careful reordering "Results" vs "Progress" sections.
+
+---
+
+## 5. UI Visibility & Flow
+
+### The "Site Info Visibility" Trap
+
+- **Symptom**: The "Current Site" info (`#siteInfo`) remains visible during analysis or after results are loaded, cluttering the UI.
+- **Root Cause**: Manual calls to `siteInfo.style.display = 'block'` in success/error/completion callbacks within analysis modules (`DomainAnalysisUI.ts`, `SinglePageAnalysisUI.ts`).
+- **Correct Logic**:
+  - **NEVER** restore `siteInfo` visibility in analysis step callbacks.
+  - `siteInfo` should be hidden when analysis starts.
+  - `checkCurrentSite` in `main.ts` should hide it if `accumulatedResults` exists.
+  - **ONLY** restore visibility in `resetAnalysis` in `main.ts`.
+- **Date Fixed**: 2026-01-19

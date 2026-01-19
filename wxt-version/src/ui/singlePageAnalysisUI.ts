@@ -104,7 +104,6 @@ export const SinglePageAnalysisUI = {
       if (loadingEl) loadingEl.style.display = 'none';
       if (analyzeBtn) analyzeBtn.style.display = 'block';
       if (cancelBtn) cancelBtn.style.display = 'none';
-      if (siteInfo) siteInfo.style.display = 'block';
 
       if (
         error.message.includes('receiving end') ||
@@ -137,7 +136,6 @@ export const SinglePageAnalysisUI = {
     if (loadingEl) loadingEl.style.display = 'none';
     if (analyzeBtn) analyzeBtn.style.display = 'block'; // Restore analyze button
     if (cancelBtn) cancelBtn.style.display = 'none'; // Hide cancel button
-    if (siteInfo) siteInfo.style.display = 'block';
 
     await chrome.runtime.sendMessage({ action: 'cancelSinglePageAnalysis' });
 
@@ -212,7 +210,6 @@ export const SinglePageAnalysisUI = {
         if (loadingEl) loadingEl.style.display = 'none';
         if (analyzeBtn) analyzeBtn.style.display = 'block';
         if (cancelBtn) cancelBtn.style.display = 'none';
-        if (siteInfo) siteInfo.style.display = 'block';
 
         analyzer.showError('Analysis failed: ' + data.singlePageAnalysisError);
         chrome.storage.local.remove(['singlePageAnalysisStatus', 'singlePageAnalysisError']);
@@ -243,7 +240,6 @@ export const SinglePageAnalysisUI = {
       if (loadingEl) loadingEl.style.display = 'none';
       if (analyzeBtn) analyzeBtn.style.display = 'block';
       if (cancelBtn) cancelBtn.style.display = 'none';
-      if (siteInfo) siteInfo.style.display = 'block';
 
       // Get current domain for usage tracking
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });

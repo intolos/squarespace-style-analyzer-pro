@@ -124,6 +124,9 @@ export const DomainAnalysisUI = {
 
     // For premium users, fetch sitemap first and show page selection
     if (analyzer.isPremium) {
+      const siteInfo = document.getElementById('siteInfo');
+      if (siteInfo) siteInfo.style.display = 'none';
+
       analyzer.showSuccess('Fetching sitemap and navigation...');
 
       try {
@@ -461,7 +464,8 @@ export const DomainAnalysisUI = {
     if (analyzeBtn) analyzeBtn.style.display = 'block';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
-    if (siteInfo) siteInfo.style.display = 'block';
+    // Removed siteInfo.style.display = 'block' per user request - 2026-01-19
+    // siteInfo should only reappear on Reset.
 
     if (result && result.success) {
       const data = result.data || {
@@ -634,7 +638,8 @@ export const DomainAnalysisUI = {
     if (analyzeBtn) analyzeBtn.style.display = 'block';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
-    if (siteInfo) siteInfo.style.display = 'block';
+    // Removed siteInfo.style.display = 'block' per user request - 2026-01-19
+    // siteInfo should only reappear on Reset.
 
     const storageData = await chrome.storage.local.get(['domainAnalysisResults']);
     const partialResults = storageData.domainAnalysisResults;

@@ -19,7 +19,7 @@ body {
 
 /* Force visual order without moving DOM elements */
 #pageSelectionModal {
-  order: 1;
+  order: -1;
 }
 
 #success {
@@ -301,6 +301,16 @@ body {
   margin: 0 0 10px 0;
   color: #2c5282;
   font-size: 1rem;
+}
+
+/* IMPORTANT: order: -1 ensures the modal appears at the very top of the popup container. */
+#pageSelectionModal {
+  order: -1;
+  padding: 15px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-bottom: 20px;
 }
 
 .domain-progress-bar {
@@ -691,6 +701,7 @@ body {
 .page-selection-modal h4 {
   color: #667eea;
   margin: 0 0 15px 0;
+  padding-top: 20px;
   text-align: center;
 }
 
