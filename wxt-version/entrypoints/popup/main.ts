@@ -154,7 +154,14 @@ class SquarespaceAnalyzer implements AnalyzerController {
         }
 
         checkStatusBtn.textContent = statusText;
-        checkStatusBtn.style.background = '#14532d';
+
+        // Match color to subscription type
+        if (this.licenseData && this.licenseData.record && !this.licenseData.record.expires_at) {
+          checkStatusBtn.style.background = '#44337a'; // Deep Purple for Lifetime
+        } else {
+          checkStatusBtn.style.background = '#14532d'; // Deep Emerald for Yearly/Active
+        }
+
         checkStatusBtn.setAttribute('disabled', 'true');
       }
     } else {
@@ -451,7 +458,13 @@ class SquarespaceAnalyzer implements AnalyzerController {
         }
 
         btn.textContent = statusText;
-        btn.style.background = '#14532d';
+
+        // Apply specific color based on license type
+        if (result.record && !result.record.expires_at) {
+          btn.style.background = '#44337a'; // Deep Purple for Lifetime
+        } else {
+          btn.style.background = '#14532d'; // Deep Emerald for Yearly
+        }
 
         // Show Legacy Success Alert
         let message = `✅ Premium Status: Active\n\n`;
