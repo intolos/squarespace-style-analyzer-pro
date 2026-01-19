@@ -249,20 +249,29 @@ export function exportAnalysisReport(data: ReportData): void {
 
           <div class="metadata">
             <h2>📋 Analysis Summary</h2>
-            <div class="metadata-grid">
-              <div class="metadata-item">
-                <div class="metadata-label">Domain</div>
-                <div class="metadata-value">${domain}</div>
-              </div>
-              <div class="metadata-item">
-                <div class="metadata-label">Analysis Date</div>
-                <div class="metadata-value">${date}</div>
-              </div>
-            </div>
             <div style="margin-top: 20px;">
               <div class="metadata-label">Pages Analyzed:</div>
               <div class="metadata-value">${data.metadata.pagesAnalyzed ? data.metadata.pagesAnalyzed.join(', ') : 'Current Page'}</div>
             </div>
+            ${
+              data.failedPages && data.failedPages.length > 0
+                ? `
+            <div style="margin-top: 20px;">
+              <div class="metadata-label" style="font-weight: bold; color: #e53e3e;">Pages Not Analyzed:</div>
+              <div class="metadata-value" style="font-size: 0.9em; margin-bottom: 8px;">
+                <strong>These pages were taking longer than 120 seconds to load so we stopped and moved on. Our analysis process is different than page load times.</strong>
+              </div>
+              <div class="metadata-value">
+                ${data.failedPages
+                  .map(
+                    fp =>
+                      `<div style="margin-bottom: 4px;"><a href="${fp.url}" target="_blank" style="color: #c53030;">${fp.url}</a></div>`
+                  )
+                  .join('')}
+              </div>
+            </div>`
+                : ''
+            }
           </div>
 
           <!-- Reports Navigation -->

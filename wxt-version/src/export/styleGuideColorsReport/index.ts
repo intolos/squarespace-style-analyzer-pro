@@ -105,8 +105,8 @@ ${COLOR_REPORT_STYLES}
 </body>
 </html>`;
 
-  const filename = `${domain}-${platformStrings.filenameVariable}-brand-style-guide-colors.html`;
-  downloadFile(html, filename, 'text/html');
+  const filename = `${domain}-${filenameBrand}-brand-style-guide-colors.html`;
+  downloadFile(filename, html, 'text/html');
   showSuccess('Brand Style Guides for Typography and Colors generated successfully!');
 }
 

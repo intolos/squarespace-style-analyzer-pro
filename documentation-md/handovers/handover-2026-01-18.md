@@ -1,0 +1,51 @@
+# Session Handover: Regression Fixes & UI Improvements (Jan 18, 2026)
+
+## 📋 Session Objective
+
+Address and fix several reported regressions in the extension's UI, analysis behavior, and report generation following the recent migration to WXT/TypeScript.
+
+## ✅ Completed Tasks
+
+### 📱 Mobile Usability Report
+
+- **URL Restoration:** Fixed the issue where URLs were missing for touch target issues. Now, any element with a valid `href` will display its link in the report.
+- **Improved Extraction:** Refined the logic in `mobileScripts.ts` to better extract link text, including checking nested image alt text.
+
+### ❌ Cancellation & Persistence
+
+- **Reinstated "Cancel" Button:** Added the missing "Cancel Analysis" button to the popup for both Single Page and Domain Analysis.
+- **Immediate Cancellation:** Optimized the cancellation process to be truly instant. The extension now stops the current task immediately without waiting for the page analysis to finish.
+- **Background Support:** Analysis now correctly continues in the background if the popup is closed. Reopening the popup reconnects to the ongoing process, and cancellation still works from the persistent state.
+
+### 📦 Storage & Manifest
+
+- **Quota Fix:** Added the `unlimitedStorage` permission to resolve the `Resource::kQuotaBytes quota exceeded` error encountered during large domain audits.
+- **Description Restore:** Reinstated the professional extension description in the manifest.
+
+### 📄 Report Filenames
+
+- **Standardized Naming:** All exported files now follow a consistent, hyphen-separated pattern: `${domain}-${brand}-${report-type}.${ext}`.
+- **Fixed Redundancy:** Resolved naming issues where brand names were duplicated in the filename (e.g., in Color Style Guide).
+
+## 🛠️ Key Technical Changes
+
+- **`background.ts`:** Implemented a robust `activeMobileAnalyses` map to track and manage background audit tabs by ID.
+- **`DomainAnalyzer` & `PageAnalyzer`:** Improved `AbortSignal` handling for responsive cancellation and accurate reporting of partially completed results.
+- **`wxt.config.ts`:** Updated manifest permissions and metadata.
+
+## 🧪 Verification Status
+
+- **Manual Verification:** Verified mobile report URLs, cancellation behavior (immediate & background), and standardized filenames.
+- **Build Status:** Confirmed that both SQS and Generic builds remain functional.
+
+## 🚀 Next Steps
+
+1. **User Review:** Confirm the standardized filename format meets all branding requirements.
+2. **Regression Testing:** Periodic checks on the "Locate" button functionality across different reports to ensure no overlap issues remain.
+3. **E2E Tests:** Consider adding specialized tests for "Immediate Cancellation" to prevent future regressions.
+
+---
+
+### 📚 Documentation
+
+For a detailed technical breakdown of every fix accomplished today, see the [Fix & Recovery Guide (Jan 18, 2026)](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/documentation-md/fix-recovery-guide-jan-18-2026.md).

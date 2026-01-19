@@ -430,6 +430,8 @@ export const DomainAnalysisUI = {
     const cancelBtn = document.getElementById('cancelDomainBtn');
 
     if (progressEl) progressEl.style.display = 'none';
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    if (analyzeBtn) analyzeBtn.style.display = 'block';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
 
@@ -596,6 +598,8 @@ export const DomainAnalysisUI = {
     const cancelBtn = document.getElementById('cancelDomainBtn');
 
     if (progressEl) progressEl.style.display = 'none';
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    if (analyzeBtn) analyzeBtn.style.display = 'block';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
 

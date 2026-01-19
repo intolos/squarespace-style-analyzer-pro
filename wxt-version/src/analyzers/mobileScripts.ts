@@ -115,6 +115,38 @@ export const MobileCheckScripts = {
       )
         continue;
 
+      // FILTER 1.5: Text Content Exclusion (Ported from ContentScriptAnalyzers)
+      // Filter out utility links like 'Skip to content', 'Open Menu', etc.
+      const textContent = (el.textContent || '').trim().toLowerCase();
+      const ariaLabelContent = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+      const checkText = textContent || ariaLabelContent;
+
+      const excludedPatterns = [
+        'open menu',
+        'skip to content',
+        'skip to',
+        'close menu',
+        'folder:',
+        'cookie',
+        'large images',
+        'all images',
+        'images (>100kb)',
+        'pause background',
+        'play background',
+        'background',
+      ];
+
+      if (checkText) {
+        let isExcluded = false;
+        for (const pattern of excludedPatterns) {
+          if (checkText.includes(pattern)) {
+            isExcluded = true;
+            break;
+          }
+        }
+        if (isExcluded) continue;
+      }
+
       // FILTER 2: Aria Hidden (Ported from Style Analyzer)
       if (el.getAttribute('aria-hidden') === 'true') continue;
 
@@ -262,13 +294,15 @@ export const MobileCheckScripts = {
       let isTooSmall = true;
       for (let k = 0; k < rect.clientRects.length; k++) {
         const cr = rect.clientRects[k];
-        if (cr.width >= minSize && cr.height >= minSize) {
+        // Use Math.round to handle sub-pixel rendering (e.g., 15.8px should pass as 16px)
+        // This matches the reported values which are also rounded.
+        if (Math.round(cr.width) >= minSize && Math.round(cr.height) >= minSize) {
           isTooSmall = false;
           break;
         }
       }
 
-      if (isTooSmall || rect.hasSmallFont) {
+      if (isTooSmall) {
         let largestRect = rect.clientRects[0];
         for (let k = 1; k < rect.clientRects.length; k++) {
           const cr = rect.clientRects[k];
@@ -277,9 +311,7 @@ export const MobileCheckScripts = {
           }
         }
 
-        const issueDescription = isTooSmall
-          ? 'Tap target is too small'
-          : 'Font size is too small (' + rect.fontSize + 'px)';
+        const issueDescription = 'Tap target is too small';
 
         issues.push({
           type: 'size',

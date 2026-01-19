@@ -41,12 +41,18 @@ export const SinglePageAnalysisUI = {
     }
 
     // Show generic loading state
-    // In WXT/ESM we might need to access DOM elements directly or via helper if showLoading isn't enough
     analyzer.hideMessages();
     const loadingEl = document.getElementById('loading');
     const loadingStatusEl = document.getElementById('loadingStatus');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const cancelBtn = document.getElementById('cancelPageBtn');
+
     if (loadingEl) loadingEl.style.display = 'flex';
     if (loadingStatusEl) loadingStatusEl.textContent = 'Analyzing page...';
+
+    // Swap buttons
+    if (analyzeBtn) analyzeBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = 'block';
 
     // Clear previous persistent state
     await chrome.storage.local.remove([
@@ -88,7 +94,13 @@ export const SinglePageAnalysisUI = {
     } catch (error: any) {
       console.error('Error:', error);
       this.stopPolling();
+      const loadingEl = document.getElementById('loading');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const cancelBtn = document.getElementById('cancelPageBtn');
+
       if (loadingEl) loadingEl.style.display = 'none';
+      if (analyzeBtn) analyzeBtn.style.display = 'block';
+      if (cancelBtn) cancelBtn.style.display = 'none';
 
       if (
         error.message.includes('receiving end') ||
@@ -114,7 +126,12 @@ export const SinglePageAnalysisUI = {
     this.stopPolling();
 
     const loadingEl = document.getElementById('loading');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const cancelBtn = document.getElementById('cancelPageBtn');
+
     if (loadingEl) loadingEl.style.display = 'none';
+    if (analyzeBtn) analyzeBtn.style.display = 'block'; // Restore analyze button
+    if (cancelBtn) cancelBtn.style.display = 'none'; // Hide cancel button
 
     await chrome.runtime.sendMessage({ action: 'cancelSinglePageAnalysis' });
 
@@ -141,7 +158,12 @@ export const SinglePageAnalysisUI = {
 
     if (data.singlePageAnalysisStatus === 'in-progress') {
       const loadingEl = document.getElementById('loading');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const cancelBtn = document.getElementById('cancelPageBtn');
+
       if (loadingEl) loadingEl.style.display = 'flex';
+      if (analyzeBtn) analyzeBtn.style.display = 'none';
+      if (cancelBtn) cancelBtn.style.display = 'block';
 
       if (data.singlePageProgressText) {
         const statusEl = document.getElementById('loadingStatus');
@@ -175,7 +197,12 @@ export const SinglePageAnalysisUI = {
       } else if (data.singlePageAnalysisStatus === 'error' && data.singlePageAnalysisError) {
         this.stopPolling();
         const loadingEl = document.getElementById('loading');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const cancelBtn = document.getElementById('cancelPageBtn');
+
         if (loadingEl) loadingEl.style.display = 'none';
+        if (analyzeBtn) analyzeBtn.style.display = 'block';
+        if (cancelBtn) cancelBtn.style.display = 'none';
 
         analyzer.showError('Analysis failed: ' + data.singlePageAnalysisError);
         chrome.storage.local.remove(['singlePageAnalysisStatus', 'singlePageAnalysisError']);
@@ -199,7 +226,12 @@ export const SinglePageAnalysisUI = {
 
     try {
       const loadingEl = document.getElementById('loading');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const cancelBtn = document.getElementById('cancelPageBtn');
+
       if (loadingEl) loadingEl.style.display = 'none';
+      if (analyzeBtn) analyzeBtn.style.display = 'block';
+      if (cancelBtn) cancelBtn.style.display = 'none';
 
       // Get current domain for usage tracking
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -232,16 +264,11 @@ export const SinglePageAnalysisUI = {
         analyzer.usageCount = analyzer.usageCount + 1;
         await analyzer.saveUserData();
         analyzer.updateUI();
-        analyzer.showSuccess(
-          'Website analyzed! You have used ' + analyzer.usageCount + ' of 3 free websites.'
-        );
-      } else if (!analyzer.isPremium) {
-        analyzer.showSuccess('Page analyzed!');
-      } else {
-        analyzer.showSuccess(
-          'Page analyzed successfully! Navigate to another page to add more data, or export your results.'
-        );
       }
+
+      analyzer.showSuccess(
+        'Page analyzed successfully! Navigate to another page to add more data, or export your results.'
+      );
 
       analyzer.trackUsage('analysis_completed');
 

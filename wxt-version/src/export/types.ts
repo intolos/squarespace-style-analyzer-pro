@@ -35,6 +35,13 @@ export interface AccumulatedResults {
   mobileIssues?: {
     issues?: any[];
   };
+  domainAnalysis?: boolean;
+  failedPages?: {
+    url: string;
+    reason: string;
+    timeout?: number;
+    timestamp?: string;
+  }[];
   [key: string]: any; // Allow for other properties
 }
 

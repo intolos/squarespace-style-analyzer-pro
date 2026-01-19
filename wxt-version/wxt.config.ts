@@ -28,5 +28,10 @@ export default defineConfig(env => {
         '128': 'icon/128.png',
       },
     },
+    vite: () => ({
+      define: {
+        'import.meta.env.VITE_IS_SQS_VERSION': JSON.stringify(isSqs ? 'true' : 'false'),
+      },
+    }),
   };
 });

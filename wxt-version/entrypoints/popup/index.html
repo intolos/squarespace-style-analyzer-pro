@@ -37,44 +37,40 @@
           <strong>Current Site:</strong> <span id="currentUrl"></span>
         </div>
 
-        <div id="pageSelectionModal" class="page-selection-modal">
-          <h4>📊 Select Sections to Analyze</h4>
-          <div id="pagesFound" class="pages-found"></div>
+        <div id="actionButtonsContainer">
+          <button id="analyzeBtn" class="btn btn-primary">
+            🔍 Analyze This Page
+          </button>
           
-          <div id="navigationSections" class="navigation-sections">
-            <!-- Dynamically populated with checkboxes -->
+          <button id="cancelPageBtn" class="btn btn-cancel" style="display: none;">
+            ❌ Cancel Page Analysis
+          </button>
+
+          <button id="analyzeDomainBtn" class="btn btn-domain">
+            🌐 Analyze Entire Domain
+          </button>
+          
+          <div id="mobileAnalysisChoice" style="display: none; margin-top: 15px;">
+            <button id="startWithoutMobileBtn" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">
+              🚀 Analyze Without Mobile Analysis
+            </button>
+            <button id="startWithMobileBtn" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">
+              📱 Analyze With Mobile Analysis <span id="mobileTimeAddition"></span>
+            </button>
+            <button id="startOnlyMobileBtn" class="btn" style="background: #0891b2; color: white; margin-bottom: 8px; width: 100%;">
+              📱 Only Mobile Analysis
+            </button>
           </div>
-          
-          <div class="selection-summary">
-            <div id="selectionCount" class="selection-count">
-              <strong>0 pages</strong> selected across <strong>0 sections</strong>
-            </div>
-          </div>
-          
-          <div id="timeEstimate" class="time-estimate"></div>
-          
-          <div class="modal-buttons" style="flex-direction: column;">
-            <button id="confirmWithoutMobile" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">🚀 Analyze Without Mobile</button>
-            <button id="confirmWithMobile" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">📱 Analyze With Mobile <span id="mobileTimeAddition"></span></button>
-            <button id="confirmOnlyMobile" class="btn" style="background: #0891b2; color: white; margin-bottom: 12px; width: 100%;">📱 Only Mobile Analysis</button>
-            <button id="cancelPageSelection" class="btn btn-secondary" style="width: 100%;">Cancel</button>
-          </div>
-        </div>
-        
-        <div class="multi-page-info">
-          <strong>📚 Multi-Page Analysis:</strong>
-          To analyze individual pages of a website, please use the following procedure:
-          <br>1. Click "Analyze This Page" on current page
-          <br>2. Navigate to next page
-          <br>3. Click "Analyze This Page" again to add that page
-          <br>4. Repeat for all pages you'd like to analyze
-          <br>5. Export combined results
-          <br>6. When finished with a website, click the "Reset" button to clear the data to analyze another site.
+
+          <button id="cancelDomainBtn" class="btn btn-cancel" style="display: none;">
+            ❌ Cancel Domain Analysis
+          </button>
         </div>
 
-        <div class="domain-info">
-          <strong>🌐 Analyze Entire Domain:</strong>
-          Click "Analyze Entire Domain" to analyze pages using the site's sitemap. Free users get 10 pages. Premium gets full domain analysis with unlimited pages. Once the analysis starts, you can close this popup and continue working - the analysis will run in the background.
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <span id="loadingStatus">Analyzing page...</span>
+
         </div>
 
         <div id="domainProgress" class="domain-progress">
@@ -92,6 +88,9 @@
         <div id="pagesAnalyzedInfo" class="pages-analyzed" style="display: none;">
           <strong>📄 Pages Analyzed:</strong> <span id="pagesCount">0</span>
         </div>
+
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
         
         <div id="resultsSection" class="results-section">
           <div class="result-summary">
@@ -131,16 +130,6 @@
             </button>
           </div>
         </div>
-        
-        <div id="error" class="error"></div>
-        <div id="success" class="success"></div>
-        <div id="loading" class="loading">
-          <div class="spinner"></div>
-          <span id="loadingStatus">Analyzing page...</span>
-          <button id="cancelSinglePageAnalysisBtn" class="btn btn-cancel" style="margin-top: 15px; width: auto; padding: 8px 16px;">
-            ❌ Cancel Analysis
-          </button>
-        </div>
 
         <div id="mobileAnalysisSection" style="margin: 20px 0; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
           <h4 style="margin: 0 0 10px 0; color: #0369a1; font-size: 0.85rem;">📱 Mobile Usability Analysis</h4>
@@ -153,38 +142,61 @@
           <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">Clicking "Analyze This Page" will always include Mobile Analysis for that page. After clicking "Analyze Entire Domain", you will see options to include Mobile Analysis or not.</p>
         </div>
 
-        <div id="actionButtonsContainer">
-          <button id="analyzeBtn" class="btn btn-primary">
-            🔍 Analyze This Page
-          </button>
+        <div class="multi-page-info">
+          <strong>📚 Multi-Page Analysis:</strong>
+          To analyze individual pages of a website, please use the following procedure:
+          <br>1. Click "Analyze This Page" on current page
+          <br>2. Navigate to next page
+          <br>3. Click "Analyze This Page" again to add that page
+          <br>4. Repeat for all pages you'd like to analyze
+          <br>5. Export combined results
+          <br>6. When finished with a website, click the "Reset" button to clear the data to analyze another site.
+        </div>
 
-          <button id="analyzeDomainBtn" class="btn btn-domain">
-            🌐 Analyze Entire Domain
-          </button>
+        <div class="domain-info">
+          <strong>🌐 Analyze Entire Domain:</strong>
+          Click "Analyze Entire Domain" to analyze pages using the site's sitemap. Free users get 10 pages. Premium gets full domain analysis with unlimited pages. Once the analysis starts, you can close this popup and continue working - the analysis will run in the background.
+        </div>
+
+        <div id="pageSelectionModal" class="page-selection-modal">
+          <h4>📊 Select Sections to Analyze</h4>
+          <div id="pagesFound" class="pages-found"></div>
           
-          <div id="mobileAnalysisChoice" style="display: none; margin-top: 15px;">
-            <button id="startWithoutMobileBtn" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">
-              🚀 Analyze Without Mobile Analysis
-            </button>
-            <button id="startWithMobileBtn" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">
-              📱 Analyze With Mobile Analysis <span id="mobileTimeAddition"></span>
-            </button>
-            <button id="startOnlyMobileBtn" class="btn" style="background: #0891b2; color: white; margin-bottom: 8px; width: 100%;">
-              📱 Only Mobile Analysis
-            </button>
+          <div id="navigationSections" class="navigation-sections">
+            <!-- Dynamically populated with checkboxes -->
           </div>
+          
+          <div class="selection-summary">
+            <div id="selectionCount" class="selection-count">
+              <strong>0 pages</strong> selected across <strong>0 sections</strong>
+            </div>
+          </div>
+          
+          <div id="timeEstimate" class="time-estimate"></div>
+          
+          <div class="modal-buttons" style="flex-direction: column;">
+            <button id="confirmWithoutMobile" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">🚀 Analyze Without Mobile</button>
+            <button id="confirmWithMobile" class="btn btn-domain" style="margin-bottom: 8px; width: 100%;">📱 Analyze With Mobile <span id="mobileTimeAddition"></span></button>
+            <button id="confirmOnlyMobile" class="btn" style="background: #0891b2; color: white; margin-bottom: 12px; width: 100%;">📱 Only Mobile Analysis</button>
+            <button id="cancelPageSelection" class="btn btn-secondary" style="width: 100%;">Cancel</button>
+          </div>
+        </div>
+        
 
-          <button id="cancelDomainBtn" class="btn btn-cancel" style="display: none;">
-            ❌ Cancel Domain Analysis
-          </button>
+
+        <div id="statusSection" class="status-section">
+          <div class="usage-counter">
+            <span id="usageCount">0</span> of 3 free websites analyzed
+          </div>
+          <div class="usage-bar">
+            <div id="usageProgress" class="usage-progress" style="width: 0%;"></div>
+          </div>
         </div>
 
         <div id="upgradeNotice" class="upgrade-notice" style="display: none;">
           <h3>🚀 Upgrade Required</h3>
           <p>You've used your 3 free analyses. Upgrade to continue analyzing unlimited sites!</p>
         </div>
-        
-	    <div id="statusText">Checking license status…</div>
 
         <div id="premiumButtonsGroup">
           <div class="upgrade-buttons-row">

@@ -18,7 +18,7 @@ export class PageAnalyzer {
     options: DomainAnalysisOptions,
     signal?: AbortSignal
   ): Promise<ReportData | null> {
-    const timeouts = [15000, 20000, 25000];
+    const timeouts = [120000];
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < timeouts.length; attempt++) {

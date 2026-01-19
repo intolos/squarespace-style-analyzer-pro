@@ -19,8 +19,8 @@ export const platformStrings = {
   siteType: isSqs ? 'Squarespace site' : 'website',
   toolsBrand: isSqs ? 'Squarespace Tools' : 'Website Tools',
   benefitsUrl: isSqs
-    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/benefits.html'
-    : 'https://intolos.github.io/website-style-analyzer-pro/benefits/benefits.html',
+    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/benefits.html'
+    : 'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/benefits.html',
   shareUrl: isSqs
     ? 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi'
     : 'https://chromewebstore.google.com/detail/website-style-analyzer/YOUR_GENERIC_ID_HERE',

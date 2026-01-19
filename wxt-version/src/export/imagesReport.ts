@@ -126,7 +126,7 @@ export function exportImagesReport(
           .join('')}
       </ul>
         <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
-           <strong>💡 NOTE:</strong> To properly use the Locate link, the item will be identified with a red outline as soon as it appears on the page. For the most accurate placement, it is recommended to let the page finish loading.
+           <strong>💡 NOTE:</strong> To properly use the Locate link for the highest accuracy, you must let the page finish loading entirely. You can go to another page and come back to it. The item will be identified with a red outline. As soon as you move the cursor, the outline will go away.
         </p>
     </div>
 

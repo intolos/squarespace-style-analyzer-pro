@@ -4,7 +4,7 @@ import { ResultsManager } from '../../src/managers/resultsManager';
 import { ExportManager } from '../../src/export/index';
 import { DomainAnalysisUI, AnalyzerController } from '../../src/ui/domainAnalysisUI';
 import { SinglePageAnalysisUI } from '../../src/ui/singlePageAnalysisUI';
-import { UIHelpers, customAlert } from '../../src/utils/uiHelpers';
+import { UIHelpers, customAlert, customPrompt } from '../../src/utils/uiHelpers';
 import { platformStrings, isSqs } from '../../src/utils/platform';
 
 class SquarespaceAnalyzer implements AnalyzerController {
@@ -55,17 +55,17 @@ class SquarespaceAnalyzer implements AnalyzerController {
       }
     });
 
-    // Premium status listener for instant update
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'local' && changes.isPremium) {
-        const wasPremium = changes.isPremium.oldValue;
-        const nowPremium = changes.isPremium.newValue;
-        if (!wasPremium && nowPremium) {
-          console.log('Premium activated! Reloading popup...');
-          window.location.reload();
-        }
-      }
-    });
+    // Premium status listener disabled - causes scroll jump on activation
+    // chrome.storage.onChanged.addListener((changes, namespace) => {
+    //   if (namespace === 'local' && changes.isPremium) {
+    //     const wasPremium = changes.isPremium.oldValue;
+    //     const nowPremium = changes.isPremium.newValue;
+    //     if (!wasPremium && nowPremium) {
+    //       console.log('Premium activated! Reloading popup...');
+    //       window.location.reload();
+    //     }
+    //   }
+    // });
   }
 
   async loadUserData() {
@@ -127,19 +127,14 @@ class SquarespaceAnalyzer implements AnalyzerController {
         upgradeBtn.style.background = '#38a169';
       }
 
-      if (multiPageInfo && actionButtonsContainer && actionButtonsContainer.parentElement) {
-        // Move containers
-        const container = multiPageInfo.parentElement;
-        container.insertBefore(actionButtonsContainer, multiPageInfo);
+      if (premiumButtonsGroup) premiumButtonsGroup.classList.add('premium-position');
 
-        if (premiumButtonsGroup) premiumButtonsGroup.classList.add('premium-position');
-
-        if (domainProgress) container.insertBefore(domainProgress, multiPageInfo);
-        if (errorDiv) container.insertBefore(errorDiv, multiPageInfo);
-        if (successDiv) container.insertBefore(successDiv, multiPageInfo);
-        if (loadingDiv) container.insertBefore(loadingDiv, multiPageInfo);
-        if (pagesAnalyzedInfo) container.insertBefore(pagesAnalyzedInfo, multiPageInfo);
-        if (resultsSection) container.insertBefore(resultsSection, multiPageInfo);
+      // Also ensure the check status button reflects premium state if it's visible
+      const checkStatusBtn = document.getElementById('checkStatusButton');
+      if (checkStatusBtn) {
+        checkStatusBtn.textContent = '✅ Premium Active';
+        checkStatusBtn.style.background = '#48bb78';
+        checkStatusBtn.setAttribute('disabled', 'true');
       }
     } else {
       if (statusSection) statusSection.style.display = 'block';
@@ -204,20 +199,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
   }
 
   repositionMobileSectionForUser() {
-    const mobileSection = document.getElementById('mobileAnalysisSection');
-    const multiPageInfo = document.querySelector('.multi-page-info');
-    const actionButtonsContainer = document.getElementById('actionButtonsContainer');
-
-    if (!mobileSection) return;
-
-    if (this.isPremium && multiPageInfo && multiPageInfo.parentNode) {
-      multiPageInfo.parentNode.insertBefore(mobileSection, multiPageInfo);
-    } else if (!this.isPremium && actionButtonsContainer && actionButtonsContainer.parentNode) {
-      actionButtonsContainer.parentNode.insertBefore(
-        mobileSection,
-        actionButtonsContainer.nextSibling
-      );
-    }
+    // Redundant now that order is static
   }
 
   bindEvents() {
@@ -234,7 +216,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
       ?.addEventListener('click', () => this.exportMobileReport());
     document.getElementById('resetBtn')?.addEventListener('click', () => this.resetAnalysis());
     document
-      .getElementById('cancelSinglePageAnalysisBtn')
+      .getElementById('cancelPageBtn')
       ?.addEventListener('click', () => this.cancelSinglePageAnalysis());
 
     document
@@ -398,8 +380,91 @@ class SquarespaceAnalyzer implements AnalyzerController {
     ExportManager.exportMobileReport(this);
   }
 
-  checkPremiumStatus() {
-    LicenseManager.checkPremiumStatus(this);
+  async checkPremiumStatus() {
+    const btn = document.getElementById('checkStatusButton');
+    if (!btn) return;
+
+    const originalText = btn.textContent;
+    btn.textContent = 'Checking license status...';
+    btn.setAttribute('disabled', 'true');
+
+    try {
+      const data = await StorageManager.loadUserData();
+      let email = data.licenseEmail;
+
+      if (!email) {
+        const input = await customPrompt('Enter your subscription email to check premium status:');
+        if (input) email = input;
+      }
+
+      const trimmedEmail = email ? email.trim().toLowerCase() : null;
+
+      if (!trimmedEmail) {
+        btn.textContent = originalText;
+        btn.removeAttribute('disabled');
+        return;
+      }
+
+      const result = await LicenseManager.checkLicense(trimmedEmail);
+      if (result && result.valid) {
+        // Success
+        btn.textContent = '✅ Premium Active';
+        btn.style.background = '#48bb78';
+        await StorageManager.saveUserData({
+          ...data,
+          isPremium: true,
+          licenseEmail: trimmedEmail,
+        });
+
+        // Show Legacy Success Alert
+        let message = `✅ Premium Status: Active\n\n`;
+        message += `📧 Email: ${trimmedEmail}\n`;
+        if (result.record && result.record.expires_at) {
+          const expiryDate = new Date(result.record.expires_at * 1000);
+          const now = new Date();
+          const daysRemaining = Math.ceil(
+            (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          message += `📅 Expires: ${expiryDate.toLocaleDateString()}\n`;
+          message += `⏰ Days Remaining: ${daysRemaining} days\n\n`;
+        } else {
+          message += `🎉 Lifetime License - Never Expires\n\n`;
+        }
+        message += `Your premium status has been activated in the extension!`;
+
+        await customAlert(message);
+      } else {
+        // Failure
+        btn.textContent = '❌ License Not Found';
+        btn.style.background = '#e53e3e';
+
+        // Show Legacy Failure Alert
+        let errorMsg = 'Premium Status: Not Active\n\n';
+        if (result && result.error) {
+          errorMsg += `Error: ${result.error}\n\n`;
+        }
+        errorMsg += `No active subscription found for this email.\n\n`;
+        errorMsg += `The system checked both yearly subscriptions and lifetime licenses.\n\n`;
+        errorMsg += `If you recently purchased, please wait a few minutes and try again.\n\n`;
+        errorMsg += `If you believe this is an error, please contact support at: webbyinsights@gmail.com`;
+
+        customAlert(errorMsg);
+
+        // Reset button after delay
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '#63b3ed';
+          btn.removeAttribute('disabled');
+        }, 3000);
+      }
+    } catch (e: any) {
+      console.error('License check failed:', e);
+      btn.textContent = 'Error Checking';
+      btn.removeAttribute('disabled');
+      customAlert(
+        `Error checking premium status:\n\n${e.message || 'Network error. Please check your connection and try again.'}`
+      );
+    }
   }
 
   trackUsage(event: string) {
