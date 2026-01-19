@@ -6,6 +6,8 @@ export interface UserData {
   isPremium: boolean;
   userId: string;
   analyzedDomains: string[];
+  licenseEmail?: string;
+  licenseData?: any;
 }
 
 export const StorageManager = {

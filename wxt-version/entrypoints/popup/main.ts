@@ -6,6 +6,7 @@ import { DomainAnalysisUI, AnalyzerController } from '../../src/ui/domainAnalysi
 import { SinglePageAnalysisUI } from '../../src/ui/singlePageAnalysisUI';
 import { UIHelpers, customAlert, customPrompt } from '../../src/utils/uiHelpers';
 import { platformStrings, isSqs } from '../../src/utils/platform';
+import { UserData } from '../../src/utils/storage';
 
 class SquarespaceAnalyzer implements AnalyzerController {
   usageCount: number = 0;
@@ -17,6 +18,8 @@ class SquarespaceAnalyzer implements AnalyzerController {
   currentDomain: string = '';
   isNewDomain: boolean = false;
   isDomainAnalyzing: boolean = false;
+  licenseData: any = null;
+  showDomainConfirmation: boolean = true;
 
   // File naming constant
   FILENAME_BRAND: string = platformStrings.filenameVariable;
@@ -43,7 +46,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
     await this.checkOngoingSinglePageAnalysis();
 
     // Check license in background (non-blocking)
-    LicenseManager.verifyStoredLicenseInBackground(this);
+    LicenseManager.verifyStoredLicenseInBackground();
 
     // Listen for background updates
     chrome.runtime.onMessage.addListener(message => {
@@ -74,9 +77,17 @@ class SquarespaceAnalyzer implements AnalyzerController {
     this.isPremium = data.isPremium;
     this.userId = data.userId;
     this.analyzedDomains = data.analyzedDomains || [];
+    this.licenseData = data.licenseData || null;
 
     // Ensure userId exists
     await StorageManager.ensureUserId(this.userId);
+
+    // Fetch session-based confirmation preference from background
+    const pref = await chrome.runtime.sendMessage({
+      action: 'getPreference',
+      key: 'hideDomainConfirmation',
+    });
+    this.showDomainConfirmation = !pref.value;
   }
 
   async loadAccumulatedResults() {
@@ -121,19 +132,29 @@ class SquarespaceAnalyzer implements AnalyzerController {
       if (upgradeNoticeEl) upgradeNoticeEl.style.display = 'none';
       if (statusText) statusText.style.display = 'none';
 
-      if (upgradeBtn) {
-        upgradeBtn.textContent = 'Premium Activated';
-        upgradeBtn.disabled = true;
-        upgradeBtn.style.background = '#38a169';
-      }
-
+      // Do NOT modify upgrade buttons text/style - keep them as is (per user request)
+      // Just ensure container has correct positioning class if needed
       if (premiumButtonsGroup) premiumButtonsGroup.classList.add('premium-position');
 
-      // Also ensure the check status button reflects premium state if it's visible
+      // Update the "Check Status" button to reflect active state and type
       const checkStatusBtn = document.getElementById('checkStatusButton');
       if (checkStatusBtn) {
-        checkStatusBtn.textContent = '✅ Premium Active';
-        checkStatusBtn.style.background = '#48bb78';
+        let statusText = '✅ Premium Activated';
+
+        // Determine license type from stored data
+        if (this.licenseData && this.licenseData.record) {
+          if (this.licenseData.record.expires_at) {
+            statusText += ' - Yearly';
+          } else {
+            statusText += ' - Lifetime';
+          }
+        } else {
+          // Fallback if data missing but isPremium is true (shouldn't happen often)
+          statusText += ' - Active';
+        }
+
+        checkStatusBtn.textContent = statusText;
+        checkStatusBtn.style.background = '#14532d';
         checkStatusBtn.setAttribute('disabled', 'true');
       }
     } else {
@@ -407,14 +428,30 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
       const result = await LicenseManager.checkLicense(trimmedEmail);
       if (result && result.valid) {
-        // Success
-        btn.textContent = '✅ Premium Active';
-        btn.style.background = '#48bb78';
+        // Success - Save data
         await StorageManager.saveUserData({
           ...data,
           isPremium: true,
           licenseEmail: trimmedEmail,
+          licenseData: result,
         });
+
+        // Update local state
+        this.isPremium = true;
+        this.licenseData = result;
+
+        // Determine text
+        let statusText = '✅ Premium Activated';
+        if (result.record) {
+          if (result.record.expires_at) {
+            statusText += ' - Yearly';
+          } else {
+            statusText += ' - Lifetime';
+          }
+        }
+
+        btn.textContent = statusText;
+        btn.style.background = '#14532d';
 
         // Show Legacy Success Alert
         let message = `✅ Premium Status: Active\n\n`;
@@ -436,7 +473,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
       } else {
         // Failure
         btn.textContent = '❌ License Not Found';
-        btn.style.background = '#e53e3e';
+        btn.style.background = '#7f1d1d';
 
         // Show Legacy Failure Alert
         let errorMsg = 'Premium Status: Not Active\n\n';
@@ -487,6 +524,15 @@ class SquarespaceAnalyzer implements AnalyzerController {
   }
   hideMessages() {
     UIHelpers.hideMessages();
+  }
+
+  async setHideDomainConfirmation(hide: boolean) {
+    this.showDomainConfirmation = !hide;
+    await chrome.runtime.sendMessage({
+      action: 'setPreference',
+      key: 'hideDomainConfirmation',
+      value: hide,
+    });
   }
 }
 

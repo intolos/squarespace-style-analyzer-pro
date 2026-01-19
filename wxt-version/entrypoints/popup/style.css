@@ -198,30 +198,30 @@ body {
 }
 
 .btn-success {
-  background: #38a169;
+  background: #14532d;
   color: white;
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #2f855a;
+  background: #064e3b;
 }
 
 .btn-info {
-  background: #3182ce;
+  background: #1e3a8a;
   color: white;
 }
 
 .btn-info:hover:not(:disabled) {
-  background: #2c5282;
+  background: #1e40af;
 }
 
 .btn-warning {
-  background: #dd6b20;
+  background: #9a3412;
   color: white;
 }
 
 .btn-warning:hover:not(:disabled) {
-  background: #c05621;
+  background: #7c2d12;
 }
 
 .btn-secondary {
@@ -236,28 +236,29 @@ body {
 }
 
 .btn-cancel {
-  background: #f56565;
+  background: #7f1d1d;
   color: white;
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: #e53e3e;
+  background: #991b1b;
 }
 
 .btn-mobile {
-  background: #0891b2;
+  background: #164e63;
   color: white;
 }
 
 .btn-mobile:hover:not(:disabled) {
-  background: #0e7490;
+  background: #155e75;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 1; /* Keep contrast high as per user request */
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
+  filter: brightness(0.9); /* Slightly darker to indicate disabled but still high contrast */
 }
 
 .loading {
@@ -945,21 +946,21 @@ body {
 }
 
 .custom-modal-btn-primary {
-  background: #667eea;
+  background: #4c51bf;
   color: white;
 }
 
 .custom-modal-btn-primary:hover {
-  background: #5568d3;
+  background: #434190;
 }
 
 .custom-modal-btn-secondary {
-  background: #e2e8f0;
-  color: #4a5568;
+  background: #4a5568;
+  color: white;
 }
 
 .custom-modal-btn-secondary:hover {
-  background: #cbd5e0;
+  background: #2d3748;
 }
 
 .custom-modal-btn-danger {
@@ -993,10 +994,10 @@ body {
 }
 
 .btn-lifetime {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
   color: white;
 }
 
 .btn-lifetime:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  background: linear-gradient(135deg, #434190 0%, #44337a 100%);
 }

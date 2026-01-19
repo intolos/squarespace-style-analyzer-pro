@@ -46,9 +46,11 @@ export const SinglePageAnalysisUI = {
     const loadingStatusEl = document.getElementById('loadingStatus');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const cancelBtn = document.getElementById('cancelPageBtn');
+    const siteInfo = document.getElementById('siteInfo');
 
     if (loadingEl) loadingEl.style.display = 'flex';
     if (loadingStatusEl) loadingStatusEl.textContent = 'Analyzing page...';
+    if (siteInfo) siteInfo.style.display = 'none';
 
     // Swap buttons
     if (analyzeBtn) analyzeBtn.style.display = 'none';
@@ -97,10 +99,12 @@ export const SinglePageAnalysisUI = {
       const loadingEl = document.getElementById('loading');
       const analyzeBtn = document.getElementById('analyzeBtn');
       const cancelBtn = document.getElementById('cancelPageBtn');
+      const siteInfo = document.getElementById('siteInfo');
 
       if (loadingEl) loadingEl.style.display = 'none';
       if (analyzeBtn) analyzeBtn.style.display = 'block';
       if (cancelBtn) cancelBtn.style.display = 'none';
+      if (siteInfo) siteInfo.style.display = 'block';
 
       if (
         error.message.includes('receiving end') ||
@@ -128,10 +132,12 @@ export const SinglePageAnalysisUI = {
     const loadingEl = document.getElementById('loading');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const cancelBtn = document.getElementById('cancelPageBtn');
+    const siteInfo = document.getElementById('siteInfo');
 
     if (loadingEl) loadingEl.style.display = 'none';
     if (analyzeBtn) analyzeBtn.style.display = 'block'; // Restore analyze button
     if (cancelBtn) cancelBtn.style.display = 'none'; // Hide cancel button
+    if (siteInfo) siteInfo.style.display = 'block';
 
     await chrome.runtime.sendMessage({ action: 'cancelSinglePageAnalysis' });
 
@@ -160,10 +166,12 @@ export const SinglePageAnalysisUI = {
       const loadingEl = document.getElementById('loading');
       const analyzeBtn = document.getElementById('analyzeBtn');
       const cancelBtn = document.getElementById('cancelPageBtn');
+      const siteInfo = document.getElementById('siteInfo');
 
       if (loadingEl) loadingEl.style.display = 'flex';
       if (analyzeBtn) analyzeBtn.style.display = 'none';
       if (cancelBtn) cancelBtn.style.display = 'block';
+      if (siteInfo) siteInfo.style.display = 'none';
 
       if (data.singlePageProgressText) {
         const statusEl = document.getElementById('loadingStatus');
@@ -199,10 +207,12 @@ export const SinglePageAnalysisUI = {
         const loadingEl = document.getElementById('loading');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const cancelBtn = document.getElementById('cancelPageBtn');
+        const siteInfo = document.getElementById('siteInfo');
 
         if (loadingEl) loadingEl.style.display = 'none';
         if (analyzeBtn) analyzeBtn.style.display = 'block';
         if (cancelBtn) cancelBtn.style.display = 'none';
+        if (siteInfo) siteInfo.style.display = 'block';
 
         analyzer.showError('Analysis failed: ' + data.singlePageAnalysisError);
         chrome.storage.local.remove(['singlePageAnalysisStatus', 'singlePageAnalysisError']);
@@ -228,10 +238,12 @@ export const SinglePageAnalysisUI = {
       const loadingEl = document.getElementById('loading');
       const analyzeBtn = document.getElementById('analyzeBtn');
       const cancelBtn = document.getElementById('cancelPageBtn');
+      const siteInfo = document.getElementById('siteInfo');
 
       if (loadingEl) loadingEl.style.display = 'none';
       if (analyzeBtn) analyzeBtn.style.display = 'block';
       if (cancelBtn) cancelBtn.style.display = 'none';
+      if (siteInfo) siteInfo.style.display = 'block';
 
       // Get current domain for usage tracking
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });

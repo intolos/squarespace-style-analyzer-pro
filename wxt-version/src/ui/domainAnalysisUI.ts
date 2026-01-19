@@ -20,6 +20,8 @@ export interface AnalyzerController {
   trackUsage: (event: string) => void;
   groupedUrls?: any;
   totalPagesForAnalysis?: number;
+  showDomainConfirmation: boolean;
+  setHideDomainConfirmation: (hide: boolean) => Promise<void>;
 }
 
 export const DomainAnalysisUI = {
@@ -54,11 +56,13 @@ export const DomainAnalysisUI = {
         const analyzeBtn = document.getElementById('analyzeBtn');
         const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
         const cancelDomainBtn = document.getElementById('cancelDomainBtn');
+        const siteInfo = document.getElementById('siteInfo');
 
         if (progressEl) progressEl.style.display = 'block';
         if (analyzeBtn) analyzeBtn.style.display = 'none';
         if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'none';
         if (cancelDomainBtn) cancelDomainBtn.style.display = 'block';
+        if (siteInfo) siteInfo.style.display = 'none';
 
         this.updateDomainProgress(data.domainAnalysisProgress, data.isPremium);
         this.startProgressPolling(analyzer); // Pass check for completion inside polling or start separate
@@ -95,6 +99,29 @@ export const DomainAnalysisUI = {
       return;
     }
 
+    // Use personalized confirmation message
+    const msgFree = `This will automatically analyze up to 10 pages found in the sitemap.\n\nAfter you start the analysis in the extension, you can close the extension (simply click off of it or go to another web page) and continue working - the analysis will run in the background.\n\nIn the Premium version, the full domain is analyzed without page limitation. It includes an extra feature of being able to select pages for analysis. This is specifically helpful for larger websites where you are able to select groups of pages to analyze your entire site in sections if desired to save time.\n\nAnalyzing multiple pages takes some time. It takes the same time as loading the page in full, after all lazy-loading elements and all, plus the time to actually do the extensive analyses that we perform. Now you know.\n\nContinue?`;
+
+    const msgPremium = `After you start the analysis in the extension, you can close the extension (simply click off of it or go to another web page) and continue working - the analysis will run in the background.\n\nIn your Premium version, the full domain is analyzed without page limitation. It includes an extra feature of being able to select pages for analysis. This is specifically helpful for larger websites where you are able to select groups of pages to analyze your entire site in sections if desired to save time.\n\nAnalyzing multiple pages takes some time. It takes the same time as loading the page in full, after all lazy-loading elements and all, plus the time to actually do the extensive analyses that we perform. Now you know.\n\nContinue?`;
+
+    let confirmed = true;
+    if (analyzer.isPremium && !analyzer.showDomainConfirmation) {
+      confirmed = true;
+    } else {
+      const result = await customConfirm(
+        analyzer.isPremium ? msgPremium : msgFree,
+        'Analyze Entire Domain',
+        analyzer.isPremium
+      );
+      confirmed = result.confirmed;
+
+      if (result.confirmed && result.checkboxChecked) {
+        await analyzer.setHideDomainConfirmation(true);
+      }
+    }
+
+    if (!confirmed) return;
+
     // For premium users, fetch sitemap first and show page selection
     if (analyzer.isPremium) {
       analyzer.showSuccess('Fetching sitemap and navigation...');
@@ -124,13 +151,6 @@ export const DomainAnalysisUI = {
       }
     } else {
       // Free users flow
-      const confirm = await customConfirm(
-        `This will automatically analyze up to 10 pages found in the sitemap.\n\nYou can close this popup and continue working - the analysis will run in the background.\n\nIn the Premium version, the full domain is analyzed without page limitation. It includes an extra feature of being able to select pages for analysis. This is specifically helpful for larger websites where you are able to select groups of pages to analyze your entire site in sections if desired to save time.\n\nContinue?`,
-        'Analyze Entire Domain'
-      );
-
-      if (!confirm) return;
-
       const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
       const mobileAnalysisChoice = document.getElementById('mobileAnalysisChoice');
 
@@ -239,10 +259,13 @@ export const DomainAnalysisUI = {
     analyzer.isDomainAnalyzing = true;
     analyzer.hideMessages();
 
+    const siteInfo = document.getElementById('siteInfo');
+
     document.getElementById('domainProgress')!.style.display = 'block';
     document.getElementById('analyzeBtn')!.style.display = 'none';
     document.getElementById('analyzeDomainBtn')!.style.display = 'none';
     document.getElementById('cancelDomainBtn')!.style.display = 'block';
+    if (siteInfo) siteInfo.style.display = 'none';
 
     chrome.storage.local.remove([
       'domainAnalysisComplete',
@@ -284,11 +307,14 @@ export const DomainAnalysisUI = {
     analyzer.isDomainAnalyzing = true;
     analyzer.hideMessages();
 
+    const siteInfo = document.getElementById('siteInfo');
+
     document.getElementById('mobileAnalysisChoice')!.style.display = 'none';
     document.getElementById('domainProgress')!.style.display = 'block';
     document.getElementById('analyzeBtn')!.style.display = 'none';
     document.getElementById('analyzeDomainBtn')!.style.display = 'none';
     document.getElementById('cancelDomainBtn')!.style.display = 'block';
+    if (siteInfo) siteInfo.style.display = 'none';
 
     chrome.storage.local.remove([
       'domainAnalysisComplete',
@@ -428,12 +454,14 @@ export const DomainAnalysisUI = {
     const progressEl = document.getElementById('domainProgress');
     const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
     const cancelBtn = document.getElementById('cancelDomainBtn');
+    const siteInfo = document.getElementById('siteInfo');
 
     if (progressEl) progressEl.style.display = 'none';
     const analyzeBtn = document.getElementById('analyzeBtn');
     if (analyzeBtn) analyzeBtn.style.display = 'block';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
+    if (siteInfo) siteInfo.style.display = 'block';
 
     if (result && result.success) {
       const data = result.data || {
@@ -570,10 +598,13 @@ export const DomainAnalysisUI = {
     }
     this.cancellationRequested = false;
 
+    const siteInfo = document.getElementById('siteInfo');
+
     document.getElementById('domainProgress')!.style.display = 'none';
     document.getElementById('analyzeBtn')!.style.display = 'block';
     document.getElementById('analyzeDomainBtn')!.style.display = 'block';
     document.getElementById('cancelDomainBtn')!.style.display = 'none';
+    if (siteInfo) siteInfo.style.display = 'block';
 
     const cleanMessage = errorMessage.startsWith('Analysis error: ')
       ? errorMessage
@@ -596,12 +627,14 @@ export const DomainAnalysisUI = {
     const progressEl = document.getElementById('domainProgress');
     const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
     const cancelBtn = document.getElementById('cancelDomainBtn');
+    const siteInfo = document.getElementById('siteInfo');
 
     if (progressEl) progressEl.style.display = 'none';
     const analyzeBtn = document.getElementById('analyzeBtn');
     if (analyzeBtn) analyzeBtn.style.display = 'block';
     if (analyzeDomainBtn) analyzeDomainBtn.style.display = 'block';
     if (cancelBtn) cancelBtn.style.display = 'none';
+    if (siteInfo) siteInfo.style.display = 'block';
 
     const storageData = await chrome.storage.local.get(['domainAnalysisResults']);
     const partialResults = storageData.domainAnalysisResults;

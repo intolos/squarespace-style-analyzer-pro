@@ -11,6 +11,7 @@ export default defineBackground(() => {
   const activeMobileAnalyses = new Map<number, { clonedTabId: number }>();
   let lastScreenshotTime = 0;
   const SCREENSHOT_MIN_INTERVAL = 750; // ms
+  let hideDomainConfirmation = false;
 
   // License Polling
   const API_BASE = 'https://squarespace-style-analyzer-pro.eamass.workers.dev';
@@ -150,6 +151,23 @@ export default defineBackground(() => {
       handleScreenshotCapture(sender).then(sendResponse);
       return true;
     }
+
+    if (request.action === 'getPreference') {
+      if (request.key === 'hideDomainConfirmation') {
+        sendResponse({ value: hideDomainConfirmation });
+      } else {
+        sendResponse({ value: null });
+      }
+      return true;
+    }
+
+    if (request.action === 'setPreference') {
+      if (request.key === 'hideDomainConfirmation') {
+        hideDomainConfirmation = request.value;
+      }
+      sendResponse({ success: true });
+      return true;
+    }
   });
 
   // --- Handlers ---
@@ -183,6 +201,17 @@ export default defineBackground(() => {
       const clonedTab = await chrome.tabs.create({ url: targetUrl, active: false });
       clonedTabId = clonedTab.id!;
 
+      // Track active analysis IMMEDIATELY so it can be cancelled even during load
+      if (originalTabId) {
+        activeMobileAnalyses.set(originalTabId, { clonedTabId });
+      } else {
+        // Fallback for popup-initiated analysis without tab info
+        const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTabs[0]) {
+          activeMobileAnalyses.set(activeTabs[0].id!, { clonedTabId });
+        }
+      }
+
       sendProgress('Loading target page...');
       // Wait for load
       await new Promise<void>(resolve => {
@@ -198,19 +227,6 @@ export default defineBackground(() => {
           resolve();
         }, 15000);
       });
-
-      // Track active analysis so it can be cancelled
-      if (originalTabId) {
-        activeMobileAnalyses.set(originalTabId, { clonedTabId });
-      } else {
-        // Fallback for popup-initiated analysis without tab info
-        // We'll use a temporary key if needed, but usually sender.tab.id is present for content scripts
-        // and for popup we might need to find the active tab.
-        const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (activeTabs[0]) {
-          activeMobileAnalyses.set(activeTabs[0].id!, { clonedTabId });
-        }
-      }
 
       if (mobileOnly) {
         sendProgress('Running mobile usability audit...');

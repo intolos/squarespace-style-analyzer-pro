@@ -30,7 +30,12 @@ export const UIHelpers = {
     });
   },
 
-  customConfirm(message: string, titleText: string = 'Confirm'): Promise<boolean> {
+  customConfirm(
+    message: string,
+    titleText: string = 'Confirm',
+    showCheckbox: boolean = false,
+    checkboxText: string = 'Do not show this message again.'
+  ): Promise<{ confirmed: boolean; checkboxChecked: boolean }> {
     return new Promise(resolve => {
       const overlay = document.getElementById('customModalOverlay')!;
       const title = document.getElementById('customModalTitle')!;
@@ -42,18 +47,35 @@ export const UIHelpers = {
       msg.textContent = message;
       input.style.display = 'none';
 
-      buttons.innerHTML = `
+      let buttonsHtml = `
         <button class="custom-modal-btn custom-modal-btn-secondary" id="customModalCancel">Cancel</button>
         <button class="custom-modal-btn custom-modal-btn-danger" id="customModalConfirm">Confirm</button>
       `;
 
+      if (showCheckbox) {
+        buttonsHtml =
+          `
+        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px; justify-content: flex-start; width: 100%;">
+          <input type="checkbox" id="customModalCheckbox" style="cursor: pointer; width: 16px; height: 16px;">
+          <label for="customModalCheckbox" style="font-size: 0.85rem; cursor: pointer; color: #4a5568;">${checkboxText}</label>
+        </div>
+        ` + buttonsHtml;
+      }
+
+      buttons.innerHTML = buttonsHtml;
       overlay.style.display = 'flex';
+
+      const getCheckboxStatus = () => {
+        if (!showCheckbox) return false;
+        const cb = document.getElementById('customModalCheckbox') as HTMLInputElement;
+        return cb ? cb.checked : false;
+      };
 
       const cancelBtn = document.getElementById('customModalCancel');
       if (cancelBtn) {
         cancelBtn.onclick = () => {
           overlay.style.display = 'none';
-          resolve(false);
+          resolve({ confirmed: false, checkboxChecked: getCheckboxStatus() });
         };
       }
 
@@ -61,7 +83,7 @@ export const UIHelpers = {
       if (confirmBtn) {
         confirmBtn.onclick = () => {
           overlay.style.display = 'none';
-          resolve(true);
+          resolve({ confirmed: true, checkboxChecked: getCheckboxStatus() });
         };
       }
     });

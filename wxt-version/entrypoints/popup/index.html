@@ -76,7 +76,7 @@
         <div id="domainProgress" class="domain-progress">
           <h4>🔄 Analyzing Domain...</h4>
           <p style="font-size: 0.85rem; color: #2c5282; margin: 0 0 10px 0; text-align: center;">
-            Tabs will rapidly open and close in your browser as pages are analyzed. Please do not interfere with this process. You can close this popup and the analysis will continue in the background.
+            Tabs will rapidly open and close in your browser as pages are analyzed. Please do not interfere with this process. After you start the analysis in the extension, you can close the extension (simply click off of it or go to another web page) and continue working - the analysis will run in the background.
           </p>
           <div class="domain-progress-bar">
             <div id="domainProgressFill" class="domain-progress-fill">0%</div>
@@ -131,16 +131,7 @@
           </div>
         </div>
 
-        <div id="mobileAnalysisSection" style="margin: 20px 0; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
-          <h4 style="margin: 0 0 10px 0; color: #0369a1; font-size: 0.85rem;">📱 Mobile Usability Analysis</h4>
-          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">
-            Analyze pages using Google Lighthouse standards (412×823px mobile viewport, mobile user agent). 
-            Adds ~2 seconds per page.
-          </p>
-          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">
-            Uses Chrome DevTools Protocol for accurate mobile testing. Requires debugger permission of "Read and change all your data on all websites" but does not alter anything on your site.</p>
-          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">Clicking "Analyze This Page" will always include Mobile Analysis for that page. After clicking "Analyze Entire Domain", you will see options to include Mobile Analysis or not.</p>
-        </div>
+
 
         <div class="multi-page-info">
           <strong>📚 Multi-Page Analysis:</strong>
@@ -155,7 +146,19 @@
 
         <div class="domain-info">
           <strong>🌐 Analyze Entire Domain:</strong>
-          Click "Analyze Entire Domain" to analyze pages using the site's sitemap. Free users get 10 pages. Premium gets full domain analysis with unlimited pages. Once the analysis starts, you can close this popup and continue working - the analysis will run in the background.
+          Click "Analyze Entire Domain" to analyze pages using the site's sitemap. Free users get 10 pages. Premium gets full domain analysis with unlimited pages. After you start the analysis in the extension, you can close the extension (simply click off of it or go to another web page) and continue working - the analysis will run in the background.
+          <p style="margin-top: 10px; font-size: 0.85rem;">Analyzing multiple pages takes some time. It takes the same time as loading the page in full, after all lazy-loading elements and all, plus the time to actually do the extensive analyses that we perform. Now you know.</p>
+        </div>
+
+        <div id="mobileAnalysisSection" style="margin: 20px 0; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+          <h4 style="margin: 0 0 10px 0; color: #0369a1; font-size: 0.85rem;">📱 Mobile Usability Analysis</h4>
+          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">
+            Analyze pages using Google Lighthouse standards (412×823px mobile viewport, mobile user agent). 
+            Adds ~3-4 seconds per page.
+          </p>
+          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">
+            Uses Chrome DevTools Protocol for accurate mobile testing. Requires debugger permission of "Read and change all your data on all websites" but does not alter anything on your site.</p>
+          <p style="font-size: 0.85rem; color: #0347A1; margin: 0 0 10px 0;">Clicking "Analyze This Page" will always include Mobile Analysis for that page. After clicking "Analyze Entire Domain", you will see options to include Mobile Analysis or not.</p>
         </div>
 
         <div id="pageSelectionModal" class="page-selection-modal">
@@ -184,14 +187,7 @@
         
 
 
-        <div id="statusSection" class="status-section">
-          <div class="usage-counter">
-            <span id="usageCount">0</span> of 3 free websites analyzed
-          </div>
-          <div class="usage-bar">
-            <div id="usageProgress" class="usage-progress" style="width: 0%;"></div>
-          </div>
-        </div>
+
 
         <div id="upgradeNotice" class="upgrade-notice" style="display: none;">
           <h3>🚀 Upgrade Required</h3>
@@ -210,11 +206,11 @@
 
           <div id="premiumStatusMessage" style="display: none; padding: 8px 12px; margin-bottom: 8px; border-radius: 6px; font-size: 0.85rem; text-align: center;"></div>
           
-          <button id="checkStatusButton" class="btn btn-info" style="margin-top: 0px; font-size: 0.85rem; padding: 10px 16px; background: #63b3ed;">
+          <button id="checkStatusButton" class="btn btn-info" style="margin-top: 0px; font-size: 0.85rem; padding: 10px 16px;">
             📋 Check Premium Status
           </button>
 
-          <a id="modifyPremiumButton" href="https://billing.stripe.com/p/login/00w7sKceJ82k8Nk7Ix4gg00" target="_blank" class="btn btn-info" style="display: block; margin-top: 0px; font-size: 0.85rem; padding: 10px 16px; background: #90cdf4; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box;">
+          <a id="modifyPremiumButton" href="https://billing.stripe.com/p/login/00w7sKceJ82k8Nk7Ix4gg00" target="_blank" class="btn btn-info" style="display: block; margin-top: 0px; font-size: 0.85rem; padding: 10px 16px; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box;">
             ⚙️ Modify Premium Details
           </a>
         </div>
@@ -245,7 +241,6 @@
             <li>Up to 12 reports generated depending on what is discovered on your website</li>
             <li>Priority support</li>
             <li>Lifetime updates</li>
-            <li>Note: When you become Premium, the "Analyze This Page" and "Analyze Entire Domain" buttons move to the top of this popup for quick access since you are already familiar with how this extension works.</li>
           </ul>
         </div>
         
