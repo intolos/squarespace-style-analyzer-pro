@@ -69,6 +69,14 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
   - Command: `git tag post-license-fix-2026-01-19`
 - **Why**: This allows instant comparison and rollback if the new "fix" breaks something else 3 hours later.
 
+### Git Execution Context
+
+- **Critical**: The `documentation-md/` folder resides in the project root (`squarespace-extension/`), while code often lives in `wxt-version/`.
+- **Rule**: When running `git add` or `git commit`, ALWAYS ensure you are either:
+  1.  Running from the project root.
+  2.  Using `git add ../documentation-md` if working from a subdirectory.
+  3.  Verifying with `git status` that _all_ intended files (code + docs) are staged.
+
 ### "Why" Comments (The Anti-Regression Shield)
 
 When you fix a tricky bug (one that took >30 mins), you MUST add a comment explaining **WHY** the code is written that way.
