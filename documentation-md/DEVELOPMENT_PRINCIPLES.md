@@ -429,7 +429,9 @@ const scale = Math.min(1, maxSize / Math.max(rect.width, rect.height));
 
 ## Before Writing ANY Code, Answer These Questions and follow this first command:
 
-- [ ] I will not change items that are working properly. I will not change items that are not requested.
+- [ ] **MANDATORY**: I have read `documentation-md/DOCUMENTATION_PROCESSES.md` and understand where to look for architecture vs. history.
+
+- [ ] I will not change items that are working properly. I will not change items that are not working differently than requested.
 
 - [ ] Have I researched how industry-standard tools (WAVE, Lighthouse, axe) implement this?
 
