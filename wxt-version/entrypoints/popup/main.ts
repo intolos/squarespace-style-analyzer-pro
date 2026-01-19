@@ -104,6 +104,8 @@ class SquarespaceAnalyzer implements AnalyzerController {
       isPremium: this.isPremium,
       userId: this.userId,
       analyzedDomains: this.analyzedDomains,
+      licenseEmail: this.licenseData?.email || this.licenseData?.record?.email,
+      licenseData: this.licenseData,
     });
   }
 
@@ -150,7 +152,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
           }
         } else {
           // Fallback if data missing but isPremium is true (shouldn't happen often)
-          statusText += ' - Active';
+          // Do nothing, just keep "Premium Activated"
         }
 
         checkStatusBtn.textContent = statusText;

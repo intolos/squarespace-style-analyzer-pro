@@ -18,6 +18,8 @@ export const StorageManager = {
       'isPremium',
       'userId',
       'analyzedDomains',
+      'licenseEmail',
+      'licenseData',
     ]);
 
     return {
@@ -25,6 +27,8 @@ export const StorageManager = {
       isPremium: data.isPremium || false,
       userId: data.userId || this.generateUserId(),
       analyzedDomains: data.analyzedDomains || [],
+      licenseEmail: data.licenseEmail,
+      licenseData: data.licenseData,
     };
   },
 
@@ -36,6 +40,8 @@ export const StorageManager = {
       isPremium: userData.isPremium,
       userId: userData.userId,
       analyzedDomains: userData.analyzedDomains,
+      licenseEmail: userData.licenseEmail,
+      licenseData: userData.licenseData,
     });
     console.log('✅ User data saved successfully');
   },
