@@ -13,15 +13,10 @@ body {
   flex-direction: column;
 }
 
+/* Main interface flex layout */
 #mainInterface {
   display: flex;
   flex-direction: column;
-}
-
-/* Force visual order without moving DOM elements */
-/* IMPORTANT: order: -1 places modal at top of flex container */
-#pageSelectionModal {
-  order: -1 !important;
 }
 
 #success {
@@ -696,7 +691,6 @@ body {
 #pageSelectionModal h4 {
   color: #667eea;
   margin: 0 0 10px 0;
-  padding-top: 20px !important;
   /* font-size removed to match legacy default */
   white-space: nowrap; /* Keep on one line */
   overflow: hidden;
@@ -916,13 +910,20 @@ body.premium-active #statusSection {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
+.custom-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 45px 0 15px 0; /* Clean, generous spacing as requested */
+  width: 100%;
+}
+
 /* Target the specific custom modal title used for alerts/prompts */
 #customModalTitle,
 .custom-modal h3 {
   display: block !important;
-  margin: 0 0 15px 0 !important;
-  margin-top: 0 !important;
-  padding-top: 45px !important;
+  margin: 0 !important;
+  padding: 0 !important;
   font-size: 1.3rem;
   color: #2d3748;
   text-align: center;

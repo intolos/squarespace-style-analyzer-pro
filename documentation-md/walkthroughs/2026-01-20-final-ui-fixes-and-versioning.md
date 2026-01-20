@@ -6,14 +6,12 @@ This release addresses several critical UI regressions and provides robust "Nucl
 
 ### 1. Premium UI Consistency & Stability
 
-- **Usage Counter Protection**: Implemented a "Nuclear Option" using `MutationObserver` in `main.ts` to ensure the "0 of 3" counter never reappears for premium users.
-- **Flicker Elimination**: Set `#statusSection` to `display: none` by default in the HTML to prevent it from appearing during the split-second before license verification.
-- **Activation Sync**: Added immediate UI refresh calls after successful license activation to ensure free-tier markers disappear without requiring a popup reload.
+- **Flicker Elimination & Protection**: Set `#statusSection` to `display: none` by default in the HTML and ensured immediate UI state synchronization upon license activation. This eliminates the "Zombie Counter" flicker elegantly without redundant DOM observers.
 
-### 2. Modal Positioning & Layout
+### 2. Modal Positioning & Layout (Refined)
 
-- **"Select Sections" Modal**: Now forcibly prepended to the top of the container using JavaScript `insertBefore`, ensuring it is the first element the user sees after sitemap fetching.
-- **Improved Padding**: Increased `padding-top` for custom modal titles (45px) and set `display: block` to ensure proper visual separation and readability.
+- **"Select Sections" Modal**: Now guaranteed at the top of the container via explicit JavaScript `insertBefore` logic. Removed redundant CSS `order` rules to maintain a single source of truth.
+- **Elegant Header Spacing**: Replaced brute-force `padding-top: 45px !important` hacks with a structured header container using Flexbox. This provides the requested generous spacing (45px) for the "Analyze Entire Domain" prompt and other alerts while adhering to clean architectural standards.
 - **Title Scaling**: Restored the "Select Sections to Analyze" title to its original legacy size for better UI consistency.
 
 ### 3. Mobile Analysis Enhancements

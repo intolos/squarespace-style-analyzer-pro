@@ -142,20 +142,6 @@ class SquarespaceAnalyzer implements AnalyzerController {
       document.body.classList.add('premium-active');
       if (statusSection) statusSection.remove(); // Remove from DOM completely so it cannot be shown
 
-      // NUCLEAR OPTION: Add MutationObserver to ensure statusSection never reappears
-      // This addresses the user's report that it "appears at the top" even after premium activation
-      if (mainInterface && !(mainInterface as any)._statusObserver) {
-        const observer = new MutationObserver(() => {
-          const zombie = document.getElementById('statusSection');
-          if (zombie) {
-            zombie.remove();
-            // console.log('☢️ Nuclear option: Removed resurrected statusSection');
-          }
-        });
-        observer.observe(mainInterface, { childList: true, subtree: true });
-        (mainInterface as any)._statusObserver = observer;
-      }
-
       if (upgradeNoticeEl) upgradeNoticeEl.style.display = 'none';
       if (statusText) statusText.style.display = 'none';
 
