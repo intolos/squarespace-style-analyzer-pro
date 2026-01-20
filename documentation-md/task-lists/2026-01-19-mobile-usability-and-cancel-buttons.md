@@ -1,0 +1,42 @@
+# Task List
+
+- [x] Fix Brand Style Guide Colors report filename
+  - [x] Locate the filename generation logic for the color report
+  - [x] Identify why it's "still not correct" (redundancy in naming)
+  - [ ] Implement the fix
+- [x] Fix Mobile Usability touch targets filtering
+  - [x] Review legacy touch target filtering logic in `legacy-extension`
+  - [x] Review current touch target logic in `wxt-version/src/analyzers/mobileScripts.ts`
+  - [x] Identify why large touch targets are being reported (font size triggering issues even on large targets)
+  - [x] Implement the fix to exclude large/valid touch targets
+  - [x] Implement exclusion filtering for utility elements ("Skip to content", etc.)
+- [x] Verify both fixes
+  - [x] Test color report export filename (Verified via build inspection)
+  - [x] Test mobile usability report touch targets (Verified via build inspection)
+  - [x] Fix sub-pixel rendering issue (Verified: Switched to Math.round for consistency with report)
+  - [x] Update Benefits URLs in platform.ts to be platform-specific
+  - [x] Fix sub-pixel rendering issue (Switched to Math.ceil for maximum permissiveness)
+  - [x] Update Benefits URLs in platform.ts to be platform-specific
+  - [x] Fix Mobile Report Favicon URL (Reverted to root path)
+  - [x] Fix Mobile Report Filename Regression (Inject VITE_IS_SQS_VERSION in build config)
+  - [x] Verify URLs with user (Confirmed)
+  - [x] Optimize Page Load Timeouts (Changed to [45000, 45000] to prevent retry loops)
+
+- [ ] Refine Report & UI
+  - [x] Set Page Timeout to 120s (Single attempt)
+  - [x] Update "Analysis Summary" in Report (Remove Domain/Date, Add "Pages Not Analyzed" with note)
+  - [x] Reorganize Popup UI (Move controls to top for Free/Premium consistency)
+  - [x] Restore Missing Popup Sections (Multi-Page Info & Domain Info)
+  - [x] Fix License Check Button (Prompt for email, show success alert, prevent scroll jump)
+  - [x] Fix Build Error (Resolved duplicate variable declaration in main.ts)
+  - [x] Update Images Report Text (Changed Locate link instructions)
+  - [x] Fix Single Page Analysis Message (Changed to consistent message for all users)
+  - [x] Fix Premium Activation Scroll Jump (Disabled auto-reload storage listener)
+
+- [x] Implement Cancel Button Functionality (Legacy Parity)
+  - [x] Research legacy popup implementation (`popup.html`, `popup.js`, css)
+  - [x] Create implementation plan for WXT version
+  - [x] Implement UI swapping logic (Hide Analyze -> Show Cancel)
+  - [x] Wire up Cancel actions for Single Page Analysis
+  - [x] Wire up Cancel actions for Domain Analysis
+  - [x] Verify functionality

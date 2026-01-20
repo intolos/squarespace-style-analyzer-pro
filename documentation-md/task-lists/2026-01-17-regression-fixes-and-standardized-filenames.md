@@ -1,0 +1,24 @@
+# Task: Fix Export Report Regressions
+
+- [x] Fix CSV "Section" column truncation <!-- id: 0 -->
+- [x] Fix "Link text: A." errors in Mobile Report
+  - [x] Port strict filtering from `sqs-style-analyzer-main.js` (`aria-hidden`, etc.)
+    - [x] Improve text extraction to check child `<img>` alt text
+- [x] Update Report Favicons to new URLs (`benefits-sqs` and `benefits-generic`) <!-- id: 1 -->
+- [x] Fix Analysis Report timestamp format <!-- id: 2 -->
+- [x] Restore missing "Quality Check" graphic in Analysis Report <!-- id: 3 -->
+- [x] Verify all exports <!-- id: 4 -->
+- [x] Investigate `mobileScripts.ts` and `mobileConverter.ts` to ensuring `href` (URL) is being extracted and passed to the report. <!-- id: 5 -->
+- [x] Fix Mobile Usability Report to showing URLs for all touch target issues (and potentially others). <!-- id: 6 -->
+- [x] Investigate why "Cancel" button is missing in Popup. <!-- id: 7 -->
+- [x] Restore "Cancel" button functionality for Single Page Analysis. <!-- id: 8 -->
+- [x] Refactor Background Script to support cancellation of Single Page Analysis. <!-- id: 9 -->
+- [x] Ensure background analysis persistence works correctly. <!-- id: 10 -->
+- [x] Implement immediate cancellation for Domain Analysis in `PageAnalyzer`. <!-- id: 11 -->
+- [x] Fix index tracking in `DomainAnalyzer` cancellation. <!-- id: 12 -->
+- [x] Verify immediate cancellation behavior. <!-- id: 13 -->
+- [x] Add `unlimitedStorage` permission to `wxt.config.ts`. <!-- id: 14 -->
+- [x] Fix extension description in `wxt.config.ts`. <!-- id: 15 -->
+- [x] Standardize and fix filenames for all exported reports. <!-- id: 16 -->
+- [x] Commit and push all changes. <!-- id: 17 -->
+- [x] Create session handover document. <!-- id: 18 -->
