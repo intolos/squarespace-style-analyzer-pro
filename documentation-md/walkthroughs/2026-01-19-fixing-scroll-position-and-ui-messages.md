@@ -1,4 +1,4 @@
-# Walkthrough - Final Fixes
+# Walkthrough: Fixing Scroll Position and UI Messages
 
 I have successfully applied and verified all requested fixes.
 

@@ -1,4 +1,4 @@
-# Walkthrough - Persistent UI Fixes (v4.3.0)
+# Walkthrough: refactor modal padding fix
 
 This release addresses several critical UI regressions and provides robust "Nuclear Option" fixes for persistent interface elements in the premium version of the extension.
 

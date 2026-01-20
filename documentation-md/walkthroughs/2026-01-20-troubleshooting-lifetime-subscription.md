@@ -1,4 +1,4 @@
-# Verification: UI Fixes & Worker Updates (v4.3.1-hotfix)
+# Walkthrough: troubleshooting lifetime subscription
 
 **Date**: 2026-01-20
 **Tasks Completed**: 5/5
