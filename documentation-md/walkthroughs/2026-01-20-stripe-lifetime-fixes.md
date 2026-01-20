@@ -20,7 +20,7 @@
 
 ```typescript
 // main.ts:296
-window.open(session.url, "_blank");
+window.open(session.url, '_blank');
 ```
 
 ## 3. Stripe Worker Updates (Cloudflare)
@@ -46,7 +46,6 @@ window.open(session.url, "_blank");
 8. **$0 Orders**: Updated session check to accept `amount_total === 0` (even if metadata is missing) + `status: 'complete'`.
    - **Search Depth**: Increased customer fetch limit to 10 to find purchases hidden in duplicate records.
 9. **Prioritized Logic**: Metadata > Lifetime Sessions > Charges > Yearly Subscriptions.
-10. **Prioritized Logic**: Implemented strict precedence: Metadata > Lifetime Sessions > Charges > Yearly Subscriptions.
 
 ## 4. Platform URLs
 
