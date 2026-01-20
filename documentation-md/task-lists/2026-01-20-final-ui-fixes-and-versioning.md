@@ -1,0 +1,21 @@
+# Task: Fix Domain Analysis UI Issues
+
+- [x] Fix spurious error message in free version
+  - Cause: Stale `singlePageAnalysisError` in storage
+  - Fix: Clear error states on popup init
+- [x] Fix Check Premium Status email prompt
+  - Fixed to ALWAYS prompt for email, ignoring saved email
+- [x] Fix "0 of 3 free websites" persistence for premium users
+  - [x] Hide by default in HTML
+  - [x] Trigger `updateUI()` on activation
+  - [x] Implement MutationObserver "Nuclear Option"
+- [x] Correct "Analyze Entire Domain" modal padding (increased to 45px)
+- [x] Ensure "Select Sections to Analyze" modal appears at top (JS `insertBefore`)
+- [x] Restore "Select Sections" title to original size
+- [x] Document fixes in `KNOWN_ISSUES.md`
+- [x] Update architecture documentation (`popup-ui.md`)
+- [x] Finalize release
+  - [x] Commit changes
+  - [x] Push to repository
+  - [x] Tag version (v4.3.0)
+- [x] Create walkthrough artifact
