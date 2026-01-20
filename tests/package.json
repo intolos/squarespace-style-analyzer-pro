@@ -1,0 +1,11 @@
+{
+  "name": "squarespace-style-analyzer-tests",
+  "version": "1.0.0",
+  "description": "Automated tests for Squarespace Style Analyzer Pro",
+  "scripts": {
+    "test": "node test-color-tracking.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}

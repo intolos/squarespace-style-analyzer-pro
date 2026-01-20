@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Border Color Property Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    .test-box {
+      margin: 20px 0;
+      padding: 20px;
+      background: white;
+    }
+    .box1 {
+      border: 2px solid #FF0000;
+      color: #333333;
+    }
+    .box2 {
+      border-top: 2px solid #00FF00;
+      border-right: 2px solid #0000FF;
+      border-bottom: 2px solid #FFFF00;
+      border-left: 2px solid #FF00FF;
+      color: #666666;
+    }
+    .box3 {
+      border: 0px solid #00FFFF;
+      color: #999999;
+    }
+  </style>
+</head>
+<body>
+  <h1>Border Color Property Test</h1>
+  <p>Testing what getComputedStyle().borderColor returns</p>
+
+  <div class="test-box box1">
+    Box 1: Uniform border (2px solid #FF0000), text color #333333
+  </div>
+
+  <div class="test-box box2">
+    Box 2: Different border colors on each side, text color #666666
+  </div>
+
+  <div class="test-box box3">
+    Box 3: Border with 0px width (#00FFFF), text color #999999
+  </div>
+
+  <button onclick="runTest()">Run Test</button>
+  <pre id="output" style="background: #f8f8f8; padding: 15px; border: 1px solid #ddd; overflow: auto; max-height: 500px; margin-top: 20px;"></pre>
+
+  <script>
+    function runTest() {
+      const output = document.getElementById('output');
+      let results = 'Border Color Property Test Results:\n\n';
+
+      const boxes = document.querySelectorAll('.test-box');
+      boxes.forEach((box, index) => {
+        const computed = window.getComputedStyle(box);
+
+        results += `Box ${index + 1} (${box.className}):\n`;
+        results += `  borderColor: ${computed.borderColor}\n`;
+        results += `  borderTopColor: ${computed.borderTopColor}\n`;
+        results += `  borderRightColor: ${computed.borderRightColor}\n`;
+        results += `  borderBottomColor: ${computed.borderBottomColor}\n`;
+        results += `  borderLeftColor: ${computed.borderLeftColor}\n`;
+        results += `  borderWidth: ${computed.borderWidth}\n`;
+        results += `  borderTopWidth: ${computed.borderTopWidth}\n`;
+        results += `  borderRightWidth: ${computed.borderRightWidth}\n`;
+        results += `  borderBottomWidth: ${computed.borderBottomWidth}\n`;
+        results += `  borderLeftWidth: ${computed.borderLeftWidth}\n`;
+        results += `  color (text): ${computed.color}\n`;
+        results += '\n';
+      });
+
+      output.textContent = results;
+      console.log(results);
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', runTest);
+  </script>
+</body>
+</html>

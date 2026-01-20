@@ -41,10 +41,11 @@ export const platformStrings = {
         productIdLifetime: 'prod_TbiIroZ9oKQ8cT',
         priceIdLifetime: 'price_1SeUs2Aoq9jsK93OqaZJ8YIg',
         successUrlYearly:
-          'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
+          'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
         successUrlLifetime:
-          'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
-        cancelUrl: 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits/cancel.html',
+          'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
+        cancelUrl:
+          'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/cancel.html',
       }
     : {
         apiBase: 'https://squarespace-style-analyzer-pro.eamass.workers.dev',
@@ -53,10 +54,11 @@ export const platformStrings = {
         productIdLifetime: 'prod_TbiWgdYfr2C63y',
         priceIdLifetime: 'price_1SeV5CAoq9jsK93OBZEQvb2q',
         successUrlYearly:
-          'https://intolos.github.io/website-style-analyzer-pro/benefits/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
+          'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
         successUrlLifetime:
-          'https://intolos.github.io/website-style-analyzer-pro/benefits/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
-        cancelUrl: 'https://intolos.github.io/website-style-analyzer-pro/benefits/cancel.html',
+          'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
+        cancelUrl:
+          'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/cancel.html',
       },
   favicon: isSqs
     ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon32.png'

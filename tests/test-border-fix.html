@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Border Color Fix Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    .test-box {
+      margin: 20px 0;
+      padding: 20px;
+      background: white;
+    }
+    .with-border {
+      border: 2px solid #FF0000;
+      color: #333333;
+    }
+    .no-border {
+      border: 0px solid #0000FF;
+      color: #666666;
+    }
+    .text-only {
+      color: #999999;
+    }
+  </style>
+</head>
+<body>
+  <h1>Border Color Fix Verification</h1>
+
+  <div class="test-box with-border">
+    Box with visible 2px red border (#FF0000) and text color #333333
+  </div>
+
+  <div class="test-box no-border">
+    Box with 0px blue border (#0000FF) and text color #666666
+  </div>
+
+  <div class="test-box text-only">
+    Box with no border style, text color #999999
+  </div>
+
+  <button onclick="runTest()">Run Test</button>
+  <pre id="output" style="background: #f8f8f8; padding: 15px; border: 1px solid #ddd; overflow: auto; max-height: 500px; margin-top: 20px;"></pre>
+
+  <!-- Load extension scripts -->
+  <script src="../color-analyzer.js"></script>
+  <script src="../content-script-helpers.js"></script>
+
+  <script>
+    function runTest() {
+      console.log('Running border color fix verification...');
+
+      const output = document.getElementById('output');
+      let results = 'Expected Results:\n';
+      results += '- Border Colors section should ONLY have #FF0000 (red border)\n';
+      results += '- Text Colors section should have #333333, #666666, #999999\n';
+      results += '- Border Colors should NOT include #0000FF (0px border) or any text colors\n\n';
+      results += '=' .repeat(60) + '\n\n';
+
+      // Initialize color data
+      const colorData = ColorAnalyzer.initializeColorData();
+
+      // Mock helpers
+      const getSectionInfo = () => 'test-section';
+      const getBlockInfo = () => 'test-block';
+
+      // Scan all test boxes
+      const boxes = document.querySelectorAll('.test-box');
+      boxes.forEach(box => {
+        const computed = window.getComputedStyle(box);
+
+        results += `Element: ${box.className}\n`;
+        results += `  Text color (color): ${computed.color}\n`;
+        results += `  Border top color: ${computed.borderTopColor}\n`;
+        results += `  Border top width: ${computed.borderTopWidth}\n\n`;
+
+        // Track text color
+        const textColor = computed.color;
+        if (textColor && !ColorAnalyzer.isTransparentColor(textColor)) {
+          ColorAnalyzer.trackColor(textColor, box, 'color', null, colorData, getSectionInfo, getBlockInfo);
+        }
+
+        // Track border colors using NEW LOGIC (individual sides with width check)
+        const borderSides = [
+          { color: computed.borderTopColor, width: parseFloat(computed.borderTopWidth) || 0 },
+          { color: computed.borderRightColor, width: parseFloat(computed.borderRightWidth) || 0 },
+          { color: computed.borderBottomColor, width: parseFloat(computed.borderBottomWidth) || 0 },
+          { color: computed.borderLeftColor, width: parseFloat(computed.borderLeftWidth) || 0 }
+        ];
+
+        const trackedBorderColors = new Set();
+        borderSides.forEach(side => {
+          if (side.color && !ColorAnalyzer.isTransparentColor(side.color) &&
+              side.width > 0 && !trackedBorderColors.has(side.color)) {
+            trackedBorderColors.add(side.color);
+            ColorAnalyzer.trackColor(side.color, box, 'border-color', null, colorData, getSectionInfo, getBlockInfo);
+            results += `  ✓ Tracked border color: ${side.color} (width: ${side.width}px)\n`;
+          } else if (side.color && side.width === 0) {
+            results += `  ✗ Skipped border color: ${side.color} (width: 0px)\n`;
+          }
+        });
+
+        results += '\n';
+      });
+
+      // Get DevTools summary
+      const summary = ColorAnalyzer.getDevToolsColorSummary(colorData);
+
+      results += '=' .repeat(60) + '\n';
+      results += 'DevTools Color Summary:\n\n';
+      results += `Text Colors (${summary.text.count}): ${summary.text.colors.join(', ')}\n`;
+      results += `Border Colors (${summary.border.count}): ${summary.border.colors.join(', ')}\n\n`;
+
+      // Verify results
+      const borderColorsCorrect = summary.border.count === 1 && summary.border.colors.includes('#FF0000');
+      const textColorsCorrect = summary.text.count === 3 &&
+                                 summary.text.colors.includes('#333333') &&
+                                 summary.text.colors.includes('#666666') &&
+                                 summary.text.colors.includes('#999999');
+      const noCrossPollution = !summary.border.colors.some(c => summary.text.colors.includes(c));
+
+      results += '=' .repeat(60) + '\n';
+      results += 'Test Results:\n';
+      results += `  Border colors correct: ${borderColorsCorrect ? '✅ PASS' : '❌ FAIL'}\n`;
+      results += `  Text colors correct: ${textColorsCorrect ? '✅ PASS' : '❌ FAIL'}\n`;
+      results += `  No cross-pollution: ${noCrossPollution ? '✅ PASS' : '❌ FAIL'}\n\n`;
+
+      if (borderColorsCorrect && textColorsCorrect && noCrossPollution) {
+        results += '🎉 ALL TESTS PASSED! Border color tracking is fixed.\n';
+      } else {
+        results += '💔 TESTS FAILED. Border color tracking still has issues.\n';
+      }
+
+      output.textContent = results;
+      console.log(results);
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      setTimeout(runTest, 500);
+    });
+  </script>
+</body>
+</html>

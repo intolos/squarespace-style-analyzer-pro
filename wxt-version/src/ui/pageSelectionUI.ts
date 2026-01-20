@@ -320,8 +320,8 @@ export const PageSelectionUI = {
       }</strong>`;
     }
 
-    // Standard analysis time (approx 2s per page)
-    const minutes = Math.ceil((totalPages * 2) / 60);
+    // IMPORTANT: Standard analysis time is ~20s per page (full load + analysis). Fixed 2026-01-20.
+    const minutes = Math.ceil((totalPages * 20) / 60);
     const timeEstimate = document.getElementById('timeEstimate');
     if (timeEstimate) {
       timeEstimate.textContent = `⏱️ Estimated time: ~${minutes} minute${minutes === 1 ? '' : 's'}`;

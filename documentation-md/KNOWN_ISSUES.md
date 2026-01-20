@@ -109,3 +109,55 @@ This file documents critical implementation details, regression traps, and "anti
   - **DO**: Call `this.updateUI()` immediately after a successful license check/activation.
   - **DO NOT**: Use a `MutationObserver` (The "Nuclear Option") unless architectural fixes fail; explicit state-sync is more performant.
 - **Date Refined**: 2026-01-20
+
+---
+
+## 8. Subscription Button Flow
+
+### The "Missing window.open" Trap
+
+- **Symptom**: Clicking "Yearly" or "Lifetime" upgrade buttons shows "Loading..." but never opens the Stripe checkout page.
+- **Root Cause**: `handleUpgradeFlow()` in `main.ts` creates a Stripe checkout session and receives a valid URL, but was missing `window.open(session.url, '_blank')`.
+- **Correct Logic**:
+  - **DO**: Call `window.open(session.url, '_blank')` immediately after receiving a successful session response.
+- **Date Fixed**: 2026-01-20
+
+---
+
+## 9. Time Estimate Calculation
+
+### The "Wrong Seconds Per Page" Trap
+
+- **Symptom**: Time estimate shows "~4 minutes" for 107 pages when it should show "~36 minutes".
+- **Root Cause**: `updateSelectionSummary()` in `pageSelectionUI.ts` used 2 seconds per page instead of 20 seconds.
+- **Correct Logic**:
+  - **DO**: Use 20 seconds per page: `Math.ceil((totalPages * 20) / 60)`
+  - **DO NOT**: Change mobile time (4s extra per page is correct).
+- **Date Fixed**: 2026-01-20
+
+---
+
+## 10. Lifetime vs. Yearly Differentiation
+
+### The "Artificial Date" Trap
+
+- **Symptom**: A lifetime user is correctly validated but the UI shows "Premium Activated - Yearly".
+- **Root Cause**: The Cloudflare Worker was returning an artificial `expires_at` date (e.g., 100 years in the future) for lifetime records to indicate they are active. The frontend sees any `expires_at` value as truthy and defaults to "Yearly."
+- **Correct Logic**:
+  - **DO**: Return `expires_at: null` for lifetime records (Customer Metadata, Lifetime Sessions, Charges).
+  - **DO**: Ensure the frontend checks `if (record.expires_at)` to determine the string "Yearly" vs "Lifetime."
+- **Date Fixed**: 2026-01-20
+
+---
+
+## 11. $0 Checkout ($100% Off Coupons)
+
+### The "No Payment Intent" Trap
+
+- **Symptom**: User completes a $0 checkout but the extension shows "Not Active."
+- **Root Cause**: The worker was only accepting sessions with `payment_status: 'paid'`. $0 orders sometimes return `no_payment_required` AND lack a `payment_intent` object entirely.
+- **Correct Logic**:
+  - **DO**: Check for `amount_total === 0` as a definitive "Lifetime" signal if the session is `complete`.
+  - **DO**: Accept both `'paid'` and `'no_payment_required'` statuses.
+  - **DO**: Dig deeper into Stripe customer records (limit=10) to find purchases hidden by "Guest Checkout" duplicates.
+- **Date Fixed**: 2026-01-20

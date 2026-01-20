@@ -24,7 +24,14 @@ The License System manages premium access for the generic and Squarespace-specif
 
 1.  **Polling**: If polling succeeds, the API returns the license record.
 2.  **Manual Check**: User enters email in "Check Status". `LicenseManager.checkLicense(email)` queries the API.
-3.  **Validation**: API validates the email against Stripe active subscriptions or lifetime purchases.
+3.  **Validation (Cloudflare Worker)**:
+    - **Prioritization**: The worker checks license sources in strict order to ensure the "Best" license wins:
+      - **Priority 1: Customer Metadata**: If the Stripe Customer object has `metadata.is_lifetime === 'true'`, access is granted manually via Dashboard.
+      - **Priority 2: Checkout Sessions (Lifetime)**: Finds one-time payments (`mode: 'payment'`). Accepts `amount_total === 0` to support 100% off coupons.
+      - **Priority 3: Charges**: Fallback for older transactions.
+      - **Priority 4: Subscriptions (Yearly)**: Only returns a Yearly result if no Lifetime license is found.
+    - **Display Differentiation**: Lifetime records are returned with `expires_at: null`. Yearly records return the Stripe period end date. This allows the popup to distinguish between types without extra fields.
+    - **Multi-Customer Handling**: Checks up to 10 Stripe customer records for the same email to avoid "Zombie" account issues during testing.
 
 ### 3. Persistence & State
 

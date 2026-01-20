@@ -293,6 +293,9 @@ class SquarespaceAnalyzer implements AnalyzerController {
       console.log('Session response:', session);
 
       if (session && session.url && session.id) {
+        // IMPORTANT: Open the Stripe checkout URL in a new tab. Fixed 2026-01-20.
+        window.open(session.url, '_blank');
+
         // IMPORTANT: Hide siteInfo if we have results.
         // This prevents UI clutter and adheres to the "results first" layout.
         // Verified 2026-01-19.

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contrast Diagnostic Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .instructions {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+      border-left: 4px solid #2196f3;
+    }
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .instructions li {
+      margin: 8px 0;
+    }
+    .code-block {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      margin: 10px 0;
+      border: 1px solid #dee2e6;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    #output {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 4px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      border: 1px solid #dee2e6;
+      min-height: 100px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .test-buttons {
+      margin: 20px 0;
+    }
+    .test-button {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .test-button-1 {
+      background: #0066CC;
+      color: white;
+    }
+    .test-button-2 {
+      background: #FA243C;
+      color: white;
+    }
+    .warning {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+      border-left: 4px solid #ffc107;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WCAG Contrast Diagnostic Tool</h1>
+    <p>This tool helps diagnose why contrast issues might not be detected by the extension.</p>
+
+    <div class="instructions">
+      <h3>📋 Instructions for Testing on Apple.com:</h3>
+      <ol>
+        <li>Open <strong>apple.com</strong> in a new tab</li>
+        <li>Open DevTools (F12 or Cmd+Option+I)</li>
+        <li>Go to the <strong>Console</strong> tab</li>
+        <li>Copy the diagnostic script below and paste it into the console</li>
+        <li>Press Enter to load the script</li>
+        <li>Use your mouse to click on the "Buy" button (iPad Air section)</li>
+        <li>In the console, type: <code>window.checkClickedElement()</code> and press Enter</li>
+        <li>Click on the "New Music Daily" button</li>
+        <li>In the console, type: <code>window.checkClickedElement()</code> and press Enter</li>
+        <li>Copy the output and share it with me</li>
+      </ol>
+    </div>
+
+    <h3>Diagnostic Script (Copy and paste into apple.com console):</h3>
+    <div class="code-block" id="diagnosticScript">
+// WCAG Contrast Diagnostic Script
+// Click this code block and press Cmd+A to select all, then Cmd+C to copy
+
+(function() {
+  let lastClickedElement = null;
+
+  // Capture clicks
+  document.addEventListener('click', function(e) {
+    lastClickedElement = e.target;
+    console.log('Element captured! Run: window.checkClickedElement()');
+  }, true);
+
+  // Helper functions from your extension
+  function rgbToHex(rgb) {
+    if (!rgb) return null;
+    const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
+    if (!match) return null;
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+  }
+
+  function isTransparentColor(color) {
+    if (!color) return true;
+    if (color === 'transparent') return true;
+    if (color === 'rgba(0, 0, 0, 0)') return true;
+    const match = color.match(/^rgba?\(.*,\s*([\d.]+)\)$/);
+    return match && parseFloat(match[1]) === 0;
+  }
+
+  function getEffectiveBackgroundColor(element) {
+    let el = element;
+    while (el) {
+      const style = window.getComputedStyle(el);
+      const bg = style && style.backgroundColor;
+      if (bg && !isTransparentColor(bg)) {
+        return bg;
+      }
+      el = el.parentElement;
+    }
+    return 'rgb(255, 255, 255)';
+  }
+
+  function calculateLuminance(hexColor) {
+    const rgb = parseInt(hexColor.substring(1), 16);
+    const r = ((rgb >> 16) & 0xff) / 255;
+    const g = ((rgb >> 8) & 0xff) / 255;
+    const b = (rgb & 0xff) / 255;
+
+    const R = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+    const G = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+    const B = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  }
+
+  function calculateContrastRatio(color1, color2) {
+    const lum1 = calculateLuminance(color1);
+    const lum2 = calculateLuminance(color2);
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  function getWCAGLevel(ratio, isLargeText) {
+    if (isLargeText) {
+      if (ratio >= 4.5) return 'AAA';
+      if (ratio >= 3.0) return 'AA';
+      return 'Fail';
+    } else {
+      if (ratio >= 7.0) return 'AAA';
+      if (ratio >= 4.5) return 'AA';
+      return 'Fail';
+    }
+  }
+
+  window.checkClickedElement = function() {
+    if (!lastClickedElement) {
+      console.log('❌ No element has been clicked yet. Click on an element first!');
+      return;
+    }
+
+    const el = lastClickedElement;
+    const computed = window.getComputedStyle(el);
+    const textColor = computed.color;
+    const bgColor = computed.backgroundColor;
+    const effectiveBg = getEffectiveBackgroundColor(el);
+
+    const textHex = rgbToHex(textColor);
+    const bgHex = rgbToHex(effectiveBg);
+
+    // Check for direct text nodes
+    let hasDirectText = false;
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const node = el.childNodes[i];
+      if (node.nodeType === 3 && node.textContent.trim().length > 0) {
+        hasDirectText = true;
+        break;
+      }
+    }
+
+    const fontSize = parseFloat(computed.fontSize) || 0;
+    const fontWeight = parseInt(computed.fontWeight, 10) || 400;
+    const isLargeText = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
+
+    let ratio = null;
+    let wcagLevel = null;
+    if (textHex && bgHex) {
+      ratio = calculateContrastRatio(textHex, bgHex);
+      wcagLevel = getWCAGLevel(ratio, isLargeText);
+    }
+
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('🔍 ELEMENT DIAGNOSTIC REPORT');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('');
+    console.log('Element:', el);
+    console.log('Tag:', el.tagName);
+    console.log('Class:', el.className);
+    console.log('Text content:', el.textContent.trim().substring(0, 50));
+    console.log('');
+    console.log('📊 COLORS:');
+    console.log('  Text color (direct):', textColor, '→', textHex);
+    console.log('  BG color (direct):', bgColor);
+    console.log('  BG color (effective):', effectiveBg, '→', bgHex);
+    console.log('');
+    console.log('📐 TYPOGRAPHY:');
+    console.log('  Font size:', fontSize + 'px');
+    console.log('  Font weight:', fontWeight);
+    console.log('  Large text?:', isLargeText);
+    console.log('');
+    console.log('✅ EXTENSION CHECKS:');
+    console.log('  Has direct text nodes?:', hasDirectText);
+    console.log('  Would be processed?:', hasDirectText && textHex && bgHex);
+    console.log('');
+    if (ratio !== null) {
+      console.log('🎯 WCAG CONTRAST:');
+      console.log('  Contrast ratio:', ratio.toFixed(2) + ':1');
+      console.log('  WCAG level:', wcagLevel);
+      console.log('  Passes WCAG?:', wcagLevel !== 'Fail');
+      console.log('  Required for ' + (isLargeText ? 'large' : 'normal') + ' text:');
+      console.log('    - AA:', isLargeText ? '3.0:1' : '4.5:1');
+      console.log('    - AAA:', isLargeText ? '4.5:1' : '7.0:1');
+    }
+    console.log('');
+    console.log('═══════════════════════════════════════════════════════');
+
+    // Return data for copying
+    return {
+      element: el.tagName + (el.className ? '.' + el.className.replace(/\s+/g, '.') : ''),
+      text: el.textContent.trim().substring(0, 50),
+      textColor: textColor,
+      textHex: textHex,
+      backgroundColor: effectiveBg,
+      backgroundHex: bgHex,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      isLargeText: isLargeText,
+      hasDirectText: hasDirectText,
+      contrastRatio: ratio ? ratio.toFixed(2) : 'N/A',
+      wcagLevel: wcagLevel || 'N/A',
+      wouldBeProcessed: hasDirectText && textHex && bgHex
+    };
+  };
+
+  console.log('✅ Diagnostic script loaded!');
+  console.log('👆 Click on any element, then run: window.checkClickedElement()');
+})();
+    </div>
+
+    <button onclick="copyScript()">📋 Copy Diagnostic Script</button>
+
+    <div class="warning">
+      <strong>⚠️ Note:</strong> If you get "Refused to execute inline script" error, this is normal browser security. The script should still work when pasted into the console.
+    </div>
+
+    <h3>Test Buttons Below (For Local Testing):</h3>
+    <p>Click these buttons to test the diagnostic script works, then use it on apple.com</p>
+
+    <div class="test-buttons">
+      <div class="test-button test-button-1" onclick="alert('Button clicked!')">
+        Buy (Test Button - Similar to iPad Air)
+      </div>
+
+      <div class="test-button test-button-2" onclick="alert('Button clicked!')">
+        New Music Daily (Test Button)
+      </div>
+    </div>
+
+    <pre id="output">Results will appear here...</pre>
+  </div>
+
+  <script>
+    function copyScript() {
+      const scriptText = document.getElementById('diagnosticScript').textContent;
+      navigator.clipboard.writeText(scriptText).then(() => {
+        alert('✅ Diagnostic script copied to clipboard!\n\nNow:\n1. Go to apple.com\n2. Open DevTools Console (F12)\n3. Paste and press Enter');
+      }).catch(err => {
+        alert('Failed to copy. Please manually select and copy the script.');
+      });
+    }
+  </script>
+</body>
+</html>
