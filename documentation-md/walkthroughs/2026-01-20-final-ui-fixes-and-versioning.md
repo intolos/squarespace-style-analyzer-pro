@@ -20,10 +20,16 @@ This release addresses several critical UI regressions and provides robust "Nucl
 
 - **Time Estimates**: Fixed the visibility logic for the mobile time addition estimate (`+ ~X min`) on the analysis confirmation button.
 
+### 4. Documentation Consolidation
+
+- **Archived Past Sessions**: Identified 7 legacy walkthroughs and 11 task lists from previous development phases and archived them in the project's `documentation-md/` directory.
+- **Improved Discoverability**: Renamed all history files to follow the `YYYY-MM-DD-description.md` format, moving them from the internal "brain" directory to the public codebase for better transparency and speed of recovery.
+
 ## 📝 Documentation Updates
 
 - **[KNOWN_ISSUES.md](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/documentation-md/KNOWN_ISSUES.md)**: Added sections documenting the fixes for modal title padding and the "Zombie Counter" flicker.
 - **[popup-ui.md](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/documentation-md/architecture/popup-ui.md)**: Updated the architecture guide to include the new premium visibility protections and modal positioning logic.
+- **New Archives**: 18 history files added to `documentation-md/walkthroughs/` and `documentation-md/task-lists/`.
 
 ## 🚀 Release Information
 

@@ -14,6 +14,7 @@
 - [x] Restore "Select Sections" title to original size
 - [x] Document fixes in `KNOWN_ISSUES.md`
 - [x] Update architecture documentation (`popup-ui.md`)
+- [x] Archive past walkthroughs and task lists (18 files consolidated)
 - [x] Finalize release
   - [x] Commit changes
   - [x] Push to repository
