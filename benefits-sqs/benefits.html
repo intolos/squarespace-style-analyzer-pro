@@ -25,7 +25,7 @@
 		  font-size: 1rem;          /* now 18px base */
       line-height: 1.6;
       color: #2d3748;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     .hero {
@@ -693,7 +693,8 @@
 
   table.qc-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 12px;
@@ -707,6 +708,7 @@
   table.qc-table thead th {
     background: #4B68E7;
     color: white;
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1060,7 +1062,7 @@
       <!-- Missing Alt Text -->
       <tr>
         <td>🖼️ Missing Alt Text</td>
-        <td>Scans your images for missing descriptive alt attributes which are important for accessibility. Added Bonus for SEO: Descriptive alt text provides search engines more content about your site."<td class="check">✔</td>
+        <td>Scans your images for missing descriptive alt attributes which are important for accessibility. Added Bonus for SEO: Descriptive alt text provides search engines more content about your site."</td><td class="check">✔</td>
         <td class="x">✘</td>
         <td class="x">✘</td>
         <td class="x">✘</td>
