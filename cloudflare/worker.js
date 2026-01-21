@@ -203,8 +203,9 @@ async function handleRedeemSession(request, env) {
   // Get actual expiration date
   let expires;
   if (isLifetime) {
-    // Lifetime = 100 years
-    expires = now + 100 * 365 * 24 * 60 * 60;
+    // IMPORTANT: Lifetime licenses return null for expires_at.
+    // This allows the frontend to definitively identify it as "Lifetime" styling.
+    expires = null;
   } else if (
     session.subscription &&
     typeof session.subscription === 'object' &&
@@ -584,8 +585,9 @@ async function handleWebhook(request, env) {
       // Get actual subscription expiration
       let expires = now + 365 * 24 * 60 * 60; // fallback
       if (isLifetime) {
-        // Lifetime = 100 years
-        expires = now + 100 * 365 * 24 * 60 * 60;
+        // IMPORTANT: Lifetime licenses return null for expires_at.
+        // This allows the frontend to definitively identify it as "Lifetime" styling.
+        expires = null;
       } else if (session.subscription) {
         try {
           const subResp = await fetch(

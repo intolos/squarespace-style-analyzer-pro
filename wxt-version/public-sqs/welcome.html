@@ -25,7 +25,7 @@
 		  font-size: 1rem;          /* now 18px base */
       line-height: 1.6;
       color: #2d3748;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     .hero {
@@ -693,7 +693,8 @@
 
   table.qc-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 12px;
@@ -707,6 +708,7 @@
   table.qc-table thead th {
     background: #4B68E7;
     color: white;
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1060,7 +1062,7 @@
       <!-- Missing Alt Text -->
       <tr>
         <td>🖼️ Missing Alt Text</td>
-        <td>Scans your images for missing descriptive alt attributes which are important for accessibility. Added Bonus for SEO: Descriptive alt text provides search engines more content about your site."<td class="check">✔</td>
+        <td>Scans your images for missing descriptive alt attributes which are important for accessibility. Added Bonus for SEO: Descriptive alt text provides search engines more content about your site."</td><td class="check">✔</td>
         <td class="x">✘</td>
         <td class="x">✘</td>
         <td class="x">✘</td>
@@ -1169,6 +1171,14 @@ In contrast, our report shows a listing of only the images with missing alt text
           <div class="use-case-content">
             <h3>Verify Contractor & Employee Work</h3>
             <p>Check the work of contractors and employees creating websites for you. Ensure they're following your brand guidelines and design standards.</p>
+          </div>
+        </div>
+
+        <div class="use-case">
+          <div class="use-case-icon">🚀</div>
+          <div class="use-case-content">
+            <h3>Prospecting and Onboarding New Clients with Existing Websites</h3>
+            <p>This browser extension is the fastest process to receive immediate insights of the issues with an existing website. Use it during your prospecting for new clients. Use it while onboarding new clients to ensure they're following their own brand guidelines and design standards.</p>
           </div>
         </div>
 

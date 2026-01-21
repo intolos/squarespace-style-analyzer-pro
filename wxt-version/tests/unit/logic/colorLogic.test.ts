@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateContrastRatio, getWCAGLevel } from '../../../src/utils/colorUtils';
+import { calculateContrastRatio, getWCAGLevel, rgbToHex } from '../../../src/utils/colorUtils';
 import { groupSimilarColors, identifyGrays } from '../../../src/export/styleGuideColorsReport/analysis';
 
 describe('Color Logic Tests', () => {
@@ -40,6 +40,20 @@ describe('Color Logic Tests', () => {
       expect(groups.length).toBe(1);
       expect(groups[0].mainColor).toBe('#000000');
       expect(groups[0].variations).toContain('#010101');
+    });
+  });
+
+  describe('Utility Functions', () => {
+    it('should convert RGB to Hex', () => {
+      expect(rgbToHex('rgb(0, 0, 0)')).toBe('#000000');
+      expect(rgbToHex('rgb(255, 255, 255)')).toBe('#FFFFFF');
+      expect(rgbToHex('rgba(255, 0, 0, 0.5)')).toBe('#FF0000');
+    });
+
+    it('should return null for invalid inputs', () => {
+      expect(rgbToHex('invalid')).toBeNull();
+      expect(rgbToHex('')).toBeNull();
+      expect(rgbToHex(null)).toBeNull();
     });
   });
 });
