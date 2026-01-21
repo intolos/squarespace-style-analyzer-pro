@@ -161,3 +161,27 @@ This file documents critical implementation details, regression traps, and "anti
   - **DO**: Accept both `'paid'` and `'no_payment_required'` statuses.
   - **DO**: Dig deeper into Stripe customer records (limit=10) to find purchases hidden by "Guest Checkout" duplicates.
 - **Date Fixed**: 2026-01-20
+
+---
+
+## 12. Lifetime Access Priority
+
+- **Symptom**: User has both a Yearly and a Lifetime license, but the UI labels them as "Yearly".
+- **Root Cause**: Simplistic check logic that prioritizes the first valid response (often Yearly) or assumes `expires_at` truthiness always means Yearly.
+- **Correct Logic**:
+  - **DO**: Explicitly check for Lifetime Product IDs (`prod_TbiIroZ9oKQ8cT`, `prod_TbiWgdYfr2C63y`).
+  - **DO**: Check for Lifetime product _before_ Yearly product in the `LicenseManager`.
+  - **Rationale**: Lifetime access is the "ultimate" status and must always override Yearly data for UI labeling.
+- **Date Fixed**: 2026-01-21
+
+---
+
+## 13. Case-Sensitive File Duplication (macOS/Git)
+
+- **Symptom**: Infinite rebase conflicts or "unstaged changes" that won't go away after a push/pull.
+- **Root Cause**: The remote repository contains both `Index.html` and `index.html`. On macOS (case-insensitive filesystem), these collide into the same physical file, preventing Git from correctly tracking which one is being modified.
+- **Correct Logic**:
+  - **DO**: Standardize all filenames to lowercase.
+  - **DO**: Use `git rm -f [WrongCaseFile]` to manually clean the repository whenever a case collision is detected.
+  - **DO NOT**: Manually upload files via the GitHub web interface if they might introduce case casing inconsistencies.
+- **Date Fixed**: 2026-01-21
