@@ -39,11 +39,13 @@ export const LicenseManager = {
   // Check license with Stripe
   async checkLicense(email: string): Promise<LicenseCheckResult> {
     try {
-      // First check yearly product
+      // IMPORTANT: Check Lifetime first. If a user has both a legacy Yearly sub and a new
+      // Lifetime license, we must detect Lifetime first to ensure correct UI labeling.
+      // First check lifetime product (HIGHER PRIORITY)
       let resp = await fetch(
         `${this.API_BASE}/check-email?email=${encodeURIComponent(
           email
-        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_YEARLY)}`,
+        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_LIFETIME)}`,
         { method: 'GET' }
       );
       if (resp.ok) {
@@ -53,11 +55,11 @@ export const LicenseManager = {
         }
       }
 
-      // If yearly not valid, check lifetime product
+      // If lifetime not valid, check yearly product
       resp = await fetch(
         `${this.API_BASE}/check-email?email=${encodeURIComponent(
           email
-        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_LIFETIME)}`,
+        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_YEARLY)}`,
         { method: 'GET' }
       );
       if (!resp.ok) {

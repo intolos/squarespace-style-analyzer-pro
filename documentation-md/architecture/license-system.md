@@ -15,6 +15,7 @@ The License System is a robust "Three-Legged" architecture connecting the Chrome
   - `src/managers/licenseManager.ts`: Handles checking status and polling.
   - `entrypoints/popup/main.ts`: UI Controller.
 - **Responsibility**: It never talks to Stripe directly. It only talks to the **Worker**.
+- **Priority Logic**: The extension manually checks for **Lifetime** access before Yearly access. This prevents a user who has both (or a legacy Yearly sub) from being incorrectly labeled as "Yearly" in the UI.
 
 ### 2. The Cloudflare Worker (The Brain)
 
@@ -56,6 +57,15 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 
 - **Check**: Look for `active` subscriptions.
 - **Result**: Returns a "Yearly" license (with an expiration date), unlike the "Lifetime" license (which returns `expires_at: null`).
+
+---
+
+## ✅ Priority Enforcement (Frontend vs Backend)
+
+| Component     | Priority Execution                                        | Rationale                                                                                                       |
+| :------------ | :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| **Worker**    | Lifetime (Metadata) → Lifetime (Sessions) → Yearly (Subs) | Efficiency & Source of Truth. Stamped metadata is the fastest check.                                            |
+| **Extension** | `CHECK_LIFETIME` → `CHECK_YEARLY`                         | **UI Correctness**. Ensures a user with an active Yearly sub but a new Lifetime purchase is labeled "Lifetime". |
 
 ---
 

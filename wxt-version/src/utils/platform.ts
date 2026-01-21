@@ -24,7 +24,7 @@ export const platformStrings = {
   shareUrl: isSqs
     ? 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi'
     : 'https://chromewebstore.google.com/detail/website-style-analyzer/YOUR_GENERIC_ID_HERE',
-  questionsEmail: 'webbyinsights@gmail.com',
+  questionsEmail: isSqs ? 'webbyinsights+squarespace@gmail.com' : 'webbyinsights+website@gmail.com',
   developerBioTitle: isSqs
     ? 'Independent Developer of Squarespace Websites and This Browser Extension'
     : 'Independent Developer of Websites and This Browser Extension',

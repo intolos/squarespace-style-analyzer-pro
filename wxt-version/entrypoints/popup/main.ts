@@ -156,20 +156,29 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
         // Determine license type from stored data
         if (this.licenseData && this.licenseData.record) {
-          if (this.licenseData.record.expires_at) {
-            statusText += ' - Yearly';
-          } else {
+          // IMPORTANT: Explicitly check for Lifetime Product ID first to ensure a user
+          // with both a legacy Yearly sub and a new Lifetime purchase is labeled correctly.
+          const isLifetime =
+            this.licenseData.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
+            !this.licenseData.record.expires_at;
+
+          if (isLifetime) {
             statusText += ' - Lifetime';
+          } else {
+            statusText += ' - Yearly';
           }
-        } else {
-          // Fallback if data missing but isPremium is true (shouldn't happen often)
-          // Do nothing, just keep "Premium Activated"
         }
 
         checkStatusBtn.textContent = statusText;
 
         // Match color to subscription type
-        if (this.licenseData && this.licenseData.record && !this.licenseData.record.expires_at) {
+        const isLifetime =
+          this.licenseData &&
+          this.licenseData.record &&
+          (this.licenseData.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
+            !this.licenseData.record.expires_at);
+
+        if (isLifetime) {
           checkStatusBtn.style.background = '#44337a'; // Deep Purple for Lifetime
         } else {
           checkStatusBtn.style.background = '#14532d'; // Deep Emerald for Yearly/Active
@@ -226,9 +235,12 @@ class SquarespaceAnalyzer implements AnalyzerController {
     set('uiSiteType', platformStrings.siteType);
     setAttr('uiShareLink', 'href', platformStrings.shareUrl);
     set('uiToolsBrand', platformStrings.toolsBrand);
-    set('uiDevBioTitle', platformStrings.developerBioTitle);
-    set('uiDevBioBody', platformStrings.developerBioBody);
+    setHtml('uiDevBioTitle', platformStrings.developerBioTitle);
+    setHtml('uiDevBioBody', platformStrings.developerBioBody);
 
+    setAttr('uiContactEmail', 'href', `mailto:${platformStrings.questionsEmail}`);
+    set('uiQuestionsEmail', platformStrings.questionsEmail); // For backwards compatibility or other uses if needed
+    set('uiContactEmail', 'Contact Us by Email');
     if (!platformStrings.showQuickDetection) {
       const detectionTitleInfo = document.getElementById('uiDetectionTitle');
       if (detectionTitleInfo) {
@@ -649,17 +661,26 @@ class SquarespaceAnalyzer implements AnalyzerController {
         // Determine text
         let statusText = '✅ Premium Activated';
         if (result.record) {
-          if (result.record.expires_at) {
-            statusText += ' - Yearly';
-          } else {
+          const isLifetime =
+            result.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
+            !result.record.expires_at;
+
+          if (isLifetime) {
             statusText += ' - Lifetime';
+          } else {
+            statusText += ' - Yearly';
           }
         }
 
         btn.textContent = statusText;
 
         // Apply specific color based on license type
-        if (result.record && !result.record.expires_at) {
+        const isLifetime =
+          result.record &&
+          (result.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
+            !result.record.expires_at);
+
+        if (isLifetime) {
           btn.style.background = '#44337a'; // Deep Purple for Lifetime
         } else {
           btn.style.background = '#14532d'; // Deep Emerald for Yearly
@@ -695,7 +716,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
         errorMsg += `No active subscription found for email: ${trimmedEmail}\n\n`;
         errorMsg += `The system checked both yearly subscriptions and lifetime licenses.\n\n`;
         errorMsg += `If you recently purchased, please wait a few minutes and try again.\n\n`;
-        errorMsg += `If you believe this is an error, please contact support at: webbyinsights@gmail.com`;
+        errorMsg += `If you believe this is an error, please contact support at: ${platformStrings.questionsEmail}`;
 
         customAlert(errorMsg);
 
