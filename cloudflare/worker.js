@@ -253,31 +253,54 @@ async function handleCheckEmail(request, env) {
   const url = new URL(request.url);
   const email = (url.searchParams.get('email') || '').toLowerCase();
   const productId = url.searchParams.get('product_id') || env.DEFAULT_PRODUCT_ID;
-  console.log('handleCheckEmail called for:', email, 'product:', productId);
+  const debugMode = url.searchParams.get('debug') === 'true';
+  console.log('handleCheckEmail called for:', email, 'product:', productId, 'debug:', debugMode);
 
-  if (!email)
-    return new Response(JSON.stringify({ valid: false }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+  // Debug Logging Helper
+  const debugLogs = [];
+  const addLog = msg => {
+    if (debugMode) debugLogs.push(msg);
+    // console.log(msg); // Optional: keep server logs clean unless needed, or mirror them. User asked for minimal impact.
+    if (debugMode) console.log('[DEBUG]', msg);
+  };
+
+  // Response Helper
+  const jsonResponse = data => {
+    if (debugMode) {
+      data.debug_log = debugLogs;
+    }
+    return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
+  };
+
+  if (!email) return jsonResponse({ valid: false, error: 'No email provided' });
+
+  addLog(`Starting validation for ${email} (Product: ${productId})`);
 
   const now = Math.floor(Date.now() / 1000);
 
   try {
     // 1. Fetch Customers (Handle duplicates)
     // Fetch up to 10 to handle stale/duplicate records (e.g. serial checking/guest checkouts)
+    addLog('Fetching Stripe customers (limit=10)...');
     const customersResp = await fetch(
       `https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=10`,
       { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
     );
     const customersData = await customersResp.json();
     const customers = customersData.data || [];
+    addLog(`Found ${customers.length} customer records.`);
 
     if (customers.length > 0) {
       // PRIORITY 1: MANUAL OVERRIDE (Customer Metadata)
       // Check ALL customers for this flag before anything else
+      addLog('PRIORITY 1: Checking Customer Metadata...');
       for (const customer of customers) {
+        if (debugMode)
+          addLog(`Checking customer ${customer.id} metadata: ${JSON.stringify(customer.metadata)}`);
+
         if (customer.metadata && String(customer.metadata.is_lifetime).toLowerCase() === 'true') {
           console.log('Valid Lifetime Validation: Customer Metadata Override');
+          addLog('SUCCESS: Found is_lifetime=true in customer metadata.');
           const record = createRecord(email, productId, customer.id, 'lifetime_metadata', now);
           await cacheRecord(env, record);
           return jsonResponse({ valid: true, record });
@@ -286,27 +309,38 @@ async function handleCheckEmail(request, env) {
 
       // PRIORITY 2: LIFETIME SESSIONS
       // Check ALL customers for valid lifetime sessions
+      addLog('PRIORITY 2: Checking Lifetime Sessions...');
       for (const customer of customers) {
+        addLog(`Fetching sessions for customer ${customer.id}...`);
         const sessionsResp = await fetch(
           `https://api.stripe.com/v1/checkout/sessions?customer=${encodeURIComponent(customer.id)}&limit=100`,
           { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
         );
         const sessions = (await sessionsResp.json()).data || [];
+        addLog(`Found ${sessions.length} sessions.`);
 
         // Find any session that is 'complete' (works for $0) + (is_lifetime OR amount_total === 0)
-        const validSession = sessions.find(
-          s =>
-            s.status === 'complete' &&
-            ['paid', 'no_payment_required'].includes(s.payment_status) &&
-            s.mode === 'payment' &&
-            // Check for explicit metadata OR $0 Free Order (Stripe AI recommended)
-            ((s.metadata && s.metadata.is_lifetime === 'true') || s.amount_total === 0) &&
-            // Security: App Group check (safe to allow undefined legacy)
-            (!s.metadata || !s.metadata.app_group || s.metadata.app_group === 'style_analyzer')
-        );
+        const validSession = sessions.find(s => {
+          const isComplete = s.status === 'complete';
+          const isPaid = ['paid', 'no_payment_required'].includes(s.payment_status);
+          const isPaymentMode = s.mode === 'payment';
+          const isLifetimeMeta = s.metadata && s.metadata.is_lifetime === 'true';
+          const isZero = s.amount_total === 0;
+          const isAppGroup =
+            !s.metadata || !s.metadata.app_group || s.metadata.app_group === 'style_analyzer';
+
+          if (debugMode) {
+            addLog(
+              `- Session ${s.id}: status=${s.status}, payment_status=${s.payment_status}, mode=${s.mode}, amount=${s.amount_total}, is_lifetime=${isLifetimeMeta}, app_group=${s.metadata?.app_group}`
+            );
+          }
+
+          return isComplete && isPaid && isPaymentMode && (isLifetimeMeta || isZero) && isAppGroup;
+        });
 
         if (validSession) {
           console.log('Valid Lifetime Validation: Checkout Session');
+          addLog(`SUCCESS: Found valid lifetime session ${validSession.id}`);
           const record = createRecord(
             email,
             productId,
@@ -321,22 +355,31 @@ async function handleCheckEmail(request, env) {
       }
 
       // PRIORITY 3: CHARGES (Lifetime Fallback)
+      addLog('PRIORITY 3: Checking Charges...');
       for (const customer of customers) {
+        addLog(`Fetching charges for customer ${customer.id}...`);
         const chargesResp = await fetch(
           `https://api.stripe.com/v1/charges?customer=${encodeURIComponent(customer.id)}&limit=100`,
           { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
         );
         const charges = (await chargesResp.json()).data || [];
-        const validCharge = charges.find(
-          c =>
-            c.status === 'succeeded' &&
-            c.metadata &&
-            c.metadata.is_lifetime === 'true' &&
-            (!c.metadata.app_group || c.metadata.app_group === 'style_analyzer')
-        );
+        addLog(`Found ${charges.length} charges.`);
+
+        const validCharge = charges.find(c => {
+          const isSucceeded = c.status === 'succeeded';
+          const isLifetime = c.metadata && c.metadata.is_lifetime === 'true';
+          const isAppGroup =
+            !c.metadata || !c.metadata.app_group || c.metadata.app_group === 'style_analyzer';
+
+          if (debugMode && isLifetime) {
+            addLog(`- Charge ${c.id}: status=${c.status}, is_lifetime=${isLifetime}`);
+          }
+          return isSucceeded && isLifetime && isAppGroup;
+        });
 
         if (validCharge) {
           console.log('Valid Lifetime Validation: Charge');
+          addLog(`SUCCESS: Found valid lifetime charge ${validCharge.id}`);
           const record = createRecord(email, productId, customer.id, 'lifetime_charge', now);
           await cacheRecord(env, record);
           return jsonResponse({ valid: true, record });
@@ -345,21 +388,28 @@ async function handleCheckEmail(request, env) {
 
       // PRIORITY 4: YEARLY SUBSCRIPTIONS
       // Only check this if no lifetime found
+      addLog('PRIORITY 4: Checking Subscriptions...');
       for (const customer of customers) {
+        addLog(`Fetching subscriptions for customer ${customer.id}...`);
         const subsResp = await fetch(
           `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(customer.id)}&status=active`,
           { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
         );
         const subs = (await subsResp.json()).data || [];
+        addLog(`Found ${subs.length} active subscriptions.`);
 
-        const validSub = subs.find(
-          sub => !sub.metadata.app_group || sub.metadata.app_group === 'style_analyzer'
-        );
+        const validSub = subs.find(sub => {
+          const matches = !sub.metadata.app_group || sub.metadata.app_group === 'style_analyzer';
+          if (debugMode)
+            addLog(`- Sub ${sub.id}: status=${sub.status}, app_group=${sub.metadata.app_group}`);
+          return matches;
+        });
 
         if (validSub) {
           let expires = validSub.current_period_end;
           // deep check for items if needed, but current_period_end is usually sufficient on sub object
           console.log('Valid Yearly Validation: Active Subscription');
+          addLog(`SUCCESS: Found valid active subscription ${validSub.id}`);
           const record = createRecord(
             email,
             productId,
@@ -374,25 +424,36 @@ async function handleCheckEmail(request, env) {
           return jsonResponse({ valid: true, record });
         }
       }
+    } else {
+      addLog('No customers found with this email.');
     }
   } catch (error) {
     console.error('Stripe check error:', error);
+    addLog(`ERROR: ${error.message || String(error)}`);
   }
 
   // Fallback to KV Logic (unchanged)
+  addLog('Unsuccessful so far. Checking KV Cache...');
   const licenseKey = getLicenseKey(productId, email);
   const rec = await env.LICENSES.get(licenseKey);
   if (rec) {
     const record = JSON.parse(rec);
+    addLog(`KV Record Found: ${JSON.stringify(record)}`);
     if (record.stripe_customer_id && record.last_checked) {
       if ((now - record.last_checked) / 3600 < 24) {
         const valid = record.active === true || (record.expires_at && record.expires_at > now);
         console.log('Using KV cache fallback, valid:', valid);
+        addLog(`KV Fallback decision: Valid=${valid}`);
         return jsonResponse({ valid, record });
+      } else {
+        addLog('KV Record Expired (older than 24h).');
       }
     }
+  } else {
+    addLog('No KV Record found.');
   }
 
+  addLog('FINAL RESULT: Validation Failed.');
   return jsonResponse({ valid: false });
 }
 
@@ -459,12 +520,34 @@ async function handleWebhook(request, env) {
         ? session.customer_details.email.toLowerCase()
         : null;
     const productId = (session.metadata && session.metadata.product_id) || env.DEFAULT_PRODUCT_ID;
+
+    // LIFETIME AUTO-STAMP LOGIC
+    // If this is a lifetime purchase, stamp the Customer object immediately.
+    // This ensures "Priority 1" checking works instantly for this user forever.
+    const isLifetime = session.metadata && session.metadata.is_lifetime === 'true';
+    if (isLifetime && session.customer) {
+      try {
+        console.log(`Stamping Customer ${session.customer} with is_lifetime=true`);
+        const updateParams = new URLSearchParams();
+        updateParams.append('metadata[is_lifetime]', 'true');
+
+        await fetch(`https://api.stripe.com/v1/customers/${session.customer}`, {
+          method: 'POST', // Update customer
+          headers: {
+            Authorization: `Bearer ${env.STRIPE_SECRET}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: updateParams.toString(),
+        });
+        console.log('Customer stamped successfully.');
+      } catch (err) {
+        console.error('Failed to stamp customer metadata:', err);
+      }
+    }
+
     if (email) {
       const now = Math.floor(Date.now() / 1000);
       const customerId = session.customer || null;
-
-      // Check if this is a lifetime purchase
-      const isLifetime = session.metadata && session.metadata.is_lifetime === 'true';
 
       // Get actual subscription expiration
       let expires = now + 365 * 24 * 60 * 60; // fallback

@@ -2,49 +2,86 @@
 
 ## Overview
 
-The License System manages premium access for the generic and Squarespace-specific extensions. It handles subscription verification, local persistence of license details, and the upgrade flow via Stripe.
+The License System is a robust "Three-Legged" architecture connecting the Chrome Extension, a Cloudflare Worker, and Stripe. It is designed to be **Self-Healing** and **Regression-Resistant**, prioritizing "Lifetime" access above all else.
 
-## Key Components
+---
 
-- `src/managers/licenseManager.ts`: Core logic for API communication, checking license status, creating checkout sessions, and polling.
-- `src/utils/storage.ts`: Handles persistence of user data, including `licenseEmail` and `licenseData`.
-- `entrypoints/popup/main.ts`: UI controller that initiates upgrades, displays status, and coordinates with `LicenseManager` and `StorageManager`.
-- `src/utils/platform.ts`: Contains the extension-specific Stripe Product/Price IDs and API endpoints.
+## 🏗️ Core Components (The "Three Legs")
 
-## Operational Logic
+### 1. The Extension (Frontend)
 
-### 1. Upgrade Flow
+- **Role**: Client interface.
+- **Key Files**:
+  - `src/managers/licenseManager.ts`: Handles checking status and polling.
+  - `entrypoints/popup/main.ts`: UI Controller.
+- **Responsibility**: It never talks to Stripe directly. It only talks to the **Worker**.
 
-1.  User clicks "Upgrade" (Yearly or Lifetime) in the popup.
-2.  `main.ts` calls `LicenseManager.createCheckoutSession` with the correct Stripe Price ID (sourced from `platform.ts`).
-3.  A Stripe Checkout URL is generated and opened in a new tab.
-4.  The extension starts polling (`startLicensePolling`) in the background and foreground for payment completion.
+### 2. The Cloudflare Worker (The Brain)
 
-### 2. Verification Flow
+- **Role**: Backend Logic & Security.
+- **File**: `cloudflare/worker.js`
+- **Responsibility**: Authenticates with Stripe, validates purchases, prevents abuse, and acts as the "Source of Truth."
+- **Endpoints**:
+  - `/check-email`: Validate a user.
+  - `/create-checkout-session`: Start a purchase.
+  - `/webhook`: Listen for Stripe events.
 
-1.  **Polling**: If polling succeeds, the API returns the license record.
-2.  **Manual Check**: User enters email in "Check Status". `LicenseManager.checkLicense(email)` queries the API.
-3.  **Validation (Cloudflare Worker)**:
-    - **Prioritization**: The worker checks license sources in strict order to ensure the "Best" license wins:
-      - **Priority 1: Customer Metadata**: If the Stripe Customer object has `metadata.is_lifetime === 'true'`, access is granted manually via Dashboard.
-      - **Priority 2: Checkout Sessions (Lifetime)**: Finds one-time payments (`mode: 'payment'`). Accepts `amount_total === 0` to support 100% off coupons.
-      - **Priority 3: Charges**: Fallback for older transactions.
-      - **Priority 4: Subscriptions (Yearly)**: Only returns a Yearly result if no Lifetime license is found.
-    - **Display Differentiation**: Lifetime records are returned with `expires_at: null`. Yearly records return the Stripe period end date. This allows the popup to distinguish between types without extra fields.
-    - **Multi-Customer Handling**: Checks up to 10 Stripe customer records for the same email to avoid "Zombie" account issues during testing.
+### 3. Stripe (The Vault)
 
-### 3. Persistence & State
+- **Role**: Payment Processor & Database.
+- **Responsibility**: Stores Customer objects, Sessions, and Metadata flags (`is_lifetime=true`).
 
-- **Save**: On successful verification, `main.ts` passes the result to `StorageManager.saveUserData`.
-- **Important**: `licenseEmail` and `licenseData` (containing `record.expires_at`) **MUST** be saved to `chrome.storage.local` to distinguish between "Yearly" and "Lifetime" status across reloads.
-- **Load**: On popup open, `main.ts` calls `StorageManager.loadUserData` to retrieve the cached license info.
+---
 
-## Data Flow
+## 🧠 Smart Validation Logic (The "Priority Stack")
 
-`API (Cloudflare Worker)` -> `LicenseManager` -> `main.ts (UI)` -> `StorageManager` -> `chrome.storage.local`
+When `/check-email` is called, the Worker searches Stripe data in a specific priority order. The first match wins.
 
-## Critical Implementation Details
+### 🥇 Priority 1: Customer Metadata ("The Golden Ticket")
 
-- **Persistence Fields**: `licenseEmail` and `licenseData` are required in `StorageManager`. Do not rely solely on `isPremium` boolean if you want to display specific subscription types.
-- **Test Helpers**: `enableYearlyTest()` and `enableLifetimeTest()` in `main.ts` simulate this flow by manually constructing the expected data structure and saving it via `StorageManager`.
-- **Stripe IDs**: Defined in `src/utils/platform.ts` and switched based on `isSqs` build flag.
+- **Check**: Look for `is_lifetime: 'true'` on the Stripe **Customer Object** itself.
+- **Why**: This is the fastest and most robust check. It survives session archiving, subscription deletion, and history limits.
+- **How it gets there**: The **Webhook** automatically "Stamps" this onto the customer immediately after purchase (see _Auto-Stamping_ below).
+
+### 🥈 Priority 2: Lifetime Checkout Sessions
+
+- **Check**: Search active `checkout.session` history for `mode: 'payment'` AND (`metadata.is_lifetime` OR `amount=0`).
+- **Use Case**: Handles recent purchases before the webhook fires, or older purchases before Auto-Stamping was implemented.
+
+### 🥉 Priority 3: Charges
+
+- **Check**: Fallback search for individual `charge` objects with lifetime metadata.
+
+### 4️⃣ Priority 4: Yearly Subscriptions
+
+- **Check**: Look for `active` subscriptions.
+- **Result**: Returns a "Yearly" license (with an expiration date), unlike the "Lifetime" license (which returns `expires_at: null`).
+
+---
+
+## ⚡ The "Auto-Stamping" Mechanism (Self-Healing)
+
+To prevent "Missing Session" bugs (customer created but session lost/archived), the system now includes an automated feedback loop:
+
+1.  **User Buys Lifetime Access**.
+2.  **Stripe** fires a `checkout.session.completed` webhook.
+3.  **Worker** receives the webhook.
+4.  **Worker** calls Stripe API back: `POST /v1/customers/[ID] body={metadata: {is_lifetime: true}}`.
+5.  **Result**: The user is permanently marked as "Lifetime" on their primary record. Future checks hit **Priority 1** instantly.
+
+---
+
+## 🛠️ Debugging & Tools
+
+### The "Light Switch" (Debug Mode)
+
+You can diagnose any user by visiting the Worker URL directly in your browser with the debug flag:
+
+- **URL**: `https://[your-worker-url]/check-email?email=user@example.com&debug=true`
+- **Output**: Returns a JSON object with a `debug_log` array tracing exactly which steps (Priority 1-4) were checked and what Stripe returned for each.
+
+### Required Environment Variables (Cloudflare)
+
+- `STRIPE_SECRET`: Live Secret Key (`sk_live_...`)
+- `STRIPE_WEBHOOK_SECRET`: Signing Secret (`whsec_...`) matching the endpoint.
+- `DEFAULT_PRODUCT_ID`: ID of the extension (e.g., `squarespace_extension`).

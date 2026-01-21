@@ -25,27 +25,35 @@ window.open(session.url, '_blank');
 
 ## 3. Stripe Worker Updates (Cloudflare)
 
-**Issue**: Lifetime subscriptions failing validity checks; Required fields missing asterisks.
+**Issue**: Lifetime subscriptions failing validity checks; Required fields missing asterisks; "Missing Session" data bugs.
 **Fixes**:
 
-1. **Dynamic Lifetime Check**: Added logic to check `Charges` API for `metadata.product_id === productId` OR `metadata.is_lifetime === 'true'`.
-   - _Improvement_: Independent of Price ID, future-proof.
-2. **Customer Creation**: Added `customer_creation: 'always'` for lifetime payments.
-3. **Asterisks**: Added `*` to "First Name" and "Last Name" custom field labels.
-4. **$0 Coupon Support**: Verified `Checkout Sessions` check handles 100% off orders.
-5. **App Group Architecture**:
-   - Uses `metadata.app_group = 'style_analyzer'` for stable, variable-based grouping.
-   - Enables **Cross-Product Access** for both **Yearly** and **Lifetime**.
-   - **Compatible**: Supports legacy purchases (undefined group) and new 'grouped' purchases.
-6. **Session Security**: Updated `Checkout Session` check to strictly enforce `product_id` match (preventing cross-product access).
+### A. Validation Logic (The "Priority Stack")
 
-### Troubleshooting Fixes (Hotfix v4.3.2)
+We implemented a strict priority order for checking licenses ensuring the "Best" license always wins:
 
-7. **Manual Override**: Added support for `customer.metadata.is_lifetime = 'true'`. Allows manual granting of access via Stripe Dashboard.
-   - **Display Fix**: Lifetime records now return `expires_at: null`.
-8. **$0 Orders**: Updated session check to accept `amount_total === 0` (even if metadata is missing) + `status: 'complete'`.
-   - **Search Depth**: Increased customer fetch limit to 10 to find purchases hidden in duplicate records.
-9. **Prioritized Logic**: Metadata > Lifetime Sessions > Charges > Yearly Subscriptions.
+1.  **Metadata Override**: Checks `is_lifetime: true` on the Customer object (Fastest/Safest).
+2.  **Lifetime Sessions**: Searches history for `$0` or `lifetime` metadata sessions.
+3.  **Charges**: Checks individual charges.
+4.  **Yearly Subscription**: Checks active subscriptions.
+
+### B. The "Auto-Stamping" Mechanism (Webhook)
+
+**Problem**: Users with valid purchases sometimes had their sessions "lost" or archived by Stripe, causing validation failures (e.g., `edgotravel`).
+**Solution**: Updated the Webhook Handler to **call Stripe back** upon purchase and "Stamp" the Customer Object with `metadata.is_lifetime: true`.
+**Result**: Users are correctly identified by Priority 1 (Metadata) instantly and forever.
+
+### C. Debugging Tools
+
+**Feature**: Added `?debug=true` flag to `/check-email` endpoint.
+**Result**: Returns a detailed JSON log tracing exactly which priority steps were checked and what data was found. Use this to diagnose future "Mystery" failures.
+
+### D. General Polish
+
+1.  **Customer Creation**: Added `customer_creation: 'always'` for lifetime payments (prevents Guest checkout issues).
+2.  **Asterisks**: Added `*` to "First Name" and "Last Name" custom field labels.
+3.  **$0 Coupon Support**: Verified `Checkout Sessions` check handles 100% off orders.
+4.  **App Group Architecture**: Uses `metadata.app_group = 'style_analyzer'` for stable grouping.
 
 ## 4. Platform URLs
 
