@@ -230,9 +230,24 @@ async function handleRedeemSession(request, env) {
     }
   }
 
+  // Extract custom fields (Names)
+  let firstName = '';
+  let lastName = '';
+  let businessName = '';
+  if (session.custom_fields && Array.isArray(session.custom_fields)) {
+    session.custom_fields.forEach(f => {
+      if (f.key === 'first_name') firstName = f.text ? f.text.value : '';
+      if (f.key === 'last_name') lastName = f.text ? f.text.value : '';
+      if (f.key === 'business_name') businessName = f.text ? f.text.value : '';
+    });
+  }
+
   const record = {
     email,
     product_id: resolvedProductId,
+    first_name: firstName,
+    last_name: lastName,
+    business_name: businessName,
     active: true,
     created_at: now,
     expires_at: expires,
@@ -521,15 +536,32 @@ async function handleWebhook(request, env) {
         : null;
     const productId = (session.metadata && session.metadata.product_id) || env.DEFAULT_PRODUCT_ID;
 
+    // Extract names from custom fields (LIFETIME FIX)
+    let firstName = '';
+    let lastName = '';
+    let businessName = '';
+    if (session.custom_fields && Array.isArray(session.custom_fields)) {
+      session.custom_fields.forEach(f => {
+        if (f.key === 'first_name') firstName = f.text ? f.text.value : '';
+        if (f.key === 'last_name') lastName = f.text ? f.text.value : '';
+        if (f.key === 'business_name') businessName = f.text ? f.text.value : '';
+      });
+    }
+    const fullName = `${firstName} ${lastName}`.trim();
+
     // LIFETIME AUTO-STAMP LOGIC
     // If this is a lifetime purchase, stamp the Customer object immediately.
     // This ensures "Priority 1" checking works instantly for this user forever.
     const isLifetime = session.metadata && session.metadata.is_lifetime === 'true';
     if (isLifetime && session.customer) {
       try {
-        console.log(`Stamping Customer ${session.customer} with is_lifetime=true`);
+        console.log(
+          `Stamping Customer ${session.customer} with is_lifetime=true and name: ${fullName}`
+        );
         const updateParams = new URLSearchParams();
         updateParams.append('metadata[is_lifetime]', 'true');
+        if (fullName) updateParams.append('name', fullName);
+        if (businessName) updateParams.append('metadata[business_name]', businessName);
 
         await fetch(`https://api.stripe.com/v1/customers/${session.customer}`, {
           method: 'POST', // Update customer
@@ -575,6 +607,9 @@ async function handleWebhook(request, env) {
       const record = {
         email,
         product_id: productId,
+        first_name: firstName,
+        last_name: lastName,
+        business_name: businessName,
         active: true,
         created_at: now,
         expires_at: expires,

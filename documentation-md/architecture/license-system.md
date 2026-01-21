@@ -61,13 +61,16 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 
 ## ⚡ The "Auto-Stamping" Mechanism (Self-Healing)
 
-To prevent "Missing Session" bugs (customer created but session lost/archived), the system now includes an automated feedback loop:
+To prevent "Missing Session" bugs and ensure data consistency, the system includes an automated feedback loop:
 
-1.  **User Buys Lifetime Access**.
+1.  **User Buys Lifetime Access** (Filling in First Name, Last Name, and Business Name in Checkout).
 2.  **Stripe** fires a `checkout.session.completed` webhook.
-3.  **Worker** receives the webhook.
-4.  **Worker** calls Stripe API back: `POST /v1/customers/[ID] body={metadata: {is_lifetime: true}}`.
-5.  **Result**: The user is permanently marked as "Lifetime" on their primary record. Future checks hit **Priority 1** instantly.
+3.  **Worker** receives the webhook and **extracts naming data** from custom fields.
+4.  **Worker** calls Stripe API back to update the Customer Object:
+    - Sets `metadata[is_lifetime]: true`.
+    - Sets `name` to `First + Last Name`.
+    - Sets `metadata[business_name]` if provided.
+5.  **Result**: The user is permanently marked as "Lifetime" with their full name correctly displayed in the Stripe Dashboard. Future checks hit **Priority 1** instantly, and local KV records contain the user's name.
 
 ---
 
