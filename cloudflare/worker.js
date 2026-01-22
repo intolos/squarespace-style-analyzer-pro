@@ -111,11 +111,19 @@ async function handleCreateCheckout(request, env) {
   params.append('metadata[is_lifetime]', mode === 'payment' ? 'true' : 'false');
   params.append('metadata[is_yearly]', mode === 'subscription' ? 'true' : 'false');
 
+  // Product IDs configuration
+  const SQS_PRODUCT_IDS = ['prod_TOjJHIVm4hIXW0', 'prod_TbiIroZ9oKQ8cT'];
+  const GENERIC_PRODUCT_IDS = ['prod_TbGKBwiTIidhEo', 'prod_TbiWgdYfr2C63y'];
+
   // Granular access flags for better spreadsheet columns
-  if (productId.includes('sqs') || productId.includes('squarespace')) {
+  if (SQS_PRODUCT_IDS.includes(productId)) {
     params.append('metadata[access_squarespace]', 'true');
-  } else {
+  } else if (GENERIC_PRODUCT_IDS.includes(productId)) {
     params.append('metadata[access_website]', 'true');
+  } else {
+    // Unknown ID fallback -> Warn in metadata but do not grant access flags
+    console.warn(`UNKNOWN_PRODUCT_ID: ${productId}`);
+    params.append('metadata[setup_warning]', `unknown_product_id: ${productId}`);
   }
 
   // Add App Group to safely group SQS and Generic versions together
@@ -581,12 +589,18 @@ async function handleWebhook(request, env) {
 
     // AUTO-STAMP LOGIC
     // Stamp the Customer object immediately with access flags and plan status.
-    // This ensures "Priority 1" checking works instantly for this user forever.
     const meta = session.metadata || {};
     const isLifetime = meta.is_lifetime === 'true';
     const isYearly = meta.is_yearly === 'true';
-    const accessSqs = meta.access_squarespace === 'true';
-    const accessWeb = meta.access_website === 'true';
+
+    // Re-verify access flags based on Product ID to be safe
+    // (This handles cases where metadata might be missing or incorrect)
+    const productForStamp = productId; // Use the productId we extracted earlier
+    const SQS_PRODUCT_IDS = ['prod_TOjJHIVm4hIXW0', 'prod_TbiIroZ9oKQ8cT'];
+    const GENERIC_PRODUCT_IDS = ['prod_TbGKBwiTIidhEo', 'prod_TbiWgdYfr2C63y'];
+
+    const accessSqs = SQS_PRODUCT_IDS.includes(productForStamp);
+    const accessWeb = GENERIC_PRODUCT_IDS.includes(productForStamp);
 
     if (session.customer && (isLifetime || isYearly)) {
       try {
@@ -598,6 +612,11 @@ async function handleWebhook(request, env) {
         if (isYearly) updateParams.append('metadata[is_yearly]', 'true');
         if (accessSqs) updateParams.append('metadata[access_squarespace]', 'true');
         if (accessWeb) updateParams.append('metadata[access_website]', 'true');
+
+        // Stamp warning if ID is unknown
+        if (!accessSqs && !accessWeb) {
+          updateParams.append('metadata[setup_warning]', `unknown_product_id: ${productForStamp}`);
+        }
 
         if (fullName) updateParams.append('name', fullName);
         if (businessName) updateParams.append('metadata[business_name]', businessName);

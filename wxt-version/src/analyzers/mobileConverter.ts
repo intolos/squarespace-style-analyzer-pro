@@ -9,9 +9,11 @@ export const MobileResultsConverter = {
     const issues: any[] = [];
 
     // Convert viewport issues
-    if (lighthouseResults.viewport) {
-      this.convertViewportIssues(lighthouseResults.viewport, issues, pageUrl);
-    }
+    // IMPORTANT: If viewport is null/missing, we treat it as { exists: false }
+    // to ensure a "viewport-missing" issue is generated. This prevents "Mobile Usability was not analyzed"
+    // from appearing when analysis actually ran but found nothing (or failed to read).
+    const viewportData = lighthouseResults.viewport || { exists: false };
+    this.convertViewportIssues(viewportData, issues, pageUrl);
 
     // Convert tap target issues
     if (lighthouseResults.tapTargets) {
@@ -48,6 +50,9 @@ export const MobileResultsConverter = {
           actual: 'missing',
           required: '<meta name="viewport" content="width=device-width, initial-scale=1">',
         },
+        title: 'Page Not Set Up for Mobile',
+        description:
+          'This page is missing the settings required to adapt to mobile screens. It may appear zoomed out or difficult to read on phones.',
       });
     } else if (!viewportData.isOptimal) {
       issues.push({
