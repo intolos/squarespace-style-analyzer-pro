@@ -109,8 +109,16 @@ async function handleCreateCheckout(request, env) {
   // Store product_id, mode, and app_group in metadata for webhook/redeem to use
   params.append('metadata[product_id]', productId);
   params.append('metadata[is_lifetime]', mode === 'payment' ? 'true' : 'false');
+  params.append('metadata[is_yearly]', mode === 'subscription' ? 'true' : 'false');
+
+  // Granular access flags for better spreadsheet columns
+  if (productId.includes('sqs') || productId.includes('squarespace')) {
+    params.append('metadata[access_squarespace]', 'true');
+  } else {
+    params.append('metadata[access_website]', 'true');
+  }
+
   // Add App Group to safely group SQS and Generic versions together
-  // This allows future logic to strictly validate cross-product access
   params.append('metadata[app_group]', 'style_analyzer');
 
   // Only add subscription_data for subscription mode
@@ -308,16 +316,37 @@ async function handleCheckEmail(request, env) {
 
     if (customers.length > 0) {
       // PRIORITY 1: MANUAL OVERRIDE (Customer Metadata)
-      // Check ALL customers for this flag before anything else
+      // Check ALL customers for specific access flags and lifetime status
       addLog('PRIORITY 1: Checking Customer Metadata...');
       for (const customer of customers) {
         if (debugMode)
           addLog(`Checking customer ${customer.id} metadata: ${JSON.stringify(customer.metadata)}`);
 
-        if (customer.metadata && String(customer.metadata.is_lifetime).toLowerCase() === 'true') {
-          console.log('Valid Lifetime Validation: Customer Metadata Override');
-          addLog('SUCCESS: Found is_lifetime=true in customer metadata.');
-          const record = createRecord(email, productId, customer.id, 'lifetime_metadata', now);
+        const meta = customer.metadata || {};
+        const metaLifetime = String(meta.is_lifetime).toLowerCase() === 'true';
+        const metaYearly = String(meta.is_yearly).toLowerCase() === 'true';
+        const metaAccessSqs = String(meta.access_squarespace).toLowerCase() === 'true';
+        const metaAccessWeb = String(meta.access_website).toLowerCase() === 'true';
+
+        // Check for product-specific access first
+        const isSqsProduct = productId.includes('sqs') || productId.includes('squarespace');
+        const hasSpecificAccess = isSqsProduct ? metaAccessSqs : metaAccessWeb;
+
+        if (metaLifetime || (metaYearly && hasSpecificAccess)) {
+          console.log('Valid Validation: Customer Metadata Priority');
+          addLog(
+            `SUCCESS: Found valid status in customer metadata (Lifetime=${metaLifetime}, Yearly=${metaYearly}).`
+          );
+          const record = createRecord(
+            email,
+            productId,
+            customer.id,
+            metaLifetime ? 'lifetime_metadata' : 'yearly_metadata',
+            now
+          );
+          // If it's yearly from metadata, we should set a safe expiry if one isn't clearly tracked
+          if (!metaLifetime) record.expires_at = now + 48 * 3600; // 48h buffer for metadata-based yearly
+
           await cacheRecord(env, record);
           return jsonResponse({ valid: true, record });
         }
@@ -550,22 +579,31 @@ async function handleWebhook(request, env) {
     }
     const fullName = `${firstName} ${lastName}`.trim();
 
-    // LIFETIME AUTO-STAMP LOGIC
-    // If this is a lifetime purchase, stamp the Customer object immediately.
+    // AUTO-STAMP LOGIC
+    // Stamp the Customer object immediately with access flags and plan status.
     // This ensures "Priority 1" checking works instantly for this user forever.
-    const isLifetime = session.metadata && session.metadata.is_lifetime === 'true';
-    if (isLifetime && session.customer) {
+    const meta = session.metadata || {};
+    const isLifetime = meta.is_lifetime === 'true';
+    const isYearly = meta.is_yearly === 'true';
+    const accessSqs = meta.access_squarespace === 'true';
+    const accessWeb = meta.access_website === 'true';
+
+    if (session.customer && (isLifetime || isYearly)) {
       try {
         console.log(
-          `Stamping Customer ${session.customer} with is_lifetime=true and name: ${fullName}`
+          `Stamping Customer ${session.customer}: Lifetime=${isLifetime}, Yearly=${isYearly}, SQS=${accessSqs}, Web=${accessWeb}`
         );
         const updateParams = new URLSearchParams();
-        updateParams.append('metadata[is_lifetime]', 'true');
+        if (isLifetime) updateParams.append('metadata[is_lifetime]', 'true');
+        if (isYearly) updateParams.append('metadata[is_yearly]', 'true');
+        if (accessSqs) updateParams.append('metadata[access_squarespace]', 'true');
+        if (accessWeb) updateParams.append('metadata[access_website]', 'true');
+
         if (fullName) updateParams.append('name', fullName);
         if (businessName) updateParams.append('metadata[business_name]', businessName);
 
         await fetch(`https://api.stripe.com/v1/customers/${session.customer}`, {
-          method: 'POST', // Update customer
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${env.STRIPE_SECRET}`,
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -656,6 +694,27 @@ async function handleWebhook(request, env) {
         const r = JSON.parse(rec);
         r.active = false;
         await env.LICENSES.put(licenseKey, JSON.stringify(r));
+      }
+
+      // Also update the Stripe Customer metadata if we have a customer ID
+      const customerId = obj.customer;
+      if (customerId && event.type !== 'customer.subscription.updated') {
+        try {
+          console.log(`Resetting is_yearly for customer ${customerId} via webhook ${event.type}`);
+          const updateParams = new URLSearchParams();
+          updateParams.append('metadata[is_yearly]', 'false');
+
+          await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${env.STRIPE_SECRET}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: updateParams.toString(),
+          });
+        } catch (err) {
+          console.error('Failed to reset customer metadata via webhook:', err);
+        }
       }
     }
   }

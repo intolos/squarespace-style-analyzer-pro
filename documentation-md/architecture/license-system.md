@@ -29,8 +29,13 @@ The License System is a robust "Three-Legged" architecture connecting the Chrome
 
 ### 3. Stripe (The Vault)
 
-- **Role**: Payment Processor & Database.
-- **Responsibility**: Stores Customer objects, Sessions, and Metadata flags (`is_lifetime=true`).
+- **Responsibility**: Payment Processor & Database.
+- **Responsibility**: Stores Customer objects, Sessions, and Metadata flags:
+  - `is_lifetime`: Permanent "true" for lifetime purchases.
+  - `is_yearly`: Binary "true"/"false" toggled via webhook based on subscription status.
+  - `access_squarespace`: Dedicated column for SQS extension access.
+  - `access_website`: Dedicated column for Generic extension access.
+  - `app_group`: Set to `style_analyzer` to prevent cross-product pollution.
 
 ---
 
@@ -41,8 +46,10 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 ### 🥇 Priority 1: Customer Metadata ("The Golden Ticket")
 
 - **Check**: Look for `is_lifetime: 'true'` on the Stripe **Customer Object** itself.
+- **Check (Yearly Fallback)**: Look for `is_yearly: 'true'` AND product-specific access flags (`access_squarespace` or `access_website`).
 - **Why**: This is the fastest and most robust check. It survives session archiving, subscription deletion, and history limits.
-- **How it gets there**: The **Webhook** automatically "Stamps" this onto the customer immediately after purchase (see _Auto-Stamping_ below).
+- **How it gets there**: The **Webhook** automatically "Stamps" these onto the customer immediately after purchase (see _Auto-Stamping_ below).
+- **Expiration Handling**: `is_yearly` is reset to `false` automatically by the webhook if a subscription is deleted or a payment fails.
 
 ### 🥈 Priority 2: Lifetime Checkout Sessions
 
@@ -73,14 +80,19 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 
 To prevent "Missing Session" bugs and ensure data consistency, the system includes an automated feedback loop:
 
-1.  **User Buys Lifetime Access** (Filling in First Name, Last Name, and Business Name in Checkout).
+- **Worker Buys Lifetime or Yearly Access** (Filling in fields in Checkout).
+
 2.  **Stripe** fires a `checkout.session.completed` webhook.
 3.  **Worker** receives the webhook and **extracts naming data** from custom fields.
 4.  **Worker** calls Stripe API back to update the Customer Object:
-    - Sets `metadata[is_lifetime]: true`.
+    - Sets `metadata[is_lifetime]: true` (if Lifetime).
+    - Sets `metadata[is_yearly]: true` (if Yearly).
+    - Sets `metadata[access_squarespace]: true` (if SQS product).
+    - Sets `metadata[access_website]: true` (if Generic product).
     - Sets `name` to `First + Last Name`.
     - Sets `metadata[business_name]` if provided.
-5.  **Result**: The user is permanently marked as "Lifetime" with their full name correctly displayed in the Stripe Dashboard. Future checks hit **Priority 1** instantly, and local KV records contain the user's name.
+5.  **Result**: The user is permanently (or until cancellation) marked with granular access flags. Future checks hit **Priority 1** instantly.
+6.  **Cleanup (Webhook Trigger)**: If a `customer.subscription.deleted` or `invoice.payment_failed` event is received, the worker resets `is_yearly` to `false`.
 
 ---
 
