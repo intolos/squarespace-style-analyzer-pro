@@ -812,43 +812,9 @@
 	/* Mobile Responsive */
 	/* Only enable horizontal scrolling on mobile where sticky headers are less critical */
 	@media (max-width: 768px) {
-    .qc-table-wrapper {
-      overflow-x: visible;
+		.qc-table-wrapper {
+      overflow-x: auto;
     }
-
-    table.qc-table {
-      table-layout: fixed;
-      width: 100%;
-    }
-
-    table.qc-table thead {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    table.qc-table thead tr {
-      position: sticky;
-      top: 0;
-    }
-
-    .vertical-header {
-      width: 38px !important;
-      min-width: 38px !important;
-      font-size: 0.8rem !important;
-    }
-
-    table.qc-table th, table.qc-table td {
-      padding: 8px 4px !important;
-      font-size: 0.8rem !important;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-
-    /* Adjust initial columns for mobile */
-    table.qc-table th:nth-child(1), table.qc-table td:nth-child(1) { width: 18% !important; }
-    table.qc-table th:nth-child(2), table.qc-table td:nth-child(2) { width: 25% !important; }
-    table.qc-table th:nth-child(3), table.qc-table td:nth-child(3) { width: 10% !important; }
 		
 		.hero h1 {
 			font-size: 2.5rem;
