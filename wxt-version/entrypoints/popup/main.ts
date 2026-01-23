@@ -155,17 +155,21 @@ class SquarespaceAnalyzer implements AnalyzerController {
         let statusText = '✅ Premium Activated';
 
         // Determine license type from stored data
+        // Determine license type from stored data
         if (this.licenseData && this.licenseData.record) {
-          // IMPORTANT: Explicitly check for Lifetime Product ID first to ensure a user
-          // with both a legacy Yearly sub and a new Lifetime purchase is labeled correctly.
-          const isLifetime =
-            this.licenseData.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
-            !this.licenseData.record.expires_at;
+          // IMPORTANT: Check is_lifetime FIRST. If true, STOP immediately.
+          // This ensures Lifetime status always overrides Yearly status in the UI.
+          // Fixed 2026-01-23 to restore variable-based architecture.
+          const isLifetime = this.licenseData.record.is_lifetime === true;
+          const isYearly = this.licenseData.record.is_yearly === true;
 
           if (isLifetime) {
             statusText += ' - Lifetime';
-          } else {
+          } else if (isYearly) {
             statusText += ' - Yearly';
+          } else {
+            // Unknown state - just show "Premium Activated"
+            // No ID check needed as validation is backend-driven
           }
         }
 
@@ -175,8 +179,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
         const isLifetime =
           this.licenseData &&
           this.licenseData.record &&
-          (this.licenseData.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
-            !this.licenseData.record.expires_at);
+          this.licenseData.record.is_lifetime === true;
 
         if (isLifetime) {
           checkStatusBtn.style.background = '#44337a'; // Deep Purple for Lifetime
@@ -651,6 +654,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
           licenseData: result,
         });
 
+        // IMPORTANT: Clear the expiration notification flag so they can be notified again
+        // if their subscription expires in the future. Fixed 2026-01-23.
+        await chrome.storage.local.remove(['licenseExpiredNotificationShown']);
+
         // Update local state
         this.isPremium = true;
         this.licenseData = result;
@@ -661,24 +668,24 @@ class SquarespaceAnalyzer implements AnalyzerController {
         // Determine text
         let statusText = '✅ Premium Activated';
         if (result.record) {
-          const isLifetime =
-            result.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
-            !result.record.expires_at;
+          // IMPORTANT: Check is_lifetime FIRST. If true, STOP immediately.
+          // Fixed 2026-01-23 to restore variable-based architecture.
+          const isLifetime = result.record.is_lifetime === true;
+          const isYearly = result.record.is_yearly === true;
 
           if (isLifetime) {
             statusText += ' - Lifetime';
-          } else {
+          } else if (isYearly) {
             statusText += ' - Yearly';
+          } else {
+            // Unknown state - just show "Premium Activated"
           }
         }
 
         btn.textContent = statusText;
 
         // Apply specific color based on license type
-        const isLifetime =
-          result.record &&
-          (result.record.product_id === LicenseManager.PRODUCT_ID_LIFETIME ||
-            !result.record.expires_at);
+        const isLifetime = result.record && result.record.is_lifetime === true;
 
         if (isLifetime) {
           btn.style.background = '#44337a'; // Deep Purple for Lifetime
@@ -766,6 +773,19 @@ class SquarespaceAnalyzer implements AnalyzerController {
       key: 'hideDomainConfirmation',
       value: hide,
     });
+  }
+  async reportUnknownId(email: string, productId: string) {
+    const key = `reported_unknown_${productId}`;
+    const data = await chrome.storage.local.get(key);
+    const lastReported = typeof data[key] === 'number' ? data[key] : 0;
+    const now = Date.now();
+
+    // Debounce: Report only once every 24 hours
+    if (!lastReported || now - lastReported > 24 * 60 * 60 * 1000) {
+      console.warn(`Reporting unknown Product ID: ${productId}`);
+      LicenseManager.reportIssue('UNKNOWN_PRODUCT_ID', { email, productId });
+      await chrome.storage.local.set({ [key]: now });
+    }
   }
 }
 

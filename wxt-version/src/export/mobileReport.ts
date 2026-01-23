@@ -70,10 +70,16 @@ export function exportMobileReport(
 
   // Build TOC - show ALL check types in alphabetical order
   const allCheckTypes = [
-    { type: 'viewport-missing', label: 'Viewport Meta Tag Missing' },
-    { type: 'viewport-improper', label: 'Viewport Meta Tag Improper' },
-    { type: 'viewport-blocks-zoom', label: 'Viewport Blocks Zoom (Accessibility)' },
-    { type: 'viewport-limits-zoom', label: 'Viewport Limits Zoom (Accessibility)' },
+    { type: 'viewport-missing', label: 'Mobile Viewport Settings: Page Not Set Up for Mobile' },
+    { type: 'viewport-improper', label: 'Mobile Viewport Settings: Meta Tag Improper' },
+    {
+      type: 'viewport-blocks-zoom',
+      label: 'Mobile Viewport Settings: Blocks Zoom (Accessibility)',
+    },
+    {
+      type: 'viewport-limits-zoom',
+      label: 'Mobile Viewport Settings: Limits Zoom (Accessibility)',
+    },
     { type: 'touch-target-too-small', label: 'Touch Targets Too Small' },
     { type: 'touch-target-spacing', label: 'Touch Target Spacing' },
     { type: 'horizontal-scroll', label: 'Horizontal Scrolling' },
@@ -84,14 +90,30 @@ export function exportMobileReport(
   // Sort alphabetically by label
   allCheckTypes.sort((a, b) => a.label.localeCompare(b.label));
 
+  const hasViewportMissing = (issuesByType['viewport-missing']?.length || 0) > 0;
+  const viewportTypes = ['viewport-improper', 'viewport-blocks-zoom', 'viewport-limits-zoom'];
+
   const tocItems: any[] = [];
   allCheckTypes.forEach(checkType => {
-    const count = issuesByType[checkType.type] ? issuesByType[checkType.type].length : 0;
+    const issues = issuesByType[checkType.type];
+    const count = issues ? issues.length : 0;
+    const hasIssues = count > 0;
+
+    let passLabel = '✓ Pass, No Issues Found';
+    let labelStyle = 'color: #22c55e; font-weight: bold; margin-left: 8px;';
+
+    if (!hasIssues && hasViewportMissing && viewportTypes.includes(checkType.type)) {
+      passLabel = 'N/A (Missing Mobile Setup)';
+      labelStyle = 'color: #718096; font-style: italic; margin-left: 8px;';
+    }
+
     tocItems.push({
       id: 'mobile-' + checkType.type,
       label: checkType.label,
       count: count,
-      hasIssues: count > 0,
+      hasIssues: hasIssues,
+      passLabel: passLabel,
+      labelStyle: labelStyle,
     });
   });
 
@@ -217,7 +239,7 @@ export function exportMobileReport(
                 ? `<a href="#${item.id}">${item.label}</a>
                  <span class="toc-count">${item.count}</span>`
                 : `<span style="color: #718096;">${item.label}</span>
-                 <span style="color: #22c55e; font-weight: bold; margin-left: 8px;">✓ Pass, No Issues Found</span>`
+                 <span style="${item.labelStyle}">${item.passLabel}</span>`
             }
           </li>
         `
@@ -321,6 +343,11 @@ export function exportMobileReport(
                         }
                       </div>
 
+                      ${
+                        issue.description
+                          ? `<div class="issue-text">${escapeHtmlFn(issue.description)}</div>`
+                          : ''
+                      }
                       ${
                         issue.details?.href
                           ? `<div class="issue-text">Link URL: <a href="${escapeHtmlFn(

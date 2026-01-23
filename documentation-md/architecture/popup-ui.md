@@ -40,3 +40,31 @@ The extension popup provides the primary interface for initiating analyses and v
 
 - **Manual Visibility Calls**: Do not add `siteInfo.style.display = 'block'` to success or error callbacks in analysis modules. This logic is centralized in `main.ts` (reset only) to prevent UI clutter.
 - **Flex Order**: Ensure any new top-level UI components in `index.html` account for the `order: -1` on `#pageSelectionModal`.
+
+---
+
+## 🟢 Premium Status Button Logic (Fixed 2026-01-23)
+
+The extension uses a dedicated area for checking and displaying premium status.
+
+### Button Location
+
+Labels and styles are managed synchronously in `main.ts` within two functions:
+
+1. `updateUI()`: Handles the initial state when the popup opens.
+2. `checkPremiumStatus()`: Manually triggered when the user clicks to verify their email.
+
+### Activation Triggers
+
+The text suffix and background color are determined by standard flags returned by the Worker:
+
+- **Lifetime**: Triggered by `is_lifetime: true`.
+  - **Text**: `✅ Premium Activated - Lifetime`
+  - **Color**: `#44337a` (Deep Purple)
+- **Yearly**: Triggered by `is_yearly: true` (and `is_lifetime: false`).
+  - **Text**: `✅ Premium Activated - Yearly`
+  - **Color**: `#14532d` (Deep Emerald)
+
+### Critical Logic
+
+The system **Always Checks Lifetime FIRST**. If a record has both flags (rare) or if the manual check returns a lifetime record, the system stops immediately to ensure the user receives their superior status benefits.

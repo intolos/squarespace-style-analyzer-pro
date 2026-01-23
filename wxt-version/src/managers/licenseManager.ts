@@ -14,7 +14,7 @@ export interface CheckoutSessionResult {
   error?: string | any;
 }
 
-import { platformStrings } from '../utils/platform';
+import { platformStrings, isSqs } from '../utils/platform';
 
 export const LicenseManager = {
   // Configuration from platform settings
@@ -90,6 +90,10 @@ export const LicenseManager = {
         cancel_url: this.CANCEL_URL,
         priceId: priceId,
         mode: mode,
+        // IMPORTANT: Pass extension_type directly so worker can stamp Customer metadata
+        // without needing Product ID environment variables. Fixed 2026-01-23.
+        extension_type: isSqs ? 'squarespace' : 'generic',
+        purchase_type: isLifetime ? 'lifetime' : 'yearly',
       };
 
       if (isLifetime) {
@@ -169,7 +173,7 @@ export const LicenseManager = {
 
       if (data.licenseEmail) {
         const now = Date.now();
-        const lastCheck = data.lastLicenseCheck || 0;
+        const lastCheck = typeof data.lastLicenseCheck === 'number' ? data.lastLicenseCheck : 0;
         const hoursSinceLastCheck = (now - lastCheck) / (1000 * 60 * 60);
 
         if (hoursSinceLastCheck < 24) {
@@ -178,7 +182,7 @@ export const LicenseManager = {
         }
 
         console.log('Verifying license with Stripe in background (24+ hours since last check)');
-        const result = await this.checkLicense(data.licenseEmail);
+        const result = await this.checkLicense(data.licenseEmail as string);
 
         if (result && result.valid) {
           await this.storageSet({
@@ -188,15 +192,57 @@ export const LicenseManager = {
           });
           console.log('Background verification complete');
         } else {
+          // IMPORTANT: Notify user that their subscription has expired.
+          // Check if we've already notified them to avoid spam.
+          const notificationData = await this.storageGet(['licenseExpiredNotificationShown']);
+          const wasActive = data.isPremium === true;
+
           await this.storageSet({
             isPremium: false,
             lastLicenseCheck: now,
           });
           console.log('License expired or not found');
+
+          // Only notify if they were previously active and we haven't notified yet
+          if (wasActive && !notificationData.licenseExpiredNotificationShown) {
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: chrome.runtime.getURL('icon/128.png'),
+              title: 'Premium Subscription Expired',
+              message:
+                'Your yearly premium subscription has expired. Click "Check Premium Status" to renew or verify your license.',
+              priority: 2,
+            });
+
+            // Mark that we've shown the notification
+            await this.storageSet({
+              licenseExpiredNotificationShown: true,
+            });
+          }
         }
       }
     } catch (error) {
       console.error('Background license verification failed:', error);
+    }
+  },
+
+  // Report issues to backend (e.g. unknown product IDs)
+  async reportIssue(type: string, details: any): Promise<void> {
+    try {
+      // Don't report if offline or no API base
+      if (!this.API_BASE) return;
+
+      const resp = await fetch(`${this.API_BASE}/report-issue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, details }),
+      });
+
+      if (!resp.ok) {
+        console.warn('Failed to report issue:', resp.status);
+      }
+    } catch (e) {
+      console.warn('Error reporting issue:', e);
     }
   },
 };

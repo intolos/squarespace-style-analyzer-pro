@@ -162,6 +162,47 @@ export default defineContentScript({
             const rect = element.getBoundingClientRect();
             if (rect.left < -1000 || rect.top < -5000) continue;
 
+            // Gradient Check (Fix for False Positives)
+            // Automated tools often fail on gradients, seeing the fallback color (often transparent/white)
+            // instead of the actual visual background. We filter these out.
+            let hasGradient = false;
+            let currentEl: HTMLElement | null = element;
+            while (currentEl && currentEl !== document.body) {
+              const style = window.getComputedStyle(currentEl);
+
+              // Check background-image property explicitly
+              const bgImage = style.getPropertyValue('background-image');
+              // Also check background shorthand property (gradients can be here too)
+              const bg = style.getPropertyValue('background');
+
+              // Check for gradient functions (including vendor prefixes)
+              if (
+                bgImage.includes('linear-gradient') ||
+                bgImage.includes('radial-gradient') ||
+                bgImage.includes('conic-gradient') ||
+                bgImage.includes('repeating-linear-gradient') ||
+                bgImage.includes('repeating-radial-gradient') ||
+                bgImage.includes('-webkit-gradient') ||
+                bgImage.includes('-moz-linear-gradient') ||
+                bgImage.includes('-webkit-linear-gradient') ||
+                bg.includes('linear-gradient') ||
+                bg.includes('radial-gradient') ||
+                bg.includes('conic-gradient') ||
+                bg.includes('repeating-linear-gradient') ||
+                bg.includes('repeating-radial-gradient')
+              ) {
+                hasGradient = true;
+                break;
+              }
+
+              currentEl = currentEl.parentElement;
+            }
+
+            if (hasGradient) {
+              // console.log('Skipping contrast check for gradient element:', element);
+              continue;
+            }
+
             // Text content
             let elementText =
               element.textContent?.trim().substring(0, 100) ||

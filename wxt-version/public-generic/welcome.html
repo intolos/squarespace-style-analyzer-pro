@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Website Style Analyzer Pro - Professional Design Audit Tool</title>
-  <meta name="description" content="Professional Design Audit tool for websites. Immediately analyze all styles and color palette for consistency. Numerous Critical Quality Checks not shown in SEO audits.">
-  <link rel="icon" href="https://intolos.github.io/website-style-analyzer-pro/benefits/icon32.png" type="image/png">
+  <meta name="description" content="Professional Design Audit tool for Websites. Immediately analyze all styles and color palette for consistency. Numerous Critical Quality Checks not shown in SEO audits.">
+  <link rel="icon" href="https://intolos.github.io/website-style-analyzer-pro/icon32.png" type="image/png">
   <style>
   
     html {
@@ -25,13 +25,13 @@
 		  font-size: 1rem;          /* now 18px base */
       line-height: 1.6;
       color: #2d3748;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     .hero {
       background: linear-gradient(135deg, #4B68E7 0%, #764ba2 100%);
       color: white;
-      padding: 80px 20px;
+      padding: 25px 20px 80px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -62,7 +62,7 @@
     }
 
     .hero h1 {
-      font-size: 3.5rem;
+      font-size: 4rem;
       margin-bottom: 20px;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
       animation: fadeInDown 1s ease;
@@ -143,7 +143,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 80px 20px;
+      padding: 40px 20px;
     }
 
     .section-title {
@@ -295,6 +295,10 @@
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
+      display: flex;
+			flex-direction: column;
+			align-items: center; /* Centers children horizontally */
+			text-align: center;   /* Keeps text centered inside the h3 */
     }
 
     .try-it-box h3 {
@@ -547,24 +551,6 @@
       border-top: 1px solid #4a5568;
       color: #cbd5e0;
     }
-
-    @media (max-width: 768px) {
-      .hero h1 {
-        font-size: 2.5rem;
-      }
-
-      .hero p {
-        font-size: 1.2rem;
-      }
-
-      .section-title {
-        font-size: 2rem;
-      }
-
-      .pricing-card.featured {
-        transform: scale(1);
-      }
-    }
     
   .rainbow {
 		background: linear-gradient(
@@ -580,7 +566,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: bold;
-	}
+	}	
 	
 	.typography-icon {
   font-size: 22px;
@@ -691,23 +677,6 @@
     background: #eef2ff;
   }
 
-  /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .quality-table th,
-    .quality-table td {
-      padding: 14px;
-      font-size: 0.92rem;
-    }
-
-    .quality-table thead th {
-      font-size: 1.1rem;
-    }
-
-    .quality-title {
-      font-size: 1.9rem;
-    }
-  }
-
   .qc-wrapper {
     max-width: 1200px;
     margin: 40px auto;
@@ -718,24 +687,32 @@
 
   .qc-title {
     text-align: center;
-    font-size: 2.4rem;
     font-weight: 700;
     margin-bottom: 40px;
   }
 
   table.qc-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 12px;
-    overflow: hidden;
     font-size: 1rem;
   }
 
-  table.qc-table thead {
+  .qc-table-wrapper {
+    width: 100%;
+  }
+
+  table.qc-table thead th {
     background: #4B68E7;
     color: white;
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
   table.qc-table th, 
@@ -767,14 +744,6 @@
   /* Checkmark & X */
   .check { color: #0BAD06; font-size: 1.4rem; font-weight: bold; }
   .x { color: #E7163C; font-size: 1.4rem; font-weight: bold; }
-
-  @media (max-width: 900px) {
-    table.qc-table th, table.qc-table td {
-      padding: 12px;
-      font-size: 0.92rem;
-    }
-    table.qc-table th { font-size: 1.05rem; }
-  }
 	
   	.quality-table {
     table-layout: fixed;
@@ -813,18 +782,112 @@
 	h3 {
 		font-size: 1.7rem !important;
 	}
+	
+	.header-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .header-content {
+    display: flex;
+    flex-direction: row; /* Side-by-side on desktop */
+    align-items: center;
+    text-align: center;
+  }
+
+  .header-logo {
+    height: 5rem;
+    width: auto;
+    margin-right: 15px;
+  }
+
+  .header-title {
+    font-size: 4em;
+    margin: 0;
+    line-height: 1.1;
+  }
+	
+	/* Mobile Responsive */
+	/* Only enable horizontal scrolling on mobile where sticky headers are less critical */
+	@media (max-width: 768px) {
+		.qc-table-wrapper {
+      overflow-x: auto;
+    }
+		
+		.hero h1 {
+			font-size: 2.5rem;
+		}
+
+		.hero p {
+			font-size: 1.2rem;
+		}
+
+		.section-title, .qc-title {
+			font-size: 1.7rem;
+		}
+
+    .section-subtitle, h3 {
+      font-size: 1.5rem;
+    }
+
+		.pricing-card.featured {
+			transform: scale(1);
+		}
+
+    .quality-table th,
+    .quality-table td {
+      padding: 14px;
+      font-size: 0.92rem;
+    }
+
+    .quality-table thead th {
+      font-size: 1.1rem;
+    }
+
+    .quality-title {
+      font-size: 1.9rem;
+    }
+
+    table.qc-table th, table.qc-table td {
+      padding: 12px;
+      font-size: 0.92rem;
+    }
+    table.qc-table th { font-size: 1.05rem; }
+    
+    .header-content {
+      flex-direction: column; /* Stack icon on top of text */
+    }
+
+    .header-logo {
+      margin-right: 0;
+      margin-bottom: 10px;
+      height: 4rem; /* Slightly smaller icon */
+    }
+
+    .header-title {
+      font-size: 2.5rem; /* Smaller font for mobile */
+      white-space: normal; /* Allow text to wrap if needed */
+    }
+	}
 
 </style>
 </head>
 <body>
   <div class="hero" id="topofpage">
     <div class="hero-content">
-    <!-- 🎨 -->
-      <h1><img src="https://intolos.github.io/website-style-analyzer-pro/icon128.png" alt="" style="height: 1em; width: auto; vertical-align: middle; margin-right: 15px;">Website Style Analyzer Pro</h1>
-      <p>Professional <strong><em>Design Audit</em></strong> tool for websites.<br />
-      <span class="text-shadow" style="color:#FFFF00;">Ever wonder if your website has consistent styling across all pages?<br />Critical <strong><em>Quality Checks Using over 70 Aspects of Design</em></strong> for<br />quality assurance will let you know.</span><br /><br />
-      Immediately analyze, and compare across all pages, styles of headings, paragraphs, buttons, all typography, and color palette for <strong><em>consistency</em></strong>.  And much more.<br /><br />
-      Up to 12 beautiful, clear, and understandable reports from multiple viewpoints present all the details of those Quality Checks depending on what issues are found. Reports include specific links to "errors" and location mapping to allow quick and easy fixes.<br /><br />
+			
+			<div class="header-container">
+				<div class="header-content">
+					<img src="https://intolos.github.io/website-style-analyzer-pro/icon128.png" alt="Website Style Analyzer Pro" class="header-logo">
+					<h1 class="header-title">Website Style Analyzer Pro</h1>
+				</div>
+			</div>
+			
+      <h1 class="rainbow">Professional <strong><em>Design Audit</em></strong> tool for<br />Websites.</h1>
+      <p>Ever wonder if your website has consistent styling across all pages?<br />Critical <strong><em>Quality Checks using over 70 Aspects of Design</em></strong> for quality assurance will let you know. Immediately analyze, and compare across all pages, styles of headings, paragraphs, buttons, all typography, and color palette for <strong><em>consistency</em></strong>.  And much more.<br /><br />
+      Up to 12 beautiful, clear, and understandable reports from multiple viewpoints present all the details of the Quality Checks depending on what issues are found. Reports include specific links to "errors" and location mapping to allow quick and easy fixes. Analyze individual pages or entire domains.<br /><br />
       Within minutes, we automate your Design Audit for quality assurance. We save you 5, 10, 15, or more, hours of manual review which could easily miss important inconsistencies.<br /><br />
       You will rarely, if ever, find our design audit elements, Quality Checks, and reports in any SEO extensions. An incredible addition to your SEO audit.</p>
       
@@ -838,18 +901,18 @@
   <!-- BEGIN Features -->
   <div class="container" id="features">
     <h2 class="section-title">Powerful Design Audit Features</h2>
-    <p class="section-subtitle">Everything you need to create a Design Audit and document your website styles and much more</p>
+    <p class="section-subtitle">Everything you need to create a Design Audit and document site styles and colors for consistency and much more</p>
     
 		<div class="features">
 			<div class="feature">
 					<span class="feature-icon"><span style="color: #00cc00;">★</span> <!-- Green --></span>
-					<h3>Critical Checks Using Over 70 Aspects of Design for Quality Assurance</h3>
+					<h3>Critical Quality Checks Using Over 70 Aspects of Design for Quality Assurance</h3>
 					<ul class="pricing-features">Checks across all pages:
 						<li>Typography analysis for consistent font sizes, font weight, line height, letter spacing, text-transform,  color, and more, for all style types of headings, paragraphs, and buttons</li>
 						<li>All pages have H1 headings</li>
 						<li>No pages have multiple H1 headings</li>
 						<li>Heading hierarchy is correct on all pages</li>
-						<li>Colors consistency across all pages. Swatches and color codes of all colors used. Color Families and variations grouping identifying similar shades. Outlier detection of colors used 1-2 times. Page-by-Page breakdown of all colors used on each page. Recommended Color Palette with consolidation suggestions.</li>
+						<li>Colors consistency across all pages. Swatches and color codes of all colors used. Color Families and variations grouping identifying similar shades. Outlier detection of colors used 1-2 times. Page-by-Page breakdown of all colors used on each page.</li>
 						<li>All images have alt text</li>
 						<li>Images do not have generic file names</li>
 						<li>WCAG Accessibility check for color contrast between text and background</li>
@@ -862,52 +925,19 @@
       <div class="feature">
         <span class="feature-icon">✨</span>
         <h3>Brand Style Guide<br />Typography</h3>
-        <p>Generates a complete "Brand Style Guide Typography" report showing all typography and six or more style parameters for each of headings, paragraphs, and button styles used on your site. Discover and reveal inconsistencies <!--  among all of the following parameters  -->with precise locations for quick corrections. 
-        <!--  Our report analyzes the following.</p><br />
-        <p style="text-align: left;"><em>Headings and Paragraphs</em>:<br />
-        <span class="typography-icon icon-fontfamily">A𝒶</span> Font-family<br />
-        <span class="typography-icon icon-fontsize">↕️A</span> Font-size<br/>
-        <span class="typography-icon icon-fontweight">◻️A◼️</span> Font-weight<br />
-        <span class="typography-icon icon-lineheight">⬆️<img src="iconizer-scroll.svg" style="height: 22px;">⬇️</span> Line-height<br />
-        <span class="typography-icon icon-letterspace">↔️A↔️</span> Letter-spacing<br />
-        <span class="typography-icon icon-texttransform">a→A</span> Text-transform</p><br />
-        <p style="text-align: left;"><em>Buttons</em>:<br />
-        <span class="typography-icon icon-fontfamily">A𝒶</span> Font-family<br />
-				<span class="typography-icon icon-fontsize">↕️A</span> Font-size<br />
-				<span class="typography-icon icon-fontweight">◻️A◼️</span> Font-weight<br />
-				<span class="typography-icon icon-borderradius">🌙</span> Border-radius<br />
-				<span class="typography-icon icon-padding">◉</span> Padding<br />
-				<span class="typography-icon icon-textalign">↔️</span> Text-align<br />
-				<span class="typography-icon icon-texttransform">a→A</span> Text-transform</p>  -->
+        <p>Generates a complete "Brand Style Guide Typography" report showing all typography and six or more style parameters for each of headings, paragraphs, and button styles used on your site. Discover and reveal inconsistencies with precise locations for quick corrections. 
 			</div>				
       
       <div class="feature">
         <span class="feature-icon"><span class="rainbow">✨</span></span>
         <h3>Brand Style Guide<br />Colors</h3>
-        <p>Generates a complete "Brand Style Guide Colors" report showing all text colors for headings, paragraphs, and button styles plus background and border colors for buttons used on your site. Reveals issues with too many colors and too many close color variations, outlier colors used only once or twice, accessibility issues, and more. As a bonus, even recommends a consolidated color palette if needed. <!-- Our report analyzes the following.</p>
-        <p style="text-align: left;"><span class="rainbow">🟡</span> Color Consistency Score<br />
-        🔴 Issues Detected<br />
-        ⚠️ Warnings<br />
-        🎨 All Colors Used (Too Many Colors?)<br />
-        👨‍👩‍👧‍👦 Color Families & Variations (Too Many Variations?)<br />
-        ⚪ Neutral Colors (Too Many Variations?)<br />
-        ❗ Outlier Colors (Used Only Once or Twice)<br />
-        ♿ Accessibility Issues (In or Out of Compliance with WCAG?)<br />
-        ✅ Recommended Consolidated Palette<br />
-        🌈 Color Distribution Across Pages (Intentional Design or Haphazard?)
-        </p><br />
-        <p>
-        <ul class="pricing-features"><span style="marging-bottom: 0px; margin-top: 0px;">In summary, the Brand Style Guide Colors report covers:
-        <li>Text color for headings, paragraphs, and buttons</li>
-        <li>Background color for buttons</li>
-        <li>Border color for buttons</li>
-        <li>Contrast/accessibility issues for all</li></span></p>  -->
+        <p>Generates a complete "Brand Style Guide Colors" report showing a summary of all colors used on the analyzed pages and breaks them down into text, background, and border colors. Reveals issues with too many colors, too many close color variations, outlier colors used only once or twice, accessibility issues, and more. As a bonus, it shows all colors used on each page.
       </div>
       
       <div class="feature">
         <span class="feature-icon">🔍</span>
         <h3>Headings Analysis</h3>
-        <p>Immediately identify all heading types (H1-H4) with precise location mapping and style documentation. Analyzes consistent typography.</p>
+        <p>Immediately identify all heading/title types with precise location mapping and style documentation. Analyzes consistent typography.</p>
       </div>
 
       <div class="feature">
@@ -925,13 +955,13 @@
       <div class="feature">
         <span class="feature-icon">🎯</span>
         <h3>Page and Domain Analysis</h3>
-        <p>Analyze individual pages. Or analyze entire domains. With one click, crawl sitemaps and analyze up to 10 pages in the free version and up to 500 pages at one time with the Premium feature. For larger websites, simply select groups of pages, in the Premium feature of page selection, to analyze your entire site.</p>
+        <p>Analyze individual pages. Or analyze entire domains. With one click, crawl sitemaps and analyze up to 10 pages in the free version and unlimited pages with the Premium feature. For larger websites, you can select groups of pages shown in the Premium feature of page selection, to choose how many and which groupings of pages you wish to analyze at one time.</p>
       </div>      
       
       <div class="feature">
         <span class="feature-icon">📊</span>
         <h3>Beautiful Reports</h3>
-        <p>Up to 10 beautifully styled and easy-to-read reports as needed depending on the specific analysis. Export to CSV for spreadsheet analysis. Export to stunning HTML reports, for viewing in your browser, with interactive table of contents, complete presentation of all typography and color specifications, and precise error locations. Multiple reports, including ordering by styles across all pages as well as all styles used on page by page presentations, reveal inconsistencies from every conceivable viewpoint to pinpoint items for corrections.</p>
+        <p>Up to 12 beautifully styled and easy-to-read reports as needed depending on the specific analysis. Export to CSV for spreadsheet analysis. Export to stunning HTML reports, for viewing in your browser, with interactive table of contents, complete presentation of all typography and color specifications, and precise error locations. Multiple reports, including ordering by styles across all pages as well as all styles used on page by page presentations, reveal inconsistencies from every conceivable viewpoint to pinpoint items for corrections.</p>
       </div>     
     </div>
   </div>
@@ -940,9 +970,9 @@
 <!-- BEGIN Compare to SEO -->
   <div class="container" style="max-width: 1200px; margin: 0 auto;" id="compareseo">
   <div class="qc-wrapper">
-  <h2 class="qc-title">What’s Unique About Website Style Analyzer Pro?</h2>
+  <h2 class="qc-title">What's Unique About Website Style Analyzer Pro?</h2>
   <h2 class="qc-title">Our Extension Serves a Different Purpose<br />Compared to the Most Popular SEO Extensions</h2>
-<div style="overflow-x: auto; width: 100%;">
+<div class="qc-table-wrapper">
   <table class="qc-table">
   <colgroup>
     <col> <!-- Quality Check -->
@@ -1031,7 +1061,7 @@
       <!-- Missing Alt Text -->
       <tr>
         <td>🖼️ Missing Alt Text</td>
-        <td>Scans your images for missing descriptive alt attributes which are important for accessibility. Added Bonus for SEO: Descriptive alt text provides search engines more content about your site."<td class="check">✔</td>
+        <td>Scans your images for missing descriptive alt attributes which are important for accessibility. Added Bonus for SEO: Descriptive alt text provides search engines more content about your site."</td><td class="check">✔</td>
         <td class="x">✘</td>
         <td class="x">✘</td>
         <td class="x">✘</td>
@@ -1116,7 +1146,7 @@ In contrast, our report shows a listing of only the images with missing alt text
 
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
       	</div>
 
 <!-- BEGIN Why Would You Use Website Style Analyzer Pro? -->
@@ -1130,7 +1160,7 @@ In contrast, our report shows a listing of only the images with missing alt text
           <div class="use-case-icon">✅</div>
           <div class="use-case-content">
             <h3>Check Your Own Work</h3>
-            <p>Ensure your site follows best practices and brand guidelines before launch and after updates. Check your sites much, much quicker with far more detailed analyses than by checking within your developer platform! </p>
+            <p>Ensure your site follows best practices and brand guidelines before launch and after updates. Check your sites much, much quicker with far more detailed analyses than by checking within the website developer platform! </p>
 <!--            <p class="use-case-note">📍 Note: When we were testing, we found a website that forgot to use a H1 Heading on several pages! And another that used H1 and H3 but no H2! And another that used numerous H1 headings on a page! And another that left out Image Alt Text descriptions on numerous images! Plus you'll find many other types of oversights with this extension's analyses!</p>  -->
           </div>
         </div>
@@ -1140,6 +1170,14 @@ In contrast, our report shows a listing of only the images with missing alt text
           <div class="use-case-content">
             <h3>Verify Contractor & Employee Work</h3>
             <p>Check the work of contractors and employees creating websites for you. Ensure they're following your brand guidelines and design standards.</p>
+          </div>
+        </div>
+
+        <div class="use-case">
+          <div class="use-case-icon">🚀</div>
+          <div class="use-case-content">
+            <h3>Prospecting and Onboarding New Clients with Existing Websites</h3>
+            <p>This browser extension is the fastest process to receive immediate insights of the issues with an existing website. Use it during your prospecting for new clients. Use it while onboarding new clients to ensure they're following their own brand guidelines and design standards.</p>
           </div>
         </div>
 
@@ -1158,8 +1196,6 @@ In contrast, our report shows a listing of only the images with missing alt text
             <p>Discover inconsistencies in your site design within a page and between pages. Catch styling errors before they become problems.</p>
           </div>
         </div>
-
-    <div class="use-case">
 			
 			<p style="margin-bottom: 8px;">
 			<ul style="list-style-type: none;"><strong>Perfect for:</strong>
@@ -1179,8 +1215,8 @@ In contrast, our report shows a listing of only the images with missing alt text
 <!-- BEGIN Quality Checks Benefits -->
   <div class="container" style="max-width: 1200px; margin: 0 auto;" id="benefits">
   <div class="qc-wrapper">
-  <h2 class="qc-title">Why Do You Need These Quality Checks of<br>Over 70 Aspects of Design?</h2>
-<div style="overflow-x: auto; width: 100%;">
+  <h2 class="qc-title">Why Do You Need These Quality Checks using<br>Over 70 Aspects of Design?</h2>
+<div class="qc-table-wrapper">
   <table class="qc-table">
     <thead>
       <tr>
@@ -1281,7 +1317,7 @@ In contrast, our report shows a listing of only the images with missing alt text
 
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
       	</div>
 
 <!-- BEGIN WHY Our DESIGN AUDIT -->
@@ -1326,7 +1362,7 @@ In contrast, our report shows a listing of only the images with missing alt text
         <div class="step">
           <div class="step-number">1</div>
           <h3>Install Extension</h3>
-          <p>Add Website Style Analyzer Pro to Chrome with one click. No signup required to start.</p>
+          <p>Add Website Style Analyzer Pro to Chrome with one click. No signup required.</p>
         </div>
 
         <div class="step">
@@ -1344,13 +1380,13 @@ In contrast, our report shows a listing of only the images with missing alt text
         <div class="step">
           <div class="step-number">4</div>
           <h3>Export Results</h3>
-          <p>Download beautiful HTML reports or CSV files. Share with clients or save for documentation.</p>
+          <p>Download beautiful HTML reports or CSV files. Reveal your results in minutes. Save 5, 10, 15, or more hours compared to manual analysis where you're likely to miss many of the inconsistencies. Share with clients or save for documentation.</p>
         </div>
       </div>
     </div>
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
       	</div>
   </div>
 
@@ -1381,7 +1417,7 @@ In contrast, our report shows a listing of only the images with missing alt text
             <li>HTML reports for beautiful presentations for so many design audit analyses in one place you will not find anywhere else</li>
           </ul>
           <div class="try-it-box">
-          <a href="" target=”_blank” class="btn">Try the Extension Now and<br />See for Yourself</a>
+          <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank” class="btn">Try the Extension Now and<br />See for Yourself</a>
           </div>
         </div>
 
@@ -1392,7 +1428,7 @@ In contrast, our report shows a listing of only the images with missing alt text
           <ul class="pricing-features">
             <li>Unlimited website analyses</li>
             <li>Page-by-page analysis</li>
-            <li>Full domain analysis via sitemap up to 500 pages at one time. For larger websites, simply select groups of pages, in the Premium feature of page selection, to analyze your entire site.</li>
+            <li>Full domain analysis via sitemap. For larger websites, you are able to select groups of pages, in the Premium feature of page selection, to analyze your entire site in sections if desired to save time.</li>
             <li>Six critical quality checks</li>
             <li>Full style detection</li>
             <li>Color palette extraction</li>
@@ -1408,40 +1444,22 @@ In contrast, our report shows a listing of only the images with missing alt text
             <li>Lifetime updates</li>
           </ul>
 		      <div class="try-it-box">
-          <a href="" target=”_blank” class="btn">Upgrade for Only $19.99 for Unlimited Use for One Year<br />or<br />Only  $29.99 for Lifetime Unlimited Use Forever<br /><br />Click on the "Upgrade" button in the extension</a>
+          <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank” class="btn">Upgrade for Only $19.99 for Unlimited Use for One Year<br />or<br />Only  $29.99 for Lifetime Unlimited Use Forever<br /><br />Click on the "Upgrade" button in the extension</a>
           </div>
         </div>
       </div>
     </div>
         <div class="try-it-box">
-        <p>Try the Extension Now and See for Yourself</p>
-        <a href="" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
+        <h3>Try the Extension Now and See for Yourself</h3>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
       	</div>
   </div>
   
 <!--
-<script>
-const API_BASE = "https://website-style-analyzer-pro.eamass.workers.dev";
-document.getElementById("subscribeBtn").addEventListener("click", async () => {
-  const status = document.getElementById("status");
-  status.textContent = "Redirecting to checkout...";
-  try {
-    const res = await fetch(`${API_BASE}/create-checkout`, { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-    else status.textContent = "Error: Unable to create checkout session.";
-  } catch (err) {
-    status.textContent = "Network error. Please try again.";
-  }
-});
-</script>
--->
-  
-<!--
-  <div class="testimonials">
+  <div class="testimonials" id="testimonials">
     <div class="container">
       <h2 class="section-title">What Our Users Say</h2>
-      <p class="section-subtitle">Trusted by website professionals worldwide</p>
+      <p class="section-subtitle">Trusted by Website professionals worldwide</p>
       
       <div class="testimonial-grid">
         <div class="testimonial">
@@ -1481,9 +1499,27 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
   </div>
 -->
 
+  <div class="container" style="max-width: 900px; margin: 0 auto;" id="permissions">
+  <p><center><h3 style="color:#4B68E7;">A Note About Permissions</h3></center>
+    <p>There are two permissions in particular for which we want to give you ease.<br />
+				<ul style="padding-left: 40px;">
+					<li>Access the page debugger backend</li>
+					<li>Read and change all your data on all websites</li>
+				</ul>
+		</p><br />
+		<p>The extension uses Chrome DevTools Protocol for accurate mobile testing. This requires debugger permission of "Read and change all your data on all websites" but we assure you the extension does not alter anything on your site. All data storage about the website being analyzed is temporary and user-session-based:
+				<ul style="padding-left: 40px;">
+					<li>All analysis data is automatically deleted when users start a new analysis or click the Reset button</li>
+					<li>Data is cleared after successful export to ensure no stale data accumulates</li>
+					<li>No data persists beyond the current analysis session</li>
+				</ul>
+    </p>
+  </p><br />
+  </div>
+
   <div class="container" style="max-width: 1200px; margin: 0 auto;">
   <p><center><h3 style="color:#4B68E7;">Website Style Analyzer Pro: Automated Design and Brand Consistency Audit</h3>
-    <em>The tool you’ll rely on that automatically checks if your website follows design best practices and brand guidelines.<br />Get an actionable comprehensive design audit in minutes—not hours.</em></center>
+    <em>Transform how you analyze websites with this comprehensive Design Audit tool.<br />The tool you’ll rely on that automatically checks if your website follows design best practices and brand guidelines.<br />Get an actionable comprehensive design audit in minutes—not hours.</em></center>
   </p><br />
   </div>
 
@@ -1499,18 +1535,18 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
         <ul class="footer-links">
 					<li><a href="#topofpage">Introduction</a></li>
           <li><a href="#features">Features</a></li>
-          <li><a href="#use">Why Would You Use Website Style Analyzer Pro?</a></li>
           <li><a href="#compareseo">Design Audit Compared to SEO Audit</a></li>
+          <li><a href="#use">Why Would You Use Website Style Analyzer Pro?</a></li>
           <li><a href="#benefits">Why Do You Need Over 70 Aspects of Design?</a></li>
           <li><a href="#whydesignaudit">Why Our Design Audit?</a></li>          
           <li><a href="#how">How It Works</a></li>
           <li><a href="#pricing">Pricing</a></li>
-          <li>
+          <li><a href="#permissions">Permissions</a></li>
 						<table>
 						<tr>
-						<td><img src="https://intolos.github.io/website-style-analyzer-pro/icon128.png" alt="" style="height: auto; width: auto; vertical-align: top; margin-right: 5px;">
+						<td><img src="https://intolos.github.io/website-style-analyzer-pro/icon128.png" alt="Website Style Analyzer Pro" style="height: auto; width: auto; vertical-align: top; margin-right: 5px;">
 						</td>
-						<td><a href="" target=”_blank”>Get the Extension Now from the Chrome Web Store</a>
+						<td><a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target=”_blank”>Get the Extension Now from the Chrome Web Store</a>
 						</td>
 						</tr>
 						</table>

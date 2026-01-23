@@ -185,3 +185,52 @@ This file documents critical implementation details, regression traps, and "anti
   - **DO**: Use `git rm -f [WrongCaseFile]` to manually clean the repository whenever a case collision is detected.
   - **DO NOT**: Manually upload files via the GitHub web interface if they might introduce case casing inconsistencies.
 - **Date Fixed**: 2026-01-21
+
+---
+
+## 14. Contrast Audit & Gradients
+
+### The "Shorthand Background" Trap
+
+- **Symptom**: Gradient backgrounds are not detected, causing false positive contrast errors in reports.
+- **Root Cause**: Checking only `computedStyle.backgroundImage`. Some browsers/frameworks apply gradients via the `background` shorthand property.
+- **Correct Logic**:
+  - **DO**: Check both `backgroundImage` AND `background` computed properties.
+  - **DO**: Search for specific gradient functions (`linear-gradient`, `radial-gradient`, etc.) including vendor prefixes.
+- **Date Fixed**: 2026-01-23
+
+---
+
+## 15. Button Deduplication & Intentional Repetition
+
+### The "N/A Section" Trap
+
+- **Symptom**: On non-Squarespace sites, identical buttons placed intentionally (e.g., "Buy Now" at top and bottom) are deduplicated into a single entry.
+- **Root Cause**: Deduplication logic used `text + section + block`. On generic sites, section/block metadata is "N/A", causing collisions for identical text.
+- **Correct Logic**:
+  - **DO**: Use "Dimension-based Deduplication".
+  - **DO**: Round `top` and `left` positions by the element's `height` and `width` to create unique keys.
+  - **Rationale**: This distinguishes intentional buttons at different positions while still catching framework-level "accidental" duplicates (at the same position ± sub-pixel differences).
+- **Date Fixed**: 2026-01-23
+
+---
+
+## 16. Extension Metadata Capture
+
+- **Symptom**: `original_purchase_extension` and `original_purchase_type` are not captured in Stripe Customer metadata.
+- **Root Cause**: The Cloudflare Worker was attempting to compare Product IDs against environment variables (`env.SQS_PRODUCT_ID_YEARLY`, etc.) which were undefined at the edge.
+- **Correct Logic**:
+  - **DO**: Use a "Passthrough Architecture."
+  - **DO**: Have the client send `extension_type` and `purchase_type` directly to the worker.
+  - **DO**: Store these in session metadata and read them directly in the webhook, eliminating the need for Product ID environment variables in Cloudflare.
+- **Date Fixed**: 2026-01-23
+
+---
+
+## 17. Button Label "Lifetime" for Yearly Users
+
+- **Symptom**: User completes a yearly purchase but the button shows "Premium Activated - Lifetime."
+- **Root Cause**: The `/redeem-session` endpoint was returning a `record` object without the explicit `is_lifetime: false` and `is_yearly: true` flags. The frontend checked these flags, found them undefined, and the logic path resulted in incorrect labeling or styling.
+- **Correct Logic**:
+  - **DO**: Ensure every record-returning endpoint (`/redeem-session`, `/check-email`) explicitly includes the `is_lifetime` and `is_yearly` boolean flags.
+- **Date Fixed**: 2026-01-23

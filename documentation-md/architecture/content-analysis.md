@@ -15,7 +15,12 @@ This module analyzes the structural and semantic quality of the page content. It
 
 **Goal:** Identify all buttons and classify them (Primary/Secondary) while filtering out noise.
 
-- **Selectors:** Broad matching including `<button>`, `input[type="submit"]`, and `a.button` / `a.sqs-block-button`.
+- **Selectors:** Broad matching including `<button>`, `input[type="submit"]`, `a.button`, `a.btn` (Bootstrap/Tailwind), and `a.sqs-block-button`.
+- **Filters:**
+  - **Text Length:** Skips buttons with text < 3 chars or > 200 chars (increased from 100 to support descriptive CTA buttons).
+- **Deduplication:**
+  - **Dimension-based:** Rounds element `top/left` positions by their own `height/width` to create unique keys.
+  - **Benefit:** Distinguishes between intentional repetitions (common in generic sites) while still merging framework duplicates (same position ± sub-pixel) in Squarespace.
 - **Exclusions:** We explicitly ignore "utility" buttons to avoid report clutter:
   - Hamburger menus ("open menu", "close menu").
   - Accessibility aids ("skip to content").

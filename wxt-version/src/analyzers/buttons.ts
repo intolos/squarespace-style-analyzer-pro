@@ -118,16 +118,26 @@ export async function analyzeButtons(
 
     // Skip very short text
     if (text.length < 3 && !['ok', 'go'].includes(lowerText)) continue;
-    if (text.length > 100) continue;
+    if (text.length > 200) continue;
 
-    const buttonKey = text + '|' + section + '|' + block;
+    // IMPORTANT: Dimension-based Deduplication for Buttons
+    // Uses button position rounded by its own dimensions to create unique keys.
+    // This catches framework duplicates (same position ± sub-pixel) while counting
+    // intentional repetitions at different positions. Works for both Squarespace
+    // and generic sites without needing section/block metadata.
+    const rect = (btn as HTMLElement).getBoundingClientRect();
+    const posY = Math.round(rect.top / rect.height) * rect.height;
+    const posX = Math.round(rect.left / rect.width) * rect.width;
+    const buttonKey = text + '|' + posY + '|' + posX;
     if (processedButtonKeys.has(buttonKey)) continue;
 
     const tagName = btn.tagName.toLowerCase();
     const hasHref = tagName === 'a' && btn.hasAttribute('href');
     const isButton = tagName === 'button' || tagName === 'input';
     const hasButtonRole = btn.getAttribute('role') === 'button';
-    const hasButtonClass = (btn.className || '').toLowerCase().includes('button');
+    const hasButtonClass =
+      (btn.className || '').toLowerCase().includes('button') ||
+      (btn.className || '').toLowerCase().includes('btn');
 
     if (!hasHref && !isButton && !hasButtonRole && !hasButtonClass) continue;
 

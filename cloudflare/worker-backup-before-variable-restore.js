@@ -16,6 +16,9 @@ export default {
     }
 
     try {
+      if (request.method === 'POST' && pathname === '/report-issue') {
+        return await handleReportIssue(request, env);
+      }
       if (request.method === 'POST' && pathname === '/create-checkout-session') {
         return await handleCreateCheckout(request, env);
       }
@@ -109,17 +112,25 @@ async function handleCreateCheckout(request, env) {
   // Store product_id, mode, and app_group in metadata for webhook/redeem to use
   params.append('metadata[product_id]', productId);
   params.append('metadata[is_lifetime]', mode === 'payment' ? 'true' : 'false');
+  params.append('metadata[is_yearly]', mode === 'subscription' ? 'true' : 'false');
+
+  // Product IDs configuration
+  const SQS_PRODUCT_IDS = ['prod_TOjJHIVm4hIXW0', 'prod_TbiIroZ9oKQ8cT'];
+  const GENERIC_PRODUCT_IDS = ['prod_TbGKBwiTIidhEo', 'prod_TbiWgdYfr2C63y'];
+
+  // Granular access flags for better spreadsheet columns
+  if (SQS_PRODUCT_IDS.includes(productId)) {
+    params.append('metadata[access_squarespace]', 'true');
+  } else if (GENERIC_PRODUCT_IDS.includes(productId)) {
+    params.append('metadata[access_website]', 'true');
+  } else {
+    // Unknown ID fallback -> Warn in metadata but do not grant access flags
+    console.warn(`UNKNOWN_PRODUCT_ID: ${productId}`);
+    params.append('metadata[setup_warning]', `unknown_product_id: ${productId}`);
+  }
+
   // Add App Group to safely group SQS and Generic versions together
-  // This allows future logic to strictly validate cross-product access
   params.append('metadata[app_group]', 'style_analyzer');
-  // IMPORTANT: Client sends extension_type and purchase_type directly so webhook can
-  // stamp Customer metadata without needing Product ID environment variables. Fixed 2026-01-23.
-  if (body.extension_type) {
-    params.append('metadata[extension_type]', body.extension_type);
-  }
-  if (body.purchase_type) {
-    params.append('metadata[purchase_type]', body.purchase_type);
-  }
 
   // Only add subscription_data for subscription mode
   if (mode === 'subscription') {
@@ -254,11 +265,6 @@ async function handleRedeemSession(request, env) {
   const record = {
     email,
     product_id: resolvedProductId,
-    // IMPORTANT: Include is_lifetime and is_yearly flags so frontend can correctly
-    // display "Premium Activated - Lifetime" vs "Premium Activated - Yearly".
-    // Bug fixed 2026-01-23: these were missing, causing button to show wrong text.
-    is_lifetime: isLifetime,
-    is_yearly: !isLifetime,
     first_name: firstName,
     last_name: lastName,
     business_name: businessName,
@@ -285,11 +291,26 @@ async function handleCheckEmail(request, env) {
   const debugMode = url.searchParams.get('debug') === 'true';
   console.log('handleCheckEmail called for:', email, 'product:', productId, 'debug:', debugMode);
 
+  // Constants for Product IDs (matching handleCreateCheckout)
+  const SQS_YEARLY = 'prod_TOjJHIVm4hIXW0';
+  const SQS_LIFETIME = 'prod_TbiIroZ9oKQ8cT';
+  const GEN_YEARLY = 'prod_TbGKBwiTIidhEo';
+  const GEN_LIFETIME = 'prod_TbiWgdYfr2C63y';
+  const SQS_PRODUCT_IDS = [SQS_YEARLY, SQS_LIFETIME];
+  const GEN_PRODUCT_IDS = [GEN_YEARLY, GEN_LIFETIME];
+
+  // Logic to determine context (SQS vs Generic)
+  const isSqsContext = SQS_PRODUCT_IDS.includes(productId);
+  // Helper to get correct ID based on detected type
+  const getCorrectId = isLifetime => {
+    if (isSqsContext) return isLifetime ? SQS_LIFETIME : SQS_YEARLY;
+    return isLifetime ? GEN_LIFETIME : GEN_YEARLY;
+  };
+
   // Debug Logging Helper
   const debugLogs = [];
   const addLog = msg => {
     if (debugMode) debugLogs.push(msg);
-    // console.log(msg); // Optional: keep server logs clean unless needed, or mirror them. User asked for minimal impact.
     if (debugMode) console.log('[DEBUG]', msg);
   };
 
@@ -303,7 +324,7 @@ async function handleCheckEmail(request, env) {
 
   if (!email) return jsonResponse({ valid: false, error: 'No email provided' });
 
-  addLog(`Starting validation for ${email} (Product: ${productId})`);
+  addLog(`Starting validation for ${email} (Product: ${productId} | SQS Context: ${isSqsContext})`);
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -320,30 +341,41 @@ async function handleCheckEmail(request, env) {
     addLog(`Found ${customers.length} customer records.`);
 
     if (customers.length > 0) {
-      // PRIORITY 1: CUSTOMER METADATA (The Golden Ticket)
-      // IMPORTANT: Check is_lifetime FIRST. If true, STOP immediately.
-      // Only check is_yearly if is_lifetime is false.
-      // This ensures users who upgrade from yearly to lifetime always see "Lifetime" status.
-      // Fixed 2026-01-23.
+      // PRIORITY 1: MANUAL OVERRIDE (Customer Metadata)
+      // Check ALL customers for specific access flags and lifetime status
       addLog('PRIORITY 1: Checking Customer Metadata...');
       for (const customer of customers) {
         if (debugMode)
           addLog(`Checking customer ${customer.id} metadata: ${JSON.stringify(customer.metadata)}`);
 
-        // Check is_lifetime FIRST
-        if (customer.metadata && String(customer.metadata.is_lifetime).toLowerCase() === 'true') {
-          console.log('Valid Lifetime Validation: Customer Metadata');
-          addLog('SUCCESS: Found is_lifetime=true in customer metadata.');
-          const record = createRecord(email, productId, customer.id, 'lifetime_metadata', now);
-          await cacheRecord(env, record);
-          return jsonResponse({ valid: true, record });
-        }
+        const meta = customer.metadata || {};
+        const metaLifetime = String(meta.is_lifetime).toLowerCase() === 'true';
+        const metaYearly = String(meta.is_yearly).toLowerCase() === 'true';
+        const metaAccessSqs = String(meta.access_squarespace).toLowerCase() === 'true';
+        const metaAccessWeb = String(meta.access_website).toLowerCase() === 'true';
 
-        // Only check is_yearly if is_lifetime was false
-        if (customer.metadata && String(customer.metadata.is_yearly).toLowerCase() === 'true') {
-          console.log('Valid Yearly Validation: Customer Metadata');
-          addLog('SUCCESS: Found is_yearly=true in customer metadata.');
-          const record = createRecord(email, productId, customer.id, 'yearly_metadata', now);
+        // Check for product-specific access
+        const hasSpecificAccess = isSqsContext ? metaAccessSqs : metaAccessWeb;
+
+        if (metaLifetime || (metaYearly && hasSpecificAccess)) {
+          console.log('Valid Validation: Customer Metadata Priority');
+          addLog(
+            `SUCCESS: Found valid status in customer metadata (Lifetime=${metaLifetime}, Yearly=${metaYearly}).`
+          );
+
+          // CRITICAL FIX: Return correct product ID based on what was found, NOT what was requested.
+          const finalProductId = getCorrectId(metaLifetime);
+
+          const record = createRecord(
+            email,
+            finalProductId,
+            customer.id,
+            metaLifetime ? 'lifetime_metadata' : 'yearly_metadata',
+            now
+          );
+          // If it's yearly from metadata, we should set a safe expiry if one isn't clearly tracked
+          if (!metaLifetime) record.expires_at = now + 48 * 3600; // 48h buffer for metadata-based yearly
+
           await cacheRecord(env, record);
           return jsonResponse({ valid: true, record });
         }
@@ -383,9 +415,13 @@ async function handleCheckEmail(request, env) {
         if (validSession) {
           console.log('Valid Lifetime Validation: Checkout Session');
           addLog(`SUCCESS: Found valid lifetime session ${validSession.id}`);
+
+          // Lifetime session = Lifetime ID
+          const finalProductId = getCorrectId(true);
+
           const record = createRecord(
             email,
-            productId,
+            finalProductId,
             customer.id,
             'lifetime_session',
             now,
@@ -512,14 +548,9 @@ function createRecord(email, pid, cusId, type, now, sessId, subId, expires) {
   }
   // If isLife is true, exp remains undefined/null (perfect for UI logic)
 
-  // IMPORTANT: Add is_lifetime and is_yearly flags to the returned record.
-  // The client checks these flags directly instead of comparing Product IDs.
-  // Fixed 2026-01-23 to restore variable-based architecture.
   return {
     email,
     product_id: pid,
-    is_lifetime: isLife,
-    is_yearly: !isLife,
     active: true,
     created_at: now,
     expires_at: exp,
@@ -581,54 +612,37 @@ async function handleWebhook(request, env) {
     }
     const fullName = `${firstName} ${lastName}`.trim();
 
-    // IMPORTANT: Auto-stamp Customer metadata for both Lifetime and Yearly purchases.
-    // This ensures Priority 1 checking works instantly and provides marketing analytics.
-    // Fixed 2026-01-23 to restore variable-based architecture.
-    const isLifetime = session.metadata && session.metadata.is_lifetime === 'true';
-    const isYearly = !isLifetime;
+    // AUTO-STAMP LOGIC
+    // Stamp the Customer object immediately with access flags and plan status.
+    const meta = session.metadata || {};
+    const isLifetime = meta.is_lifetime === 'true';
+    const isYearly = meta.is_yearly === 'true';
 
-    if (session.customer) {
+    // Re-verify access flags based on Product ID to be safe
+    // (This handles cases where metadata might be missing or incorrect)
+    const productForStamp = productId; // Use the productId we extracted earlier
+    const SQS_PRODUCT_IDS = ['prod_TOjJHIVm4hIXW0', 'prod_TbiIroZ9oKQ8cT'];
+    const GENERIC_PRODUCT_IDS = ['prod_TbGKBwiTIidhEo', 'prod_TbiWgdYfr2C63y'];
+
+    const accessSqs = SQS_PRODUCT_IDS.includes(productForStamp);
+    const accessWeb = GENERIC_PRODUCT_IDS.includes(productForStamp);
+
+    if (session.customer && (isLifetime || isYearly)) {
       try {
         console.log(
-          `Stamping Customer ${session.customer}: Lifetime=${isLifetime}, Yearly=${isYearly}, Product=${productId}`
+          `Stamping Customer ${session.customer}: Lifetime=${isLifetime}, Yearly=${isYearly}, SQS=${accessSqs}, Web=${accessWeb}`
         );
-
-        // Fetch existing customer metadata to check if this is first purchase
-        const customerResp = await fetch(
-          `https://api.stripe.com/v1/customers/${session.customer}`,
-          {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` },
-          }
-        );
-        const customer = await customerResp.json();
-        const existingMeta = customer.metadata || {};
-
         const updateParams = new URLSearchParams();
+        if (isLifetime) updateParams.append('metadata[is_lifetime]', 'true');
+        if (isYearly) updateParams.append('metadata[is_yearly]', 'true');
+        if (accessSqs) updateParams.append('metadata[access_squarespace]', 'true');
+        if (accessWeb) updateParams.append('metadata[access_website]', 'true');
 
-        // Current status flags (can change over time)
-        updateParams.append('metadata[is_lifetime]', isLifetime ? 'true' : 'false');
-        updateParams.append('metadata[is_yearly]', isYearly ? 'true' : 'false');
-        updateParams.append('metadata[app_group]', 'style_analyzer');
-
-        // Marketing metadata - ONLY stamp on first purchase (never reset)
-        if (!existingMeta.original_purchase_extension) {
-          // IMPORTANT: Read extension_type and purchase_type directly from session metadata
-          // (sent by client) instead of comparing Product IDs. This removes the need for
-          // Product ID environment variables. Fixed 2026-01-23.
-          const extensionType = session.metadata?.extension_type || 'unknown';
-          const purchaseType =
-            session.metadata?.purchase_type || (isLifetime ? 'lifetime' : 'yearly');
-
-          updateParams.append('metadata[original_purchase_extension]', extensionType);
-          updateParams.append('metadata[original_purchase_type]', purchaseType);
+        // Stamp warning if ID is unknown
+        if (!accessSqs && !accessWeb) {
+          updateParams.append('metadata[setup_warning]', `unknown_product_id: ${productForStamp}`);
         }
 
-        // Cross-product access flags (buy one extension, get access to both)
-        updateParams.append('metadata[access_squarespace]', 'true');
-        updateParams.append('metadata[access_website]', 'true');
-
-        // Customer name and business name
         if (fullName) updateParams.append('name', fullName);
         if (businessName) updateParams.append('metadata[business_name]', businessName);
 
@@ -640,7 +654,7 @@ async function handleWebhook(request, env) {
           },
           body: updateParams.toString(),
         });
-        console.log('Customer metadata stamped successfully.');
+        console.log('Customer stamped successfully.');
       } catch (err) {
         console.error('Failed to stamp customer metadata:', err);
       }
@@ -726,9 +740,7 @@ async function handleWebhook(request, env) {
         await env.LICENSES.put(licenseKey, JSON.stringify(r));
       }
 
-      // IMPORTANT: Reset is_yearly flag in Customer metadata when subscription expires.
-      // This ensures the Priority 1 check correctly identifies expired subscriptions.
-      // Fixed 2026-01-23.
+      // Also update the Stripe Customer metadata if we have a customer ID
       const customerId = obj.customer;
       if (customerId && event.type !== 'customer.subscription.updated') {
         try {
@@ -785,4 +797,66 @@ function constantTimeCompare(a, b) {
   let res = 0;
   for (let i = 0; i < a.length; i++) res |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return res === 0;
+}
+
+// Report Issue Endpoint (e.g. Unknown Product ID)
+async function handleReportIssue(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const { type, details } = body;
+  console.error(`[ISSUE REPORT] Type: ${type}`, JSON.stringify(details));
+
+  // Determine subject/body based on type
+  let subject = `[Extension Issue] ${type}`;
+  let content = `Issue Reported: ${type}\n\nDetails:\n${JSON.stringify(details, null, 2)}`;
+
+  if (type === 'UNKNOWN_PRODUCT_ID') {
+    subject = `URGENT: Unknown Product ID Detected`;
+    content = `An unknown Product ID resulted in a "Premium Activated" status with no suffix.\n\n`;
+    content += `Email: ${details.email}\n`;
+    content += `Product ID: ${details.productId}\n`;
+    content += `Timestamp: ${new Date().toISOString()}\n`;
+    content += `\nRaw Details:\n${JSON.stringify(details, null, 2)}`;
+  }
+
+  // Attempt to send email
+  // Env var EMAIL_API_URL should be the Google Apps Script Web App URL
+  // or a compatible webhook handler.
+  if (env.EMAIL_API_URL) {
+    try {
+      await sendEmail(env, 'webbyinsights+productidnotdetected@gmail.com', subject, content);
+      return new Response(JSON.stringify({ ok: true, sent: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (e) {
+      console.error('Failed to send email via API:', e);
+      return new Response(JSON.stringify({ ok: true, sent: false, error: String(e) }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  } else {
+    console.warn('EMAIL_API_URL not set. Issue logged but email not sent.');
+    return new Response(JSON.stringify({ ok: true, sent: false, warning: 'no_email_config' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// Helper to send email via external API (e.g. Google Apps Script Bridge)
+async function sendEmail(env, to, subject, body) {
+  if (!env.EMAIL_API_URL) throw new Error('EMAIL_API_URL not configured');
+
+  const resp = await fetch(env.EMAIL_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: to,
+      subject: subject,
+      body: body,
+    }),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Email API failed (${resp.status}): ${text}`);
+  }
 }

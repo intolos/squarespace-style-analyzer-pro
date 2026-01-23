@@ -38,11 +38,11 @@ export const ResultsManager = {
   ): { merged: ReportData; alreadyAnalyzed: boolean } {
     if (!accumulatedResults) {
       const merged = { ...newResults };
-      merged.metadata.pagesAnalyzed = [this.normalizePath(newResults.metadata.pathname)];
+      merged.metadata.pagesAnalyzed = [this.normalizePath(newResults.metadata.pathname || '')];
       return { merged, alreadyAnalyzed: false };
     }
 
-    const normalizedNewPath = this.normalizePath(newResults.metadata.pathname);
+    const normalizedNewPath = this.normalizePath(newResults.metadata.pathname || '');
 
     if (
       accumulatedResults.metadata.pagesAnalyzed &&
@@ -56,6 +56,9 @@ export const ResultsManager = {
 
     // Merge site styles
     if (newResults.siteStyles) {
+      if (!accumulatedResults.siteStyles) {
+        accumulatedResults.siteStyles = {};
+      }
       for (const style in newResults.siteStyles) {
         const styleObj = newResults.siteStyles[style];
         if (!styleObj) continue;
@@ -70,12 +73,11 @@ export const ResultsManager = {
             locations: [...styleObj.locations],
           };
         } else {
-          if (!accumulatedResults.siteStyles[style].locations) {
-            accumulatedResults.siteStyles[style].locations = [];
+          const accStyle = accumulatedResults.siteStyles[style];
+          if (!accStyle.locations) {
+            accStyle.locations = [];
           }
-          accumulatedResults.siteStyles[style].locations = accumulatedResults.siteStyles[
-            style
-          ].locations.concat(styleObj.locations);
+          accStyle.locations = accStyle.locations.concat(styleObj.locations);
         }
       }
     }
@@ -145,18 +147,22 @@ export const ResultsManager = {
     // Merge color palette
     if (!accumulatedResults.colorPalette) {
       accumulatedResults.colorPalette = newResults.colorPalette;
-    } else {
+    } else if (newResults.colorPalette) {
       const allColors = new Set(
-        accumulatedResults.colorPalette.all.concat(newResults.colorPalette.all)
+        (accumulatedResults.colorPalette.all || []).concat(newResults.colorPalette.all || [])
       );
       const bgColors = new Set(
-        accumulatedResults.colorPalette.backgrounds.concat(newResults.colorPalette.backgrounds)
+        (accumulatedResults.colorPalette.backgrounds || []).concat(
+          newResults.colorPalette.backgrounds || []
+        )
       );
       const textColors = new Set(
-        accumulatedResults.colorPalette.text.concat(newResults.colorPalette.text)
+        (accumulatedResults.colorPalette.text || []).concat(newResults.colorPalette.text || [])
       );
       const borderColors = new Set(
-        accumulatedResults.colorPalette.borders.concat(newResults.colorPalette.borders)
+        (accumulatedResults.colorPalette.borders || []).concat(
+          newResults.colorPalette.borders || []
+        )
       );
 
       accumulatedResults.colorPalette.all = Array.from(allColors);
@@ -254,18 +260,27 @@ export const ResultsManager = {
     }
 
     // Merge quality checks
-    for (const check in newResults.qualityChecks) {
-      if (!accumulatedResults.qualityChecks[check]) {
-        accumulatedResults.qualityChecks[check] = [];
+    if (newResults.qualityChecks) {
+      if (!accumulatedResults.qualityChecks) {
+        accumulatedResults.qualityChecks = {};
       }
-      const newCheckData = newResults.qualityChecks[check] || [];
-      accumulatedResults.qualityChecks[check] =
-        accumulatedResults.qualityChecks[check].concat(newCheckData);
+      for (const check in newResults.qualityChecks) {
+        if (!accumulatedResults.qualityChecks[check]) {
+          accumulatedResults.qualityChecks[check] = [];
+        }
+        const newCheckData = newResults.qualityChecks[check] || [];
+        accumulatedResults.qualityChecks[check] = (
+          accumulatedResults.qualityChecks[check] || []
+        ).concat(newCheckData);
+      }
     }
 
     // Add page to analyzed list
+    if (!accumulatedResults.metadata.pagesAnalyzed) {
+      accumulatedResults.metadata.pagesAnalyzed = [];
+    }
     accumulatedResults.metadata.pagesAnalyzed.push(
-      this.normalizePath(newResults.metadata.pathname)
+      this.normalizePath(newResults.metadata.pathname || '')
     );
 
     return { merged: accumulatedResults, alreadyAnalyzed: false };

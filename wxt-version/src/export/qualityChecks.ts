@@ -444,6 +444,20 @@ export function calculateQualityChecks(
     const displayedIssues = mobileIssues.slice(0, 5);
     const hasMoreIssues = mobileIssues.length > 5;
 
+    const details = displayedIssues.map((issue: any) => ({
+      url: '',
+      page: issue.navigationName || 'Unknown',
+      description: issue.title || issue.description || 'Mobile Issue',
+    }));
+
+    if (mobileIssues.length > 0) {
+      details.push({
+        url: '',
+        page: '',
+        description: '<em>See Mobile Usability report for details.</em>',
+      });
+    }
+
     checks.push({
       passed: !hasMobileIssues,
       message:
@@ -452,11 +466,7 @@ export function calculateQualityChecks(
           : hasMobileIssues
             ? `Mobile Usability issues found (${mobileErrors.length} errors, ${mobileWarnings.length} warnings)${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} issues. Click the Mobile Report button to export the full report.` : ''}`
             : `Mobile Usability warnings found (${mobileWarnings.length})${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} warnings. Click the Mobile Report button to export the full report.` : ''}`,
-      details: displayedIssues.map((issue: any) => ({
-        url: issue.url,
-        page: issue.navigationName || 'Unknown',
-        description: issue.title || issue.description || 'Mobile Issue', // Placeholder format
-      })),
+      details: details,
     });
 
     if (!hasMobileIssues) passedCount++;

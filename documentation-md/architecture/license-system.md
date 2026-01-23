@@ -16,6 +16,7 @@ The License System is a robust "Three-Legged" architecture connecting the Chrome
   - `entrypoints/popup/main.ts`: UI Controller.
 - **Responsibility**: It never talks to Stripe directly. It only talks to the **Worker**.
 - **Priority Logic**: The extension manually checks for **Lifetime** access before Yearly access. This prevents a user who has both (or a legacy Yearly sub) from being incorrectly labeled as "Yearly" in the UI.
+- **Stricter Lifetime Check**: As of 2026-01-23, the extension strictly validates the specialized **Lifetime Product ID**. It no longer relies on a fallback check for a missing `expires_at` date, which could cause false entries if Yearly subscription data was incomplete.
 
 ### 2. The Cloudflare Worker (The Brain)
 
@@ -45,11 +46,11 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 
 ### 🥇 Priority 1: Customer Metadata ("The Golden Ticket")
 
-- **Check**: Look for `is_lifetime: 'true'` on the Stripe **Customer Object** itself.
-- **Check (Yearly Fallback)**: Look for `is_yearly: 'true'` AND product-specific access flags (`access_squarespace` or `access_website`).
-- **Why**: This is the fastest and most robust check. It survives session archiving, subscription deletion, and history limits.
-- **How it gets there**: The **Webhook** automatically "Stamps" these onto the customer immediately after purchase (see _Auto-Stamping_ below).
-- **Expiration Handling**: `is_yearly` is reset to `false` automatically by the webhook if a subscription is deleted or a payment fails.
+- **Check (Lifetime FIRST)**: Look for `is_lifetime: 'true'` on the Stripe **Customer Object**.
+  - **Rationale**: Lifetime is the "superior" status. If true, the system **STOPS** immediately and returns a Lifetime record.
+- **Check (Yearly Fallback)**: If `is_lifetime` is false, check for `is_yearly: 'true'` AND product-specific access flags.
+- **Why**: This is the fastest and most robust check. It survives session archiving and history limits.
+- **How it gets there**: The **Webhook** automatically "Stamps" these onto the customer immediately after purchase.
 
 ### 🥈 Priority 2: Lifetime Checkout Sessions
 
@@ -63,16 +64,36 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 ### 4️⃣ Priority 4: Yearly Subscriptions
 
 - **Check**: Look for `active` subscriptions.
-- **Result**: Returns a "Yearly" license (with an expiration date), unlike the "Lifetime" license (which returns `expires_at: null`).
+- **Result**: Returns a "Yearly" license (with an expiration date).
 
 ---
 
-## ✅ Priority Enforcement (Frontend vs Backend)
+## 🔄 Lifecycle Scenarios
 
-| Component     | Priority Execution                                        | Rationale                                                                                                       |
-| :------------ | :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| **Worker**    | Lifetime (Metadata) → Lifetime (Sessions) → Yearly (Subs) | Efficiency & Source of Truth. Stamped metadata is the fastest check.                                            |
-| **Extension** | `CHECK_LIFETIME` → `CHECK_YEARLY`                         | **UI Correctness**. Ensures a user with an active Yearly sub but a new Lifetime purchase is labeled "Lifetime". |
+### 1. First Purchase
+
+- User completes checkout.
+- Webhook stamps Customer with `is_lifetime` or `is_yearly`.
+- Webhook stamps `original_purchase_extension` and `original_purchase_type` (first purchase only).
+- Extension receives success during polling or next "Check Status".
+
+### 2. Yearly Renewal (Automatic or Manual)
+
+- Stripe extends the subscription.
+- Webhook (invoice.payment_succeeded) ensures `is_yearly` remains `true`.
+- Extension background check (24h) updates local storage with new expiration date.
+
+### 3. Subscription Expiration
+
+- Stripe cancels subscription.
+- Webhook (customer.subscription.deleted) resets `is_yearly` to `false`.
+- Extension background check detects invalid license and notifies user.
+
+### 4. Yearly to Lifetime Upgrade
+
+- User with active yearly sub purchases lifetime.
+- Webhook sets `is_lifetime: true`.
+- **Note**: `is_yearly` may still be `true` until the sub expires, but Priority 1 check hits `is_lifetime` first and **STOPS**, ensuring the user immediately sees Lifetime status.
 
 ---
 
@@ -80,19 +101,46 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 
 To prevent "Missing Session" bugs and ensure data consistency, the system includes an automated feedback loop:
 
-- **Worker Buys Lifetime or Yearly Access** (Filling in fields in Checkout).
-
-2.  **Stripe** fires a `checkout.session.completed` webhook.
-3.  **Worker** receives the webhook and **extracts naming data** from custom fields.
-4.  **Worker** calls Stripe API back to update the Customer Object:
+1.  **Stripe** fires a `checkout.session.completed` webhook.
+2.  **Worker** receives the webhook and **extracts naming data** from custom fields.
+3.  **Worker** calls Stripe API back to update the Customer Object:
     - Sets `metadata[is_lifetime]: true` (if Lifetime).
     - Sets `metadata[is_yearly]: true` (if Yearly).
-    - Sets `metadata[access_squarespace]: true` (if SQS product).
-    - Sets `metadata[access_website]: true` (if Generic product).
-    - Sets `name` to `First + Last Name`.
-    - Sets `metadata[business_name]` if provided.
-5.  **Result**: The user is permanently (or until cancellation) marked with granular access flags. Future checks hit **Priority 1** instantly.
-6.  **Cleanup (Webhook Trigger)**: If a `customer.subscription.deleted` or `invoice.payment_failed` event is received, the worker resets `is_yearly` to `false`.
+    - Sets `metadata[access_squarespace]: true`.
+    - Sets `metadata[access_website]: true`.
+    - Sets `metadata[original_purchase_extension]` (If not already set).
+    - Sets `metadata[original_purchase_type]` (If not already set).
+
+---
+
+## � Background License Verification (24-Hour Cycle)
+
+The extension automatically verifies stored licenses in the background to detect expirations without requiring user action.
+
+### How It Works
+
+1. **Trigger**: Every time the popup opens, `verifyStoredLicenseInBackground()` is called (`main.ts` line 54).
+2. **Frequency Check**: The function checks if 24+ hours have passed since `lastLicenseCheck`.
+3. **Skip if Recent**: If checked within the last 24 hours, verification is skipped to avoid excessive API calls.
+4. **Verification**: If 24+ hours have passed, it calls `checkLicense()` to verify with the Worker/Stripe.
+5. **Update Status**:
+   - **Valid**: Updates `isPremium: true`, `licenseData`, and `lastLicenseCheck`.
+   - **Invalid/Expired**: Sets `isPremium: false` and shows a notification to the user.
+
+### User Notification on Expiration
+
+When a yearly subscription expires and the background check detects it:
+
+- **Notification**: A Chrome notification is displayed with:
+  - Title: "Premium Subscription Expired"
+  - Message: Instructions to renew or verify license
+- **One-Time Alert**: The `licenseExpiredNotificationShown` flag prevents duplicate notifications.
+- **Reset on Renewal**: When the user successfully renews, this flag is cleared so they can be notified again if it expires in the future.
+
+### Code Location
+
+- **Background Verification**: `src/managers/licenseManager.ts` lines 166-210
+- **Notification Logic**: `src/managers/licenseManager.ts` lines 190-209
 
 ---
 
@@ -110,3 +158,17 @@ You can diagnose any user by visiting the Worker URL directly in your browser wi
 - `STRIPE_SECRET`: Live Secret Key (`sk_live_...`)
 - `STRIPE_WEBHOOK_SECRET`: Signing Secret (`whsec_...`) matching the endpoint.
 - `DEFAULT_PRODUCT_ID`: ID of the extension (e.g., `squarespace_extension`).
+
+---
+
+## 🔗 Passthrough Architecture (Fixed 2026-01-23)
+
+The client sends `extension_type` and `purchase_type` directly in the checkout request. The worker stores these in session metadata, and the webhook reads them to stamp Customer records.
+
+**Flow:**
+
+1. **Client** (`licenseManager.ts`) → Sends `extension_type: 'squarespace' | 'generic'` and `purchase_type: 'lifetime' | 'yearly'`
+2. **Worker** (`handleCreateCheckout`) → Stores in `metadata[extension_type]` and `metadata[purchase_type]`
+3. **Webhook** (`checkout.session.completed`) → Reads from `session.metadata.extension_type` and stamps Customer
+
+This design keeps Product IDs defined in **one place only** (`platform.ts`) and eliminates the need for Product ID environment variables in Cloudflare.

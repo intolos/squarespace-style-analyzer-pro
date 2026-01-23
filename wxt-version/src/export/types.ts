@@ -5,6 +5,25 @@ export interface AccumulatedResults {
     domain: string;
     title?: string;
     description?: string;
+    pathname?: string;
+    pagesAnalyzed?: string[];
+    url?: string;
+  };
+  siteStyles?: Record<string, { locations: any[] }>;
+  colorPalette?: {
+    all: string[];
+    backgrounds: string[];
+    text: string[];
+    borders: string[];
+  };
+  images?: any[];
+  mobileIssues?: {
+    issues?: any[];
+    viewportMeta?: {
+      exists: boolean;
+      content: string | null;
+      isProper: boolean;
+    };
   };
   colorData: ColorData;
   devToolsColorSummary?: {
@@ -27,13 +46,11 @@ export interface AccumulatedResults {
   };
   headings: Record<string, { locations: Array<{ styleDefinition?: string }> }>;
   paragraphs: Record<string, { locations: Array<{ styleDefinition?: string }> }>;
-  buttons: Record<string, { locations: Array<{ text: string; styleDefinition?: string }> }>;
+  buttons: Record<string, { locations: Array<{ text?: string; styleDefinition?: string }> }>;
   qualityChecks?: {
     missingAltText?: any[];
     genericImageNames?: any[];
-  };
-  mobileIssues?: {
-    issues?: any[];
+    [key: string]: any[] | undefined;
   };
   domainAnalysis?: boolean;
   failedPages?: {

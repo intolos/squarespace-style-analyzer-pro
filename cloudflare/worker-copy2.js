@@ -112,14 +112,6 @@ async function handleCreateCheckout(request, env) {
   // Add App Group to safely group SQS and Generic versions together
   // This allows future logic to strictly validate cross-product access
   params.append('metadata[app_group]', 'style_analyzer');
-  // IMPORTANT: Client sends extension_type and purchase_type directly so webhook can
-  // stamp Customer metadata without needing Product ID environment variables. Fixed 2026-01-23.
-  if (body.extension_type) {
-    params.append('metadata[extension_type]', body.extension_type);
-  }
-  if (body.purchase_type) {
-    params.append('metadata[purchase_type]', body.purchase_type);
-  }
 
   // Only add subscription_data for subscription mode
   if (mode === 'subscription') {
@@ -254,11 +246,6 @@ async function handleRedeemSession(request, env) {
   const record = {
     email,
     product_id: resolvedProductId,
-    // IMPORTANT: Include is_lifetime and is_yearly flags so frontend can correctly
-    // display "Premium Activated - Lifetime" vs "Premium Activated - Yearly".
-    // Bug fixed 2026-01-23: these were missing, causing button to show wrong text.
-    is_lifetime: isLifetime,
-    is_yearly: !isLifetime,
     first_name: firstName,
     last_name: lastName,
     business_name: businessName,
@@ -320,30 +307,17 @@ async function handleCheckEmail(request, env) {
     addLog(`Found ${customers.length} customer records.`);
 
     if (customers.length > 0) {
-      // PRIORITY 1: CUSTOMER METADATA (The Golden Ticket)
-      // IMPORTANT: Check is_lifetime FIRST. If true, STOP immediately.
-      // Only check is_yearly if is_lifetime is false.
-      // This ensures users who upgrade from yearly to lifetime always see "Lifetime" status.
-      // Fixed 2026-01-23.
+      // PRIORITY 1: MANUAL OVERRIDE (Customer Metadata)
+      // Check ALL customers for this flag before anything else
       addLog('PRIORITY 1: Checking Customer Metadata...');
       for (const customer of customers) {
         if (debugMode)
           addLog(`Checking customer ${customer.id} metadata: ${JSON.stringify(customer.metadata)}`);
 
-        // Check is_lifetime FIRST
         if (customer.metadata && String(customer.metadata.is_lifetime).toLowerCase() === 'true') {
-          console.log('Valid Lifetime Validation: Customer Metadata');
+          console.log('Valid Lifetime Validation: Customer Metadata Override');
           addLog('SUCCESS: Found is_lifetime=true in customer metadata.');
           const record = createRecord(email, productId, customer.id, 'lifetime_metadata', now);
-          await cacheRecord(env, record);
-          return jsonResponse({ valid: true, record });
-        }
-
-        // Only check is_yearly if is_lifetime was false
-        if (customer.metadata && String(customer.metadata.is_yearly).toLowerCase() === 'true') {
-          console.log('Valid Yearly Validation: Customer Metadata');
-          addLog('SUCCESS: Found is_yearly=true in customer metadata.');
-          const record = createRecord(email, productId, customer.id, 'yearly_metadata', now);
           await cacheRecord(env, record);
           return jsonResponse({ valid: true, record });
         }
@@ -512,14 +486,9 @@ function createRecord(email, pid, cusId, type, now, sessId, subId, expires) {
   }
   // If isLife is true, exp remains undefined/null (perfect for UI logic)
 
-  // IMPORTANT: Add is_lifetime and is_yearly flags to the returned record.
-  // The client checks these flags directly instead of comparing Product IDs.
-  // Fixed 2026-01-23 to restore variable-based architecture.
   return {
     email,
     product_id: pid,
-    is_lifetime: isLife,
-    is_yearly: !isLife,
     active: true,
     created_at: now,
     expires_at: exp,
@@ -581,66 +550,29 @@ async function handleWebhook(request, env) {
     }
     const fullName = `${firstName} ${lastName}`.trim();
 
-    // IMPORTANT: Auto-stamp Customer metadata for both Lifetime and Yearly purchases.
-    // This ensures Priority 1 checking works instantly and provides marketing analytics.
-    // Fixed 2026-01-23 to restore variable-based architecture.
+    // LIFETIME AUTO-STAMP LOGIC
+    // If this is a lifetime purchase, stamp the Customer object immediately.
+    // This ensures "Priority 1" checking works instantly for this user forever.
     const isLifetime = session.metadata && session.metadata.is_lifetime === 'true';
-    const isYearly = !isLifetime;
-
-    if (session.customer) {
+    if (isLifetime && session.customer) {
       try {
         console.log(
-          `Stamping Customer ${session.customer}: Lifetime=${isLifetime}, Yearly=${isYearly}, Product=${productId}`
+          `Stamping Customer ${session.customer} with is_lifetime=true and name: ${fullName}`
         );
-
-        // Fetch existing customer metadata to check if this is first purchase
-        const customerResp = await fetch(
-          `https://api.stripe.com/v1/customers/${session.customer}`,
-          {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` },
-          }
-        );
-        const customer = await customerResp.json();
-        const existingMeta = customer.metadata || {};
-
         const updateParams = new URLSearchParams();
-
-        // Current status flags (can change over time)
-        updateParams.append('metadata[is_lifetime]', isLifetime ? 'true' : 'false');
-        updateParams.append('metadata[is_yearly]', isYearly ? 'true' : 'false');
-        updateParams.append('metadata[app_group]', 'style_analyzer');
-
-        // Marketing metadata - ONLY stamp on first purchase (never reset)
-        if (!existingMeta.original_purchase_extension) {
-          // IMPORTANT: Read extension_type and purchase_type directly from session metadata
-          // (sent by client) instead of comparing Product IDs. This removes the need for
-          // Product ID environment variables. Fixed 2026-01-23.
-          const extensionType = session.metadata?.extension_type || 'unknown';
-          const purchaseType =
-            session.metadata?.purchase_type || (isLifetime ? 'lifetime' : 'yearly');
-
-          updateParams.append('metadata[original_purchase_extension]', extensionType);
-          updateParams.append('metadata[original_purchase_type]', purchaseType);
-        }
-
-        // Cross-product access flags (buy one extension, get access to both)
-        updateParams.append('metadata[access_squarespace]', 'true');
-        updateParams.append('metadata[access_website]', 'true');
-
-        // Customer name and business name
+        updateParams.append('metadata[is_lifetime]', 'true');
         if (fullName) updateParams.append('name', fullName);
         if (businessName) updateParams.append('metadata[business_name]', businessName);
 
         await fetch(`https://api.stripe.com/v1/customers/${session.customer}`, {
-          method: 'POST',
+          method: 'POST', // Update customer
           headers: {
             Authorization: `Bearer ${env.STRIPE_SECRET}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: updateParams.toString(),
         });
-        console.log('Customer metadata stamped successfully.');
+        console.log('Customer stamped successfully.');
       } catch (err) {
         console.error('Failed to stamp customer metadata:', err);
       }
@@ -724,29 +656,6 @@ async function handleWebhook(request, env) {
         const r = JSON.parse(rec);
         r.active = false;
         await env.LICENSES.put(licenseKey, JSON.stringify(r));
-      }
-
-      // IMPORTANT: Reset is_yearly flag in Customer metadata when subscription expires.
-      // This ensures the Priority 1 check correctly identifies expired subscriptions.
-      // Fixed 2026-01-23.
-      const customerId = obj.customer;
-      if (customerId && event.type !== 'customer.subscription.updated') {
-        try {
-          console.log(`Resetting is_yearly for customer ${customerId} via webhook ${event.type}`);
-          const updateParams = new URLSearchParams();
-          updateParams.append('metadata[is_yearly]', 'false');
-
-          await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${env.STRIPE_SECRET}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: updateParams.toString(),
-          });
-        } catch (err) {
-          console.error('Failed to reset customer metadata via webhook:', err);
-        }
       }
     }
   }
