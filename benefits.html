@@ -161,15 +161,15 @@
     }
 
 	/* Headings: scale proportionally and consistently */
-	h2, .section-title {
+	h2.section-title {
 		font-size: 2.2rem !important;
 	}
 	
-	h2, .section-subtitle {
+	h2.section-subtitle {
 		font-size: 1.7rem !important;
 	}
 	
-	h2, .qc-title {
+	h2.qc-title {
 		font-size: 1.7rem !important;
 	}
 	
@@ -419,6 +419,7 @@
       gap: 40px;
       max-width: 900px;
       margin: 0 auto;
+			margin-top: 40px;
     }
 
     .pricing-card {
@@ -439,7 +440,7 @@
     .pricing-card.featured {
       border-color: #4B68E7;
       box-shadow: 0 10px 30px rgba(102,126,234,0.2);
-      transform: scale(1.05);
+      transform-origin: center bottom;
     }
 
     .pricing-badge {
@@ -599,13 +600,13 @@
   .rainbow {
 		background: linear-gradient(
     90deg,
-    #ff0000,
-    #ff7f00,
-    #ffff00,
-    #00ff00,
-    #0000ff,
-    #4b0082,
-    #8b00ff
+    #ff0000, /* Red */
+    #ff7f00, /* Orange */
+    #ffff00, /* Yellow */
+    #00ff00, /* Green */
+    #00e5ff, /* Cyan (Pops against Blue) */
+    #a29bfe, /* Light Indigo/Lavender */
+    #ff70eb  /* Bright Pink/Magenta (Contrast with Purple) */
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
