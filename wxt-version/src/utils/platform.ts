@@ -19,8 +19,8 @@ export const platformStrings = {
   siteType: isSqs ? 'Squarespace site' : 'website',
   toolsBrand: isSqs ? 'Squarespace Tools' : 'Website Tools',
   benefitsUrl: isSqs
-    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/benefits.html'
-    : 'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/benefits.html',
+    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/'
+    : 'https://intolos.github.io/website-style-analyzer-pro/',
   shareUrl: isSqs
     ? 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi'
     : 'https://chromewebstore.google.com/detail/website-style-analyzer/YOUR_GENERIC_ID_HERE',
@@ -54,13 +54,12 @@ export const platformStrings = {
         productIdLifetime: 'prod_TbiWgdYfr2C63y',
         priceIdLifetime: 'price_1SeV5CAoq9jsK93OBZEQvb2q',
         successUrlYearly:
-          'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
+          'https://intolos.github.io/website-style-analyzer-pro/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
         successUrlLifetime:
-          'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
-        cancelUrl:
-          'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/cancel.html',
+          'https://intolos.github.io/website-style-analyzer-pro/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
+        cancelUrl: 'https://intolos.github.io/website-style-analyzer-pro/cancel.html',
       },
   favicon: isSqs
     ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon32.png'
-    : 'https://intolos.github.io/website-style-analyzer-pro/benefits-generic/icon32.png',
+    : 'https://intolos.github.io/website-style-analyzer-pro/icon32.png',
 };

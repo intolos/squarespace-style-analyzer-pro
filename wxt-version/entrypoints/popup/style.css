@@ -631,9 +631,15 @@ body {
   border-left: 3px solid #667eea;
   margin-bottom: 12px;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   transition: all 0.2s ease;
+}
+
+.use-case-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .use-case-item:hover {
@@ -644,20 +650,17 @@ body {
 .use-case-icon {
   font-size: 1.3rem;
   flex-shrink: 0;
-  margin-top: 2px;
 }
 
-.use-case-content {
-  flex: 1;
-}
+/* .use-case-content removed in favor of full-width flow */
 
-.use-case-content h5 {
+.use-case-item h5 {
   color: #2d3748;
-  margin: 0 0 5px 0;
+  margin: 0;
   font-size: 0.95rem;
 }
 
-.use-case-content p {
+.use-case-item p {
   color: #4a5568;
   margin: 0;
   font-size: 0.85rem;
