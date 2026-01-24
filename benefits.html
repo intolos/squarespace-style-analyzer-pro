@@ -148,7 +148,7 @@
 
     .section-title {
       text-align: center;
-      font-size: 2.0rem;
+      font-size: 2.2rem;
       color: #2d3748;
       margin-bottom: 20px;
     }
@@ -157,8 +157,51 @@
       text-align: center;
       font-size: 1.7rem;
       color: #7A6696;
-      margin-bottom: 60px;
+      margin-bottom: 20px;
     }
+
+	/* Headings: scale proportionally and consistently */
+	h2, .section-title {
+		font-size: 2.2rem !important;
+	}
+	
+	h2, .section-subtitle {
+		font-size: 1.7rem !important;
+	}
+	
+	h2, .qc-title {
+		font-size: 1.7rem !important;
+	}
+	
+	h3 {
+		font-size: 1.4rem !important;
+	}
+	
+	.header-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .header-content {
+    display: flex;
+    flex-direction: row; /* Side-by-side on desktop */
+    align-items: center;
+    text-align: center;
+  }
+
+  .header-logo {
+    height: 5rem;
+    width: auto;
+    margin-right: 15px;
+  }
+
+  .header-title {
+    font-size: 4em;
+    margin: 0;
+    line-height: 1.1;
+  }
 
     .features {
       display: grid;
@@ -771,45 +814,6 @@
 			animation: fadeInDown 1s ease;
   }
 	
-	/* Headings: scale proportionally and consistently */
-	h1, .section-title {
-		font-size: 2.8rem !important;
-	}
-	
-	h2, .qc-title {
-		font-size: 2.2rem !important;
-	}
-	
-	h3 {
-		font-size: 1.7rem !important;
-	}
-	
-	.header-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    padding: 20px;
-  }
-
-  .header-content {
-    display: flex;
-    flex-direction: row; /* Side-by-side on desktop */
-    align-items: center;
-    text-align: center;
-  }
-
-  .header-logo {
-    height: 5rem;
-    width: auto;
-    margin-right: 15px;
-  }
-
-  .header-title {
-    font-size: 4em;
-    margin: 0;
-    line-height: 1.1;
-  }
-	
 	/* Mobile Responsive */
 	/* Only enable horizontal scrolling on mobile where sticky headers are less critical */
 	@media (max-width: 768px) {
@@ -828,16 +832,20 @@
 		.section-title, .qc-title {
 			font-size: 1.5rem;
 		}
+		
+		h2 .section-title, .qc-title {
+			font-size: 1.5rem;
+		}
 
     .section-subtitle {
       font-size: 1.3rem;
     }
 
-    .section-subtitle, h2 {
+    h2 .section-subtitle {
       font-size: 1.3rem;
     }
 
-    .section-subtitle, h3 {
+    h3 .section-subtitle {
       font-size: 1.2rem;
     }
 
@@ -885,8 +893,7 @@
 </head>
 <body>
   <div class="hero" id="topofpage">
-    <div class="hero-content">
-			
+    <div class="hero-content">	
 			<div class="header-container">
 				<div class="header-content">
 					<img src="https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon128.png" alt="Squarespace Style Analyzer Pro" class="header-logo">
@@ -894,7 +901,7 @@
 				</div>
 			</div>
 			
-      <h1 class="rainbow">Professional <strong><em>Design Audit</em></strong> tool for<br />Squarespace websites</h1>
+    <h1 class="rainbow">Professional <strong><em>Design Audit</em></strong> tool for<br />Squarespace websites</h1>
       <p><span class="text-shadow" style="color:#FFFF00;"><strong><em>Bonus: This extension works on all websites.<br />However, it has over 15 Squarespace-specific factors.</em></strong></span><br /><br />
       Ever wonder if your Squarespace site has consistent styling across all pages?<br />Critical <strong><em>Quality Checks using over 70 Aspects of Design</em></strong> for quality assurance will let you know. Immediately analyze, and compare across all pages, styles of headings, paragraphs, buttons, all typography, and color palette for <strong><em>consistency</em></strong>.  And much more.<br /><br />
       Up to 12 beautiful, clear, and understandable reports from multiple viewpoints present all the details of the Quality Checks depending on what issues are found. Reports include specific links to "errors" and location mapping to allow quick and easy fixes. Analyze individual pages or entire domains.<br /><br />
@@ -911,7 +918,7 @@
   <!-- BEGIN Features -->
   <div class="container" id="features">
     <h2 class="section-title">Powerful Design Audit Features</h2>
-    <p class="section-subtitle">Everything you need to create a Design Audit and document Squarespace site styles and colors for consistency and much more</p>
+    <h2 class="section-subtitle">Everything you need to create a Design Audit and document Squarespace site styles and colors for consistency and much more</h2>
     
 		<div class="features">
 			<div class="feature">
@@ -1007,18 +1014,6 @@
       </tr>
     </thead>
     <tbody>
-
-      <!-- Installs -->
-<!--      <tr>
-        <td>Installs (Approximate)</td>
-        <td>Approximate installs from the Chrome Web Store according to Gemini AI, December 2025.</td>
-        <td></td>
-        <td>3,000,000+</td>
-        <td>2,000,000+</td>
-        <td>1,000,000+</td>
-        <td>1,000,000+</td>
-        <td>800,000+</td>
-      </tr>   -->
 
       <!-- Style Consistency -->
       <tr>
@@ -1163,15 +1158,23 @@ In contrast, our report shows a listing of only the images with missing alt text
   <div class="use-cases" id="use">
     <div class="container">
       <h2 class="section-title">Why Would You Use<br />Squarespace Style Analyzer Pro?</h2>
-      <p class="section-subtitle">Real-world Scenarios Where Our Design Audit Tool<br />Saves Time and Ensures Consistency and Quality</p>
+      <h2 class="section-subtitle">Real-world Scenarios Where Our Design Audit Tool<br />Saves Time and Ensures Consistency and Quality</h2>
       
       <div class="use-cases-list">
+      
+        <div class="use-case">
+          <div class="use-case-icon">🚀</div>
+          <div class="use-case-content">
+            <h3>Prospecting and Onboarding New Clients with Existing Websites</h3>
+            <p>This browser extension is the fastest process to receive immediate insights of the issues with an existing website. Use it during your prospecting for new clients. Use it while onboarding new clients to ensure they're following their own brand guidelines and design standards.</p>
+          </div>
+        </div>
+              
         <div class="use-case">
           <div class="use-case-icon">✅</div>
           <div class="use-case-content">
             <h3>Check Your Own Work</h3>
             <p>Ensure your site follows best practices and brand guidelines before launch and after updates. Check your sites much, much quicker with far more detailed analyses than by checking within the Squarespace developer platform! </p>
-<!--            <p class="use-case-note">📍 Note: When we were testing, we found a website that forgot to use a H1 Heading on several pages! And another that used H1 and H3 but no H2! And another that used numerous H1 headings on a page! And another that left out Image Alt Text descriptions on numerous images! Plus you'll find many other types of oversights with this extension's analyses!</p>  -->
           </div>
         </div>
 
@@ -1180,14 +1183,6 @@ In contrast, our report shows a listing of only the images with missing alt text
           <div class="use-case-content">
             <h3>Verify Contractor & Employee Work</h3>
             <p>Check the work of contractors and employees creating websites for you. Ensure they're following your brand guidelines and design standards.</p>
-          </div>
-        </div>
-
-        <div class="use-case">
-          <div class="use-case-icon">🚀</div>
-          <div class="use-case-content">
-            <h3>Prospecting and Onboarding New Clients with Existing Websites</h3>
-            <p>This browser extension is the fastest process to receive immediate insights of the issues with an existing website. Use it during your prospecting for new clients. Use it while onboarding new clients to ensure they're following their own brand guidelines and design standards.</p>
           </div>
         </div>
 
@@ -1230,10 +1225,10 @@ In contrast, our report shows a listing of only the images with missing alt text
 </div> 
 <!-- END Why Would You Use Squarespace Style Analyzer Pro? -->
 
-<!-- BEGIN Quality Checks Benefits -->
+<!-- BEGIN WHY DO YOU NEED THESE QUALITY CHECKS -->
   <div class="container" style="max-width: 1200px; margin: 0 auto;" id="benefits">
   <div class="qc-wrapper">
-  <h2 class="qc-title">Why Do You Need These Quality Checks using<br>Over 70 Aspects of Design?</h2>
+  <h2 class="section-title">Why Do You Need These Quality Checks using<br>Over 70 Aspects of Design?</h2>
 <div class="qc-table-wrapper">
   <table class="qc-table">
     <thead>
@@ -1331,22 +1326,23 @@ In contrast, our report shows a listing of only the images with missing alt text
   </div>
 </div>
 </div>
-  <!-- End Quality Checks Benefits -->
+<!-- END WHY DO YOU NEED THESE QUALITY CHECKS -->
 
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
         <a href="https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
       	</div>
-
-<!-- BEGIN WHY Our DESIGN AUDIT -->
+			<br />
+			
+<!-- BEGIN WHY OUR DESIGN AUDIT -->
 <div class="container" style="max-width: 1200px; margin: 0 auto;" id="whydesignaudit">
 
   <h2 class="section-title">Why Our Design Audit?</h2>
 
-  <p class="section-subtitle" style="margin-bottom: 40px; color:#000000;">Our Design Audit Verifies Actual Visual Consistency versus What Is Specified!<br />
-    See if Your Website Meets Your Brand Guidelines and Accessibility.<br />
+  <h2 class="section-subtitle">Our Design Audit Verifies Actual Visual Consistency versus What Is Specified!<br />
+    Does Your Website Meet Your Brand Guidelines and Accessibility?<br />
     Does Your Website Achieve Good Design Principles?
-  </p>
+  </h2>
       
   <h3 style="color:#4B68E7;">Our Design Audit transforms an analysis of the styling of your website from a “here's what we found" data dump to an actionable “here's what needs attention and exactly where."
   </h3><br />
@@ -1369,13 +1365,14 @@ In contrast, our report shows a listing of only the images with missing alt text
   <h3 style="color: #4B68E7; margin-bottom: 22px;">The above are just a few of the differences between receiving data and asking “what do we do with this?” and our Design Audit that intelligently discovers brand inconsistencies and immediately presents professionally designed reports that give you actionable next steps.</h3>
 
 </div>
-<!-- END WHY Our DESIGN AUDIT -->
+<!-- END WHY OUR DESIGN AUDIT -->
 
+<!-- BEGIN HOW IT WORKS -->
   <div class="how-it-works" id="how">
     <div class="container">
       <h2 class="section-title">How It Works</h2>
-      <p class="section-subtitle">Get started in minutes</p>
-      
+      <H2 class="section-subtitle">Get started in minutes</H2>
+      <br />
       <div class="steps">
         <div class="step">
           <div class="step-number">1</div>
@@ -1401,6 +1398,8 @@ In contrast, our report shows a listing of only the images with missing alt text
           <p>Download beautiful HTML reports or CSV files. Reveal your results in minutes. Save 5, 10, 15, or more hours compared to manual analysis where you're likely to miss many of the inconsistencies. Share with clients or save for documentation.</p>
         </div>
       </div>
+<!-- END HOW IT WORKS -->
+
     </div>
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
@@ -1408,10 +1407,11 @@ In contrast, our report shows a listing of only the images with missing alt text
       	</div>
   </div>
 
+<!-- BEGIN PRICING -->
   <div class="pricing" id="pricing">
     <div class="container">
       <h2 class="section-title">Simple, Transparent Pricing</h2>
-      <p class="section-subtitle">Start free, upgrade when you need more</p>
+      <h2 class="section-subtitle">Start free, upgrade when you need more</h2>
       
       <div class="pricing-cards">
         <div class="pricing-card">
@@ -1467,12 +1467,16 @@ In contrast, our report shows a listing of only the images with missing alt text
         </div>
       </div>
     </div>
+  </div>
+<!-- END PRICING -->
+    
       	<div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
         <a href="https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi" target=”_blank” class="btn">Add to Chrome - Start Free Trial</a>
       	</div>
-  </div>
   
+  
+<!-- BEGIN TESTIMONIALS -->
 <!--
 <script>
 const API_BASE = "https://squarespace-style-analyzer-pro.eamass.workers.dev";
@@ -1534,9 +1538,11 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
     </div>
   </div>
 -->
+<!-- END TESTIMONIALS -->
 
+<!-- BEGIN PERMISSIONS -->
   <div class="container" style="max-width: 900px; margin: 0 auto;" id="permissions">
-  <p><center><h3 style="color:#4B68E7;">A Note About Permissions</h3></center>
+  <center><h3 style="color:#4B68E7;">A Note About Permissions</h3></center>
     <p>There are two permissions in particular for which we want to give you ease.<br />
 				<ul style="padding-left: 40px;">
 					<li>Access the page debugger backend</li>
@@ -1550,8 +1556,9 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
 					<li>No data persists beyond the current analysis session</li>
 				</ul>
     </p>
-  </p><br />
+		<br />
   </div>
+<!-- END PERMISSIONS -->
 
   <div class="container" style="max-width: 1200px; margin: 0 auto;">
   <p><center><h3 style="color:#4B68E7;">Squarespace Style Analyzer Pro: Automated Design and Brand Consistency Audit</h3>
