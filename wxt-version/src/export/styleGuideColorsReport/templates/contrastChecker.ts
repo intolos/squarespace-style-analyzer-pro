@@ -126,7 +126,9 @@ export const CONTRAST_CHECKER_HTML = `<!DOCTYPE html>
  * Function to open the contrast checker in a popup window
  */
 export function getContrastCheckerScript(): string {
-  return `
+  const escapedHTML = JSON.stringify(CONTRAST_CHECKER_HTML).replace(/<\/script>/g, '<\\/script>');
+  return (
+    `
     <script>
       function showContrastChecker() {
         const width = 450;
@@ -143,9 +145,12 @@ export function getContrastCheckerScript(): string {
         
         const popupDoc = popup.document;
         popupDoc.open();
-        popupDoc.write(\`${CONTRAST_CHECKER_HTML.replace(/`/g, '\\`')}\`);
+        popupDoc.write(` +
+    escapedHTML +
+    `);
         popupDoc.close();
       }
     </script>
-  `;
+  `
+  );
 }
