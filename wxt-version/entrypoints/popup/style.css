@@ -682,10 +682,18 @@ body {
   font-size: 0.95rem;
 }
 
-.page-selection-modal {
+/* Unified Modal Container Styling */
+.modal-container {
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  padding: 20px 20px 40px 20px; /* Generous bottom padding to prevent button clipping */
+  box-sizing: border-box;
+  max-height: 560px; /* Ensure tall modals don't go off-screen in the 600px popup */
+  overflow-y: auto;
+}
+
+.page-selection-modal {
   margin: 15px 0;
   border: 2px solid #667eea;
   display: none;
@@ -905,19 +913,15 @@ body.premium-active #statusSection {
 }
 
 .custom-modal {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
   max-width: 340px;
   width: 90%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .custom-modal-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 45px 0 15px 0; /* Clean, generous spacing as requested */
+  padding: 22px 0 15px 0; /* Reduced from 45px per user request to decrease top margin */
   width: 100%;
 }
 
@@ -941,6 +945,7 @@ body.premium-active #statusSection {
 
 .custom-modal input {
   width: 100%;
+  box-sizing: border-box; /* Prevent padding from making the input overflow */
   padding: 12px;
   font-size: 1rem;
   border: 2px solid #e2e8f0;

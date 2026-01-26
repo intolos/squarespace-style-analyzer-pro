@@ -139,10 +139,11 @@ function generateQualityScorecard(score: number, checks: QualityCheckResult['che
   html += `
       </div>
       <br />
-      <div style="background: #667EEA; padding: 10px; margin-bottom: 20px; border-radius: 8px; color: white;">
-        <div style="font-size: 0.9rem; text-align: left;">
+      <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
+        <div id="note-text" class="note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
           NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization. We also want you to know that it is much easier to architect and create website code than to audit and analyze it afterwards. This is due to deciphering the wide variety of disparate coding styles, the inherent complexity of tracing deep nesting layers, navigating the intricate web of parent-child dependencies that evolve over time, and more. Our coding in this extension includes numerous situations to catch all possibilities for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.
         </div>
+        <button id="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
       </div>
     </div>
   `;
@@ -227,6 +228,8 @@ export function exportAnalysisReport(data: ReportData): void {
           .accordion-item { padding: 10px; border-bottom: 1px solid #edf2f7; }
           .accordion-item:last-child { border-bottom: none; }
           .accordion-item-number { color: #cbd5e0; font-weight: bold; font-size: 0.9rem; min-width: 30px; }
+          
+          .note-expanded { -webkit-line-clamp: unset !important; display: block !important; }
           
           footer { text-align: center; color: #718096; font-size: 0.9rem; padding: 40px 0; margin-top: 60px; border-top: 1px solid #edf2f7; }
           
@@ -331,6 +334,16 @@ export function exportAnalysisReport(data: ReportData): void {
                 container.classList.toggle('active');
               });
             });
+
+            // NOTE section toggle logic
+            const noteToggle = document.getElementById('note-toggle');
+            const noteText = document.getElementById('note-text');
+            if (noteToggle && noteText) {
+              noteToggle.addEventListener('click', function() {
+                const isExpanded = noteText.classList.toggle('note-expanded');
+                noteToggle.textContent = isExpanded ? 'Read Less' : 'Read More';
+              });
+            }
           });
         </script>
       </body>
