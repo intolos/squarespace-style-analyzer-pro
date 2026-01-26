@@ -64,14 +64,17 @@ export const DomainAnalysisUI = {
         if (cancelDomainBtn) cancelDomainBtn.style.display = 'block';
         if (siteInfo) siteInfo.style.display = 'none';
 
-        this.updateDomainProgress(data.domainAnalysisProgress, data.isPremium);
+        this.updateDomainProgress(
+          (data.domainAnalysisProgress as any) || { analyzed: 0, total: 0 },
+          (data.isPremium as boolean) || false
+        );
         this.startProgressPolling(analyzer); // Pass check for completion inside polling or start separate
         this.checkForCompletion(
           analyzer,
           currentDomain,
           analyzer.isNewDomain,
-          data.domainAnalysisMobileOnly || false,
-          data.domainAnalysisUseMobileViewport || false
+          (data.domainAnalysisMobileOnly as boolean) || false,
+          (data.domainAnalysisUseMobileViewport as boolean) || false
         );
       }
     }
@@ -88,7 +91,7 @@ export const DomainAnalysisUI = {
     if (!tabs.length || !tabs[0].url) return;
 
     const tab = tabs[0];
-    const currentDomain = new URL(tab.url).hostname.replace('www.', '');
+    const currentDomain = new URL(tab.url || '').hostname.replace('www.', '');
     analyzer.currentDomain = currentDomain;
     analyzer.isNewDomain = !analyzer.analyzedDomains.includes(currentDomain);
 
@@ -363,7 +366,10 @@ export const DomainAnalysisUI = {
     this.progressInterval = setInterval(async () => {
       const data = await chrome.storage.local.get(['domainAnalysisProgress']);
       if (data.domainAnalysisProgress) {
-        this.updateDomainProgress(data.domainAnalysisProgress, isPremium);
+        this.updateDomainProgress(
+          (data.domainAnalysisProgress as any) || { analyzed: 0, total: 0 },
+          (isPremium as boolean) || false
+        );
       }
     }, 1000);
   },
@@ -412,7 +418,10 @@ export const DomainAnalysisUI = {
       ]);
 
       if (data.domainAnalysisError) {
-        this.handleDomainAnalysisError(analyzer, data.domainAnalysisError);
+        this.handleDomainAnalysisError(
+          analyzer,
+          (data.domainAnalysisError as string) || 'Unknown error'
+        );
       } else if (data.domainAnalysisComplete) {
         const resultsData = await chrome.storage.local.get(['domainAnalysisResults']);
         this.handleDomainAnalysisComplete(
@@ -644,8 +653,8 @@ export const DomainAnalysisUI = {
     const storageData = await chrome.storage.local.get(['domainAnalysisResults']);
     const partialResults = storageData.domainAnalysisResults;
 
-    if (partialResults && partialResults.data) {
-      analyzer.accumulatedResults = partialResults.data;
+    if (partialResults && (partialResults as any).data) {
+      analyzer.accumulatedResults = (partialResults as any).data;
       await analyzer.saveAccumulatedResults();
 
       const resultsSection = document.getElementById('resultsSection');
@@ -655,7 +664,9 @@ export const DomainAnalysisUI = {
 
       analyzer.displayResults();
 
-      const pagesAnalyzed = partialResults.stats ? partialResults.stats.successfulPages : 0;
+      const pagesAnalyzed = (partialResults as any).stats
+        ? (partialResults as any).stats.successfulPages
+        : 0;
       if (pagesAnalyzed > 0) {
         analyzer.showSuccess(
           `Analysis cancelled. Showing results for ${pagesAnalyzed} page${

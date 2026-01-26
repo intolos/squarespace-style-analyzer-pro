@@ -4,7 +4,7 @@
 import type { ReportData } from './types';
 import { StyleComparisonUtils } from '../utils/styleComparisonUtils';
 import { analyzeColorConsistency } from './styleGuideColorsReport/analysis';
-import { exportMobileReport } from './mobileReport'; // For formatIssueDescription if needed, or I'll duplicate/move the helper
+import { exportMobileReport, MOBILE_CHECK_TYPES, formatIssueDescription } from './mobileReport'; // For formatIssueDescription if needed, or I'll duplicate/move the helper
 
 // Helper to extract font size
 function extractFontSize(styleDefinition: string | undefined): number | null {
@@ -177,7 +177,7 @@ export function calculateQualityChecks(
       passed: hierarchyCorrect,
       message: hierarchyCorrect
         ? 'Heading hierarchy is correct on all pages'
-        : `${brokenHierarchy.length} heading hierarchy issue(s) found. <a href="#reports-nav" style="color: #667eea;">See Aggregated Styles Report below.</a>`,
+        : `${brokenHierarchy.length} heading hierarchy issue(s) found`,
       details: hierarchyCorrect
         ? []
         : brokenHierarchy.map(item => ({
@@ -444,11 +444,38 @@ export function calculateQualityChecks(
     const displayedIssues = mobileIssues.slice(0, 5);
     const hasMoreIssues = mobileIssues.length > 5;
 
-    const details = displayedIssues.map((issue: any) => ({
-      url: '',
-      page: issue.navigationName || 'Unknown',
-      description: issue.title || issue.description || 'Mobile Issue',
-    }));
+    // Aggregate issues by type using the master list
+    const issueCountsByType: Record<string, number> = {};
+    for (const issue of mobileIssues) {
+      const type = issue.type;
+      issueCountsByType[type] = (issueCountsByType[type] || 0) + 1;
+    }
+
+    const details: any[] = [];
+    let distinctTypesFound = 0;
+
+    // Iterate through master list to ensure correct order and labeling
+    for (const checkType of MOBILE_CHECK_TYPES) {
+      const count = issueCountsByType[checkType.type];
+      if (count > 0) {
+        if (distinctTypesFound < 5) {
+          details.push({
+            url: '',
+            page: 'All Pages',
+            description: `${checkType.label} (${count})`, // e.g. "Touch Targets Too Small (3)"
+          });
+        }
+        distinctTypesFound++;
+      }
+    }
+
+    if (distinctTypesFound > 5) {
+      details.push({
+        url: '',
+        page: '',
+        description: `...and ${distinctTypesFound - 5} more issue types.`,
+      });
+    }
 
     if (mobileIssues.length > 0) {
       details.push({
@@ -464,8 +491,8 @@ export function calculateQualityChecks(
         mobileIssues.length === 0
           ? 'Mobile Usability checks passed - no issues detected'
           : hasMobileIssues
-            ? `Mobile Usability issues found (${mobileErrors.length} errors, ${mobileWarnings.length} warnings)${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} issues. Click the Mobile Report button to export the full report.` : ''}`
-            : `Mobile Usability warnings found (${mobileWarnings.length})${hasMoreIssues ? `. Showing first 5 of ${mobileIssues.length} warnings. Click the Mobile Report button to export the full report.` : ''}`,
+            ? `Mobile Usability issues found (${mobileErrors.length} errors, ${mobileWarnings.length} warnings)`
+            : `Mobile Usability warnings found (${mobileWarnings.length})`,
       details: details,
     });
 

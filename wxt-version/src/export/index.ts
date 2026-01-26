@@ -44,7 +44,7 @@ export class ExportManager {
     }
 
     exportAnalysisReport(analyzer.accumulatedResults);
-    analyzer.showSuccess('✅ Analysis report exported!');
+    analyzer.showSuccess('✅ Audit Reports exported!');
 
     // Also export images report automatically with bulk export
     // Add a delay to avoid browser download collision

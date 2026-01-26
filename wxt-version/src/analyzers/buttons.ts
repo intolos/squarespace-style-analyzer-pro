@@ -142,7 +142,12 @@ export async function analyzeButtons(
     if (!hasHref && !isButton && !hasButtonRole && !hasButtonClass) continue;
 
     // ALWAYS check contrast for all buttons (including nav/header/footer)
-    const styleDefinition = await getStyleDefinition(btn, 'button', colorTracker, colorData);
+    const styleDefinition = await getStyleDefinition(
+      btn as HTMLElement,
+      'button',
+      colorTracker,
+      colorData
+    );
 
     // Only add to button inventory if NOT in nav/header/footer
     if (!isInNav) {

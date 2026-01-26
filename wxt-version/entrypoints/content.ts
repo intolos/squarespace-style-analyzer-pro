@@ -136,7 +136,7 @@ export default defineContentScript({
 
             let element: HTMLElement | null = null;
             try {
-              element = document.querySelector(selector);
+              element = document.querySelector(selector as string);
             } catch (e) {
               continue;
             }

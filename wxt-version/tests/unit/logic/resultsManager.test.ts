@@ -100,7 +100,7 @@ describe('ResultsManager', () => {
       };
 
       const { merged } = ResultsManager.mergeResults(acc as any, newR);
-      expect(merged.mobileIssues?.viewportMeta.exists).toBe(true);
+      expect(merged.mobileIssues?.viewportMeta?.exists).toBe(true);
       expect(merged.mobileIssues?.issues?.length).toBe(1);
     });
   });

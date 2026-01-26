@@ -5,7 +5,7 @@ test.describe('Color Report (@colors)', () => {
   test('should analyze colors and generate a style guide', async ({ context, extensionId }) => {
     // 1. Navigate to a test page in a target tab
     const targetPage = await context.newPage();
-    await targetPage.goto('https://launchhappy.co/guides');
+    await targetPage.goto('http://localhost:3000/mock-site.html');
     await targetPage.waitForLoadState('domcontentloaded');
 
     // 2. Trigger color analysis via the popup in a separate tab

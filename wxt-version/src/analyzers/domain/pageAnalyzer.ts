@@ -229,7 +229,16 @@ export class PageAnalyzer {
           issues: mobileIssues,
         },
         // Empty stubs for required ReportData fields
-        colorData: { colors: {}, contrastPairs: [] },
+        colorData: {
+          colors: {},
+          contrastPairs: [],
+          _processedContrastElements: new Set(),
+          backgroundColors: new Set(),
+          textColors: new Set(),
+          fillColors: new Set(),
+          borderColors: new Set(),
+          allColors: new Set(),
+        },
         themeStyles: {},
         squarespaceThemeStyles: {},
         headings: {},

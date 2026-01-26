@@ -275,7 +275,6 @@ export class DomainAnalyzer {
 
   private mergeResults(results: ReportData[]): ReportData | null {
     if (results.length === 0) return null;
-    if (results.length === 1) return results[0];
 
     let accumulated: ReportData | null = null;
 

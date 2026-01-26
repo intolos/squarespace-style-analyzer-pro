@@ -13,6 +13,16 @@ describe('Quality Checks Logic', () => {
     buttons: {},
     siteStyles: {},
     colorPalette: { all: [], backgrounds: [], text: [], borders: [] },
+    colorData: {
+      colors: {},
+      contrastPairs: [],
+      _processedContrastElements: new Set(),
+      backgroundColors: new Set(),
+      textColors: new Set(),
+      fillColors: new Set(),
+      borderColors: new Set(),
+      allColors: new Set()
+    },
     images: [],
     qualityChecks: {
       missingH1: [],

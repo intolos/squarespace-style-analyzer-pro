@@ -5,8 +5,8 @@ test.describe('Content Report (@content)', () => {
   test('should analyze headings and generate an audit report', async ({ context, extensionId }) => {
     // 1. Navigate to a test page
     const targetPage = await context.newPage();
-    await targetPage.goto('https://launchhappy.co/guides');
-    await targetPage.waitForLoadState('networkidle');
+    await targetPage.goto('http://localhost:3000/mock-site.html');
+    await targetPage.waitForLoadState('domcontentloaded');
 
     // 2. Trigger analysis
     const popupPage = await context.newPage();

@@ -50,6 +50,11 @@ export interface AccumulatedResults {
   qualityChecks?: {
     missingAltText?: any[];
     genericImageNames?: any[];
+    missingH1?: Array<{ url: string; page: string }>;
+    multipleH1?: Array<{ url: string; page: string; count: number }>;
+    brokenHeadingHierarchy?: any[];
+    fontSizeInconsistency?: any[];
+    styleInconsistency?: any[];
     [key: string]: any[] | undefined;
   };
   domainAnalysis?: boolean;

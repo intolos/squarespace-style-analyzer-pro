@@ -102,7 +102,7 @@ export function isIconOrSocialElement(element: Element | null): boolean {
       element.tagName === 'svg' ||
       element.tagName === 'SVG' ||
       element.closest('svg') ||
-      element.ownerSVGElement
+      (element as unknown as SVGElement).ownerSVGElement
     ) {
       const rect = element.getBoundingClientRect();
       if ((rect.width > 0 && rect.width <= 64) || (rect.height > 0 && rect.height <= 64)) {

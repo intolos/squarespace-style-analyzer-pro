@@ -1,4 +1,4 @@
-import { getStyleDefinition } from '../../analyzers/utils';
+import { getStyleDefinition } from '../../analyzers/styleExtractor';
 import { ColorTracker } from '../../utils/colorUtils';
 import { ColorData } from '../../analyzers/colors';
 
@@ -49,7 +49,7 @@ export async function captureSquarespaceThemeStyles(
 
   // Create a wrapper for getStyleDefinition that includes colorTracker and colorData
   const getStyleDefFn = (element: Element, elementType: string) => {
-    return getStyleDefinition(element, elementType, colorTracker, colorData);
+    return getStyleDefinition(element as HTMLElement, elementType, colorTracker, colorData);
   };
 
   // Capture each heading type using most common style

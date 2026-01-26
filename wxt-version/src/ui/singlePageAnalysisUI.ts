@@ -173,7 +173,7 @@ export const SinglePageAnalysisUI = {
 
       if (data.singlePageProgressText) {
         const statusEl = document.getElementById('loadingStatus');
-        if (statusEl) statusEl.textContent = data.singlePageProgressText;
+        if (statusEl) statusEl.textContent = (data.singlePageProgressText as string) || '';
       }
 
       // Start polling for completion
@@ -215,7 +215,7 @@ export const SinglePageAnalysisUI = {
         chrome.storage.local.remove(['singlePageAnalysisStatus', 'singlePageAnalysisError']);
       } else if (data.singlePageAnalysisStatus === 'in-progress' && data.singlePageProgressText) {
         const statusEl = document.getElementById('loadingStatus');
-        if (statusEl) statusEl.textContent = data.singlePageProgressText;
+        if (statusEl) statusEl.textContent = (data.singlePageProgressText as string) || '';
       }
     }, 1000);
   },

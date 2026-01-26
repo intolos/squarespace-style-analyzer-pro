@@ -183,7 +183,7 @@ export function scanAllPageColors(colorData: ColorData): void {
       if (
         element.tagName === 'svg' ||
         element.tagName === 'SVG' ||
-        element.ownerSVGElement ||
+        (element as unknown as SVGElement).ownerSVGElement ||
         element.closest('svg')
       ) {
         const fillColor = computed.fill;

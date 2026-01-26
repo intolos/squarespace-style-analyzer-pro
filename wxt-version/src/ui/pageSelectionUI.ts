@@ -274,8 +274,8 @@ export const PageSelectionUI = {
         if (
           target.tagName === 'INPUT' ||
           target.closest('.section-limit-input') ||
-          target.type === 'checkbox' ||
-          target.type === 'number'
+          (target as HTMLInputElement).type === 'checkbox' ||
+          (target as HTMLInputElement).type === 'number'
         ) {
           return;
         }

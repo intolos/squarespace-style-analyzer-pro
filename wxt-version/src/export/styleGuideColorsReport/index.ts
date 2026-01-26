@@ -29,7 +29,7 @@ export function exportStyleGuideColorsReport(
   data: ReportData,
   filenameBrand: string,
   showSuccess: (msg: string) => void,
-  downloadFile: (content: string, filename: string, mimeType: string) => void
+  downloadFile: (filename: string, content: string, mimeType: string) => void
 ): void {
   if (!data || !data.colorData) {
     alert('No color data available to export.');

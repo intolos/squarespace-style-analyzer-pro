@@ -1,6 +1,6 @@
 import { defineConfig } from 'wxt';
 
-export default defineConfig(env => {
+export default defineConfig(((env: any) => {
   // Robust mode detection from CLI arguments
   const args = process.argv;
   const modeIndex = args.indexOf('--mode');
@@ -34,4 +34,4 @@ export default defineConfig(env => {
       },
     }),
   };
-});
+}) as any);

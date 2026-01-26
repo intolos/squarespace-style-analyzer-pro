@@ -554,7 +554,7 @@ export default defineBackground(() => {
 
     if (!data.pendingSessionId || !data.pendingProductId) return;
 
-    if (Date.now() - (data.licensePollingStartTime || 0) > 300000) {
+    if (Date.now() - ((data.licensePollingStartTime as number) || 0) > 300000) {
       await chrome.storage.local.remove([
         'pendingSessionId',
         'pendingProductId',

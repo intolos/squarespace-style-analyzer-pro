@@ -23,11 +23,11 @@ export const StorageManager = {
     ]);
 
     return {
-      usageCount: data.usageCount || 0,
-      isPremium: data.isPremium || false,
-      userId: data.userId || this.generateUserId(),
-      analyzedDomains: data.analyzedDomains || [],
-      licenseEmail: data.licenseEmail,
+      usageCount: (data.usageCount as number) || 0,
+      isPremium: (data.isPremium as boolean) || false,
+      userId: (data.userId as string) || this.generateUserId(),
+      analyzedDomains: (data.analyzedDomains as string[]) || [],
+      licenseEmail: data.licenseEmail as string | undefined,
       licenseData: data.licenseData,
     };
   },

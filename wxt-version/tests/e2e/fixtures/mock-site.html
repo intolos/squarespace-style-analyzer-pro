@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Squarespace Site</title>
+    <!-- Squarespace Indicator 1 -->
+    <meta name="generator" content="Squarespace">
+    <style>
+        body { font-family: sans-serif; }
+        /* Basic Styles for analysis */
+        h1 { font-size: 32px; color: #333; }
+        h2 { font-size: 24px; color: #444; }
+        p { font-size: 16px; line-height: 1.5; color: #555; }
+        
+        /* Mobile issue: Small touch target */
+        .tiny-btn { width: 20px; height: 20px; font-size: 10px; display: inline-block; }
+        
+        /* Mobile issue: Horizontal scroll trigger */
+        .wide-content { width: 120vw; background: red; height: 10px; }
+
+        /* Button styles for analysis */
+        .sqs-block-button-element { padding: 10px 20px; background: blue; color: white; display: inline-block; text-decoration: none; }
+        .sqs-block-button-container { margin: 20px 0; }
+    </style>
+</head>
+<body class="squarespace"> <!-- Squarespace Indicator 2 -->
+
+    <header>
+        <h1>Welcome to the Mock Site</h1>
+    </header>
+
+    <main>
+        <div class="sqs-block"> <!-- Squarespace Indicator 3 -->
+            <h2>Section 1: Content Analysis</h2>
+            <p>This is a paragraph for analysis.</p>
+            <p>Another paragraph here.</p>
+        </div>
+
+        <div class="sqs-block-button">
+             <div class="sqs-block-button-container">
+                 <a href="#" class="sqs-block-button-element--medium sqs-block-button-element">Test Button</a>
+             </div>
+        </div>
+
+        <div class="sqs-block-image">
+            <h2>Section 2: Image Analysis</h2>
+            <!-- Image with Alt Text -->
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="A valid placeholder image" width="100" height="100">
+            
+            <!-- Image WITHOUT Alt Text (Trigger Issue) -->
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="missing-alt" width="100" height="100">
+        </div>
+
+        <div class="mobile-issues">
+            <h2>Section 3: Mobile Issues</h2>
+            <!-- Small Touch Target -->
+            <button class="tiny-btn">Click</button>
+            <a href="#" style="font-size: 10px;">Tiny Link</a>
+            
+            <!-- Horizontal Scroll Trigger -->
+            <div class="wide-content"></div>
+        </div>
+    </main>
+
+</body>
+</html>

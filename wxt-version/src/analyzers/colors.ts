@@ -414,7 +414,7 @@ export async function trackContrastPair(
   } else {
     for (let i = 0; i < element.childNodes.length; i++) {
       const node = element.childNodes[i];
-      if (node.nodeType === 3 && node.textContent?.trim().length > 0) {
+      if (node.nodeType === 3 && node.textContent?.trim()?.length! > 0) {
         // 3 = TEXT_NODE
         hasDirectText = true;
         break;

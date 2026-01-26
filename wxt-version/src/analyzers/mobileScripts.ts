@@ -12,7 +12,7 @@ export const MobileCheckScripts = {
     const meta = document.querySelector('meta[name="viewport"]');
     if (!meta) return { exists: false };
 
-    constcontent = meta.getAttribute('content') || '';
+    const content = meta.getAttribute('content') || '';
     const hasWidth = /width\s*=\s*device-width/i.test(content);
     const hasInitialScale = /initial-scale\s*=\s*1/i.test(content);
 
@@ -40,7 +40,7 @@ export const MobileCheckScripts = {
   },
 
   // Check tap targets for size and spacing
-  getTapTargetIssues: function (options: { minSize: number }) {
+  getTapTargetIssues: function (options: any) {
     const issues: any[] = [];
     const minSize = options.minSize || 16;
     const fingerSize = 24; // WCAG 2.2 Level AA standard

@@ -58,7 +58,12 @@ export async function analyzeLinks(
       if (processedLinkKeys.has(linkKey)) continue;
       processedLinkKeys.add(linkKey);
 
-      const styleDefinition = await getStyleDefinition(link, 'text', colorTracker, colorData);
+      const styleDefinition = await getStyleDefinition(
+        link as HTMLElement,
+        'text',
+        colorTracker,
+        colorData
+      );
       const href = link.getAttribute('href') || '';
 
       results.links['in-content'].locations.push({

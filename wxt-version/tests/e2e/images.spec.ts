@@ -3,7 +3,7 @@ import { test, expect } from './fixtures/extension';
 test.describe('Images Report (@images)', () => {
   test('should analyze images and detect alt text', async ({ context, extensionId }) => {
     const targetPage = await context.newPage();
-    await targetPage.goto('https://launchhappy.co/guides');
+    await targetPage.goto('http://localhost:3000/mock-site.html');
     await targetPage.waitForLoadState('domcontentloaded');
 
     const popupPage = await context.newPage();

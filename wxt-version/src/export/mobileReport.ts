@@ -1,6 +1,6 @@
 import { platformStrings } from '../utils/platform';
 
-function formatIssueDescription(issue: any): string {
+export function formatIssueDescription(issue: any): string {
   const typeLabels: Record<string, string> = {
     'viewport-missing': 'Missing viewport meta tag',
     'viewport-improper': 'Improper viewport meta tag',
@@ -21,23 +21,33 @@ function formatIssueDescription(issue: any): string {
 }
 
 function getIssueTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    'viewport-missing': 'Viewport Meta Tag Missing',
-    'viewport-improper': 'Viewport Meta Tag Improper',
-    'viewport-blocks-zoom': 'Viewport Blocks Zoom (Accessibility)',
-    'viewport-limits-zoom': 'Viewport Limits Zoom (Accessibility)',
-    'touch-target-too-small': 'Touch Targets Too Small',
-    'horizontal-scroll': 'Horizontal Scrolling',
-    'non-mobile-element': 'Non-Mobile-Friendly Elements',
-    'image-not-responsive': 'Images Missing Responsive Sizing',
-    'text-overflow': 'Text Overflow Issues',
-    'image-wider-than-viewport': 'Images Wider Than Viewport',
-    'input-missing-type': 'Form Inputs Missing Mobile Types',
-    'fixed-width-element': 'Fixed-Width Elements',
-    'image-oversized': 'Image Sizing/Optimization',
-  };
+  const labels: Record<string, string> = {};
+  for (const check of MOBILE_CHECK_TYPES) {
+    labels[check.type] = check.label;
+  }
   return labels[type] || type;
 }
+
+// Master list of all 17 mobile check types, sorted alphabetically by label
+export const MOBILE_CHECK_TYPES = [
+  { type: 'content-width', label: 'Content Width Issues' },
+  { type: 'fixed-width-element', label: 'Fixed-Width Elements' },
+  { type: 'font-size-error', label: 'Font Size: Too Small' },
+  { type: 'font-size-warning', label: 'Font Size: Warning' },
+  { type: 'input-missing-type', label: 'Form Inputs Missing Mobile Types' },
+  { type: 'horizontal-scroll', label: 'Horizontal Scrolling' },
+  { type: 'image-oversized', label: 'Image Sizing/Optimization' },
+  { type: 'image-not-responsive', label: 'Images Missing Responsive Sizing' },
+  { type: 'image-wider-than-viewport', label: 'Images Wider Than Viewport' },
+  { type: 'viewport-blocks-zoom', label: 'Mobile Viewport Settings: Blocks Zoom (Accessibility)' },
+  { type: 'viewport-limits-zoom', label: 'Mobile Viewport Settings: Limits Zoom (Accessibility)' },
+  { type: 'viewport-improper', label: 'Mobile Viewport Settings: Meta Tag Improper' },
+  { type: 'viewport-missing', label: 'Mobile Viewport Settings: Page Not Set Up for Mobile' },
+  { type: 'non-mobile-element', label: 'Non-Mobile-Friendly Elements' },
+  { type: 'text-overflow', label: 'Text Overflow Issues' },
+  { type: 'touch-target-spacing', label: 'Touch Target Spacing' },
+  { type: 'touch-target-too-small', label: 'Touch Targets Too Small' },
+];
 
 function addBreakOpportunities(text: string): string {
   // Insert zero-width space (Unicode U+200B) after HTML entities to allow line breaks
@@ -68,27 +78,8 @@ export function exportMobileReport(
   const errorCount = issues.filter(i => i.severity === 'error').length;
   const warningCount = issues.filter(i => i.severity === 'warning').length;
 
-  // Build TOC - show ALL check types in alphabetical order
-  const allCheckTypes = [
-    { type: 'viewport-missing', label: 'Mobile Viewport Settings: Page Not Set Up for Mobile' },
-    { type: 'viewport-improper', label: 'Mobile Viewport Settings: Meta Tag Improper' },
-    {
-      type: 'viewport-blocks-zoom',
-      label: 'Mobile Viewport Settings: Blocks Zoom (Accessibility)',
-    },
-    {
-      type: 'viewport-limits-zoom',
-      label: 'Mobile Viewport Settings: Limits Zoom (Accessibility)',
-    },
-    { type: 'touch-target-too-small', label: 'Touch Targets Too Small' },
-    { type: 'touch-target-spacing', label: 'Touch Target Spacing' },
-    { type: 'horizontal-scroll', label: 'Horizontal Scrolling' },
-    { type: 'content-width', label: 'Content Width Issues' },
-    { type: 'image-oversized', label: 'Image Sizing/Optimization' },
-  ];
-
-  // Sort alphabetically by label
-  allCheckTypes.sort((a, b) => a.label.localeCompare(b.label));
+  // Build TOC - use the master list of all checks
+  const allCheckTypes = MOBILE_CHECK_TYPES;
 
   const hasViewportMissing = (issuesByType['viewport-missing']?.length || 0) > 0;
   const viewportTypes = ['viewport-improper', 'viewport-blocks-zoom', 'viewport-limits-zoom'];

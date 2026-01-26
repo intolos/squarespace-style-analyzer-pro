@@ -50,7 +50,7 @@ export function exportStyleGuide(
   accumulatedResults: StyleGuideData,
   filenameBrand: string,
   showSuccess: (msg: string) => void,
-  downloadFile: (content: string, filename: string, mimeType: string) => void
+  downloadFile: (filename: string, content: string, mimeType: string) => void
 ): void {
   if (!accumulatedResults) {
     alert('No data to export. Please analyze a page first.');

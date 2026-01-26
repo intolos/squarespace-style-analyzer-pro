@@ -10,3 +10,4 @@ CRITICAL WORKFLOW RULES:
 4. If you fix a bug or add a feature, you MUST update the relevant file in "documentation-md/architecture/" to reflect the new working state.
 5. Always add "// IMPORTANT:" comments explaining "WHY" for tricky logic to prevent regressions.
 6. **Variable-Based Worker Architecture**: The Cloudflare Worker (`cloudflare/worker.js`) MUST use ONLY variables for Product IDs and Price IDs. It must NEVER contain hardcoded Product/Price ID strings. The ONLY file allowed to have hardcoded IDs is `wxt-version/src/utils/platform.ts`. The worker receives IDs from the client request and returns metadata flags (`is_lifetime`, `is_yearly`) for the client to use for UI decisions.
+7. **Legacy Extension Preservation**: NEVER modify any files within the `legacy-extension/` directory. This directory is strictly for historical reference and must remain untouched by AI agents. All changes must be applied to the `wxt-version/` directory or other modern components.
