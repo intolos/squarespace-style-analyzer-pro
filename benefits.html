@@ -888,11 +888,123 @@
       font-size: 2.5rem; /* Smaller font for mobile */
       white-space: normal; /* Allow text to wrap if needed */
     }
-	}
+    }
+
+    /* ====== STICKY HAMBURGER MENU ====== */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .sticky-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #284ED2;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      padding-left: 20px;
+      gap: 15px;
+    }
+
+    .sticky-header-logo {
+      height: 48px;
+      width: 48px;
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .hamburger-btn span {
+      display: block;
+      width: 28px;
+      height: 3px;
+      background: white;
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .hamburger-btn:hover span {
+      background: #cce0ff;
+    }
+
+    .nav-dropdown {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      background: #284ED2;
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .nav-dropdown.open {
+      max-height: 500px;
+      padding: 15px 25px;
+    }
+
+    .nav-dropdown a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 12px 0;
+      font-size: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      transition: color 0.2s ease;
+    }
+
+    .nav-dropdown a:last-child {
+      border-bottom: none;
+    }
+
+    .nav-dropdown a:hover {
+      color: #cce0ff;
+    }
+
+    /* Add padding to body to account for sticky header */
+    body {
+      padding-top: 60px;
+    }
+    /* ====== END STICKY HAMBURGER MENU ====== */
 
 </style>
 </head>
 <body>
+  <!-- STICKY HAMBURGER NAVIGATION -->
+  <header class="sticky-header">
+    <img src="https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon48.png" alt="Logo" class="sticky-header-logo">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+  <nav class="nav-dropdown" id="navDropdown">
+    <a href="#topofpage">Top of Page</a>
+    <a href="#features">Features</a>
+    <a href="#compareseo">Design Audit Compared to SEO Audit</a>
+    <a href="#use">Why Would You Use Squarespace Style Analyzer Pro?</a>
+    <a href="#benefits">Why Do You Need Over 70 Aspects of Design?</a>
+    <a href="#whydesignaudit">Why Our Design Audit?</a>
+    <a href="#how">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#permissions">Permissions</a>
+  </nav>
+  <!-- END STICKY HAMBURGER NAVIGATION -->
+
   <div class="hero" id="topofpage">
     <div class="hero-content">	
 			<div class="header-container">
@@ -1621,5 +1733,33 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
       <p style="margin-top: 10px; font-size: 0.9rem;">Not affiliated with Squarespace, Inc. This is an independent design audit tool.</p>
     </div>
   </div>
+
+  <!-- HAMBURGER MENU JAVASCRIPT -->
+  <script>
+    (function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const navDropdown = document.getElementById('navDropdown');
+
+      // Toggle dropdown on hamburger click
+      hamburgerBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        navDropdown.classList.toggle('open');
+      });
+
+      // Close dropdown when clicking a link
+      navDropdown.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+          navDropdown.classList.remove('open');
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!navDropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+          navDropdown.classList.remove('open');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
