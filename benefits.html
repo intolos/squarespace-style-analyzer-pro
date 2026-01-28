@@ -975,6 +975,22 @@
       color: #cce0ff;
     }
 
+    .scroll-indicator {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      padding: 8px 0;
+      background: linear-gradient(transparent, #284ED2 50%);
+      position: sticky;
+      bottom: 0;
+      margin-top: 5px;
+      pointer-events: none;
+    }
+
+    .scroll-indicator.hidden {
+      display: none;
+    }
+
     /* Add padding to body to account for sticky header */
     body {
       padding-top: 60px;
@@ -1004,6 +1020,7 @@
     <a href="#pricing">Pricing</a>
     <a href="#permissions">Permissions</a>
     <a href="https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi" target="_blank">Get it at Chrome Web Store</a>
+    <div class="scroll-indicator" id="scrollIndicator">▼ Scroll for more</div>
   </nav>
   <!-- END STICKY HAMBURGER NAVIGATION -->
 
@@ -1761,6 +1778,41 @@ document.getElementById("subscribeBtn").addEventListener("click", async () => {
           navDropdown.classList.remove('open');
         }
       });
+
+      // Scroll indicator logic
+      const scrollIndicator = document.getElementById('scrollIndicator');
+      
+      function updateScrollIndicator() {
+        // Temporarily hide the indicator so it doesn't affect scrollHeight
+        scrollIndicator.classList.add('hidden');
+        
+        // Add a small buffer (2px) to account for subpixel rendering
+        const isScrollable = navDropdown.scrollHeight > navDropdown.clientHeight + 2;
+        const isAtBottom = navDropdown.scrollTop + navDropdown.clientHeight >= navDropdown.scrollHeight - 10;
+        
+        // Only show if content necessitates scrolling and we aren't at the bottom
+        if (isScrollable && !isAtBottom) {
+          scrollIndicator.classList.remove('hidden');
+        }
+      }
+      
+      navDropdown.addEventListener('scroll', updateScrollIndicator);
+      
+      navDropdown.addEventListener('transitionend', function(e) {
+        // Only trigger if the transition happened on the dropdown itself (not a child)
+        // and check if it's open (to avoid unnecessary checks when closing)
+        if (e.target === navDropdown && navDropdown.classList.contains('open')) {
+          updateScrollIndicator();
+        }
+      });
+      
+      // Check on menu open (immediate check as fallback/start)
+      hamburgerBtn.addEventListener('click', function() {
+        // We rely on transitionend for the final state, but we can clear any stale state here
+      });
+      
+      // Check on window resize
+      window.addEventListener('resize', updateScrollIndicator);
     })();
   </script>
 </body>
