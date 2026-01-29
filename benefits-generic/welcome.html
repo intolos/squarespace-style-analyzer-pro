@@ -888,12 +888,143 @@
       font-size: 2.5rem; /* Smaller font for mobile */
       white-space: normal; /* Allow text to wrap if needed */
     }
-	}
+    }
+
+    /* ====== STICKY HAMBURGER MENU ====== */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .sticky-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #284ED2;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      padding-left: 20px;
+      gap: 15px;
+    }
+
+    .sticky-header-logo {
+      height: 48px;
+      width: 48px;
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .hamburger-btn span {
+      display: block;
+      width: 28px;
+      height: 3px;
+      background: white;
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .hamburger-btn:hover span {
+      background: #cce0ff;
+    }
+
+    .nav-dropdown {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      background: #284ED2;
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .nav-dropdown.open {
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 15px 25px;
+    }
+
+    .nav-dropdown a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 12px 0;
+      font-size: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      transition: color 0.2s ease;
+    }
+
+    .nav-dropdown a:last-child {
+      border-bottom: none;
+    }
+
+    .nav-dropdown a:hover {
+      color: #cce0ff;
+    }
+
+    .scroll-indicator {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      padding: 8px 0;
+      background: linear-gradient(transparent, #284ED2 50%);
+      position: sticky;
+      bottom: 0;
+      margin-top: 5px;
+      pointer-events: none;
+    }
+
+    .scroll-indicator.hidden {
+      display: none;
+    }
+
+    /* Add padding to body to account for sticky header */
+    body {
+      padding-top: 60px;
+    }
+    /* ====== END STICKY HAMBURGER MENU ====== */
 
 </style>
 </head>
 <body>
-  <div class="hero" id="topofpage">
+  <!-- BEGIN STICKY HAMBURGER NAVIGATION -->
+  <header class="sticky-header">
+    <img src="https://intolos.github.io/website-style-analyzer-pro/icon48.png" alt="Logo" class="sticky-header-logo">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+  <nav class="nav-dropdown" id="navDropdown">
+    <a href="#topofpage">Top of Page</a>
+    <a href="#features">Features</a>
+    <a href="#compareseo">Design Audit Compared to SEO Audit</a>
+    <a href="#use">Why Would You Use Website Style Analyzer Pro?</a>
+    <a href="#benefits">Why Do You Need Over 70 Aspects of Design?</a>
+    <a href="#whydesignaudit">Why Our Design Audit?</a>
+    <a href="#how">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#permissions">Permissions</a>
+    <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank">Get it at Chrome Web Store</a>
+    <div class="scroll-indicator" id="scrollIndicator">▼ Scroll for more</div>
+  </nav>
+  <!-- END STICKY HAMBURGER NAVIGATION -->
+
+  <div class="hero" id="topofpage"><br />
     <div class="hero-content">	
 			<div class="header-container">
 				<div class="header-content">
@@ -916,7 +1047,7 @@
   </div>
 
   <!-- BEGIN Features -->
-  <div class="container" id="features">
+  <div class="container" id="features"><br />
     <h2 class="section-title">Powerful Design Audit Features</h2>
     <h2 class="section-subtitle">Everything you need to create a Design Audit and document website styles and colors for consistency and much more</h2>
     
@@ -1151,7 +1282,7 @@ In contrast, our report shows a listing of only the images with missing alt text
 
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start for Free</a>
       	</div>
 
 <!-- BEGIN Why Would You Use Website Style Analyzer Pro? -->
@@ -1318,12 +1449,12 @@ In contrast, our report shows a listing of only the images with missing alt text
 
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start for Free</a>
       	</div>
 			<br />
 			
 <!-- BEGIN WHY OUR DESIGN AUDIT -->
-<div class="container" style="max-width: 1200px; margin: 0 auto;" id="whydesignaudit">
+<div class="container" style="max-width: 1200px; margin: 0 auto;" id="whydesignaudit"><br />
 
   <h2 class="section-title">Why Our Design Audit?</h2>
 
@@ -1391,7 +1522,7 @@ In contrast, our report shows a listing of only the images with missing alt text
     </div>
         <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start for Free</a>
       	</div>
   </div>
 
@@ -1460,7 +1591,7 @@ In contrast, our report shows a listing of only the images with missing alt text
     
            <div class="try-it-box">
         <h3>Try the Extension Now and See for Yourself</h3>
-        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start Free Trial</a>
+        <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank" class="btn">Add to Chrome - Start for Free</a>
       	</div>
   
   
@@ -1512,7 +1643,7 @@ In contrast, our report shows a listing of only the images with missing alt text
 <!-- END TESTIMONIALS -->
 
 <!-- BEGIN PERMISSIONS -->
-  <div class="container" style="max-width: 900px; margin: 0 auto;" id="permissions">
+  <div class="container" style="max-width: 900px; margin: 0 auto;" id="permissions"><br />
   <p><center><h3 style="color:#4B68E7;">A Note About Permissions</h3></center>
     <p>There are two permissions in particular for which we want to give you ease.<br />
                            <ul style="padding-left: 40px;">
@@ -1595,5 +1726,68 @@ In contrast, our report shows a listing of only the images with missing alt text
       <p>© 2025 Edward Mass. All rights reserved.</p>
     </div>
   </div>
+
+  <!-- HAMBURGER MENU JAVASCRIPT -->
+  <script>
+    (function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const navDropdown = document.getElementById('navDropdown');
+
+      // Toggle dropdown on hamburger click
+      hamburgerBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        navDropdown.classList.toggle('open');
+      });
+
+      // Close dropdown when clicking a link
+      navDropdown.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+          navDropdown.classList.remove('open');
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!navDropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+          navDropdown.classList.remove('open');
+        }
+      });
+
+      // Scroll indicator logic
+      const scrollIndicator = document.getElementById('scrollIndicator');
+      
+      function updateScrollIndicator() {
+        // Temporarily hide the indicator so it doesn't affect scrollHeight
+        scrollIndicator.classList.add('hidden');
+        
+        // Add a small buffer (2px) to account for subpixel rendering
+        const isScrollable = navDropdown.scrollHeight > navDropdown.clientHeight + 2;
+        const isAtBottom = navDropdown.scrollTop + navDropdown.clientHeight >= navDropdown.scrollHeight - 10;
+        
+        // Only show if content necessitates scrolling and we aren't at the bottom
+        if (isScrollable && !isAtBottom) {
+          scrollIndicator.classList.remove('hidden');
+        }
+      }
+      
+      navDropdown.addEventListener('scroll', updateScrollIndicator);
+      
+      navDropdown.addEventListener('transitionend', function(e) {
+        // Only trigger if the transition happened on the dropdown itself (not a child)
+        // and check if it's open (to avoid unnecessary checks when closing)
+        if (e.target === navDropdown && navDropdown.classList.contains('open')) {
+          updateScrollIndicator();
+        }
+      });
+      
+      // Check on menu open (immediate check as fallback/start)
+      hamburgerBtn.addEventListener('click', function() {
+        // We rely on transitionend for the final state, but we can clear any stale state here
+      });
+      
+      // Check on window resize
+      window.addEventListener('resize', updateScrollIndicator);
+    })();
+  </script>
 </body>
 </html>
