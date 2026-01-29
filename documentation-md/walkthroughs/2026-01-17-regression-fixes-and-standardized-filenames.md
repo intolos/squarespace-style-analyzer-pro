@@ -32,8 +32,8 @@ Domain Analysis cancellation is now optimized to be truly immediate.
 
 ### Components Updated:
 
-- [pageAnalyzer.ts](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/analyzers/domain/pageAnalyzer.ts): Added immediate `AbortSignal` handling.
-- [index.ts](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/analyzers/domain/index.ts): Fixed index tracking for accurate stats.
+- [pageAnalyzer.ts](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/analyzers/domain/pageAnalyzer.ts): Added immediate `AbortSignal` handling.
+- [index.ts](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/analyzers/domain/index.ts): Fixed index tracking for accurate stats.
 
 ## 📦 Manifest & Storage Fixes
 
@@ -46,7 +46,7 @@ We resolved a critical storage quota issue and restored the extension's professi
 
 ### Components Updated:
 
-- [wxt.config.ts](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/wxt.config.ts): Added permission and updated description.
+- [wxt.config.ts](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/wxt.config.ts): Added permission and updated description.
 
 ## 📄 Standardized Filenames
 
@@ -67,8 +67,8 @@ We have standardized all exported filenames to be professional, descriptive, and
 - **Typography Style Guide:** `${domain}-${brand}-brand-style-guide-typography.html`
 - **Color Style Guide:** `${domain}-${brand}-brand-style-guide-colors.html`
 
-render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/export/styleGuideColorsReport/index.ts)
-render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/export/styleGuide.ts)
-render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/export/mobileReport.ts)
-render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/export/imagesReport.ts)
-render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/export/htmlReports.ts)
+render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/export/styleGuideColorsReport/index.ts)
+render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/export/styleGuide.ts)
+render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/export/mobileReport.ts)
+render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/export/imagesReport.ts)
+render_diffs(file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/export/htmlReports.ts)

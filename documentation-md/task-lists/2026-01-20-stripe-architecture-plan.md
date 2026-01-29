@@ -14,7 +14,7 @@ This plan implements a unified "App Group" logic in the Cloudflare Worker to all
 
 ### 1. App Group Logic
 
-- Modified [createCheckoutSession](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/chrome-extension-files-js ver 4.2 3rd Post-Launch Version/squarespace-extension/wxt-version/src/managers/licenseManager.ts#75-115) to include `metadata.app_group = 'style_analyzer'`.
+- Modified [createCheckoutSession](file:///Users/edmass/Downloads/Squarespace Style Analyzer Pro/browser-extensions/squarespace-extension/wxt-version/src/managers/licenseManager.ts#75-115) to include `metadata.app_group = 'style_analyzer'`.
 - This metadata is propagated to subscriptions, sessions, and charges.
 
 ### 2. Priority-Based Validation (`handleCheckEmail`)

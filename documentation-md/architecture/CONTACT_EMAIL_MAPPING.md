@@ -6,7 +6,7 @@ This document tracks all locations where contact email addresses appear within t
 
 To accommodate both extension versions (Squarespace and Generic), a dynamic mapping is implemented in the core project source.
 
-### [Platform Configuration](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/src/utils/platform.ts)
+### [Platform Configuration](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/wxt-version/src/utils/platform.ts)
 
 The `questionsEmail` property in `platformStrings` is determined at build-time/run-time based on the `isSqs` flag:
 
@@ -21,10 +21,10 @@ export const questionsEmail = isSqs
 
 ### 1. Extension Popup UI
 
-- **File**: [wxt-version/entrypoints/popup/index.html](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/entrypoints/popup/index.html)
+- **File**: [wxt-version/entrypoints/popup/index.html](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/wxt-version/entrypoints/popup/index.html)
   - **Element**: `<a id="uiContactEmail">`
   - **Behavior**: The link is dynamically updated by the `SquarespaceAnalyzer` class on initialization. The surrounding text leads directly into the link (e.g., "...please Contact Us by Email").
-- **File**: [wxt-version/entrypoints/popup/main.ts](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/entrypoints/popup/main.ts)
+- **File**: [wxt-version/entrypoints/popup/main.ts](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/wxt-version/entrypoints/popup/main.ts)
   - **Logic**: `updatePlatformBranding()` sets the `href` and text for `#uiContactEmail`.
   - **Logic**: `checkPremiumStatus()` uses `questionsEmail` in the error alert message.
 
@@ -32,9 +32,9 @@ export const questionsEmail = isSqs
 
 These are internal extension assets stored in the `public` directory.
 
-- **Squarespace**: [wxt-version/public-sqs/welcome.html](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/public-sqs/welcome.html)
+- **Squarespace**: [wxt-version/public-sqs/welcome.html](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/wxt-version/public-sqs/welcome.html)
   - **Email**: `webbyinsights+squarespace@gmail.com`
-- **Generic**: [wxt-version/public-generic/welcome.html](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/wxt-version/public-generic/welcome.html)
+- **Generic**: [wxt-version/public-generic/welcome.html](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/wxt-version/public-generic/welcome.html)
   - **Email**: `webbyinsights+website@gmail.com`
 
 ## External/Hosted Pages (Static)
@@ -42,7 +42,7 @@ These are internal extension assets stored in the `public` directory.
 > [!IMPORTANT]
 > These folders contain static HTML versions of the benefits and success pages hosted on GitHub Pages. They should generally NOT be modified by automated scripts unless a full site-wide branding update is required.
 
-### 1. [benefits-sqs/](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/benefits-sqs/)
+### 1. [benefits-sqs/](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/benefits-sqs/)
 
 - `cancel.html`
 - `index.html`
@@ -52,7 +52,7 @@ These are internal extension assets stored in the `public` directory.
 - `terms-of-service.html`
 - `welcome.html`
 
-### 2. [benefits-generic/](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/benefits-generic/)
+### 2. [benefits-generic/](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/benefits-generic/)
 
 - `cancel.html`
 - `index.html`
@@ -64,6 +64,6 @@ These are internal extension assets stored in the `public` directory.
 
 ## Legacy Records (Do Not Modify)
 
-### [legacy-extension/](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/chrome-extension-files-js%20ver%204.2%203rd%20Post-Launch%20Version/squarespace-extension/legacy-extension/)
+### [legacy-extension/](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/legacy-extension/)
 
 Contains historical references such as `squarespacetools@gmail.com` and `webbyinsights@gmail.com`. These are kept for reference and should remain untouched.
