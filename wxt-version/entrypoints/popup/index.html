@@ -16,7 +16,7 @@
     <div class="card">
       <div id="notSquarespace" class="not-squarespace" style="display: none;">
         <strong id="uiNotSqsTitle">⚠️ Not a Squarespace Site</strong><br>
-        <span id="uiNotSqsDescription">This extension works on all websites. However, it has over 15 Squarespace-specific factors. To analyze this site, use the standard procedures.</span>
+        <span id="uiNotSqsDescription">This extension works on all websites. However, it has over 40 Squarespace-specific factors. To analyze this site, use the standard procedures.</span>
       </div>
       
       <!-- Loading spinner shown on initial load -->
@@ -36,6 +36,12 @@
         
         <div id="siteInfo" class="site-info" style="display: none;">
           <strong>Current Site:</strong> <span id="currentUrl"></span>
+        </div>
+
+        <!-- Platform Detection Banner (Generic version only) -->
+        <!-- Initially below siteInfo, moves below export buttons after analysis -->
+        <div id="platformDetectionBanner" class="platform-banner" style="display: none;">
+          <span id="platformMessage"></span>
         </div>
 
         <div id="actionButtonsContainer">
@@ -129,6 +135,11 @@
             <button id="resetBtn" class="btn btn-secondary">
               🔄 Reset
             </button>
+          </div>
+
+          <!-- Platform banner relocated here after analysis (populated by JS) -->
+          <div id="platformBannerPostAnalysis" class="platform-banner platform-banner-post" style="display: none;">
+            <span id="platformMessagePost"></span>
           </div>
         </div>
 

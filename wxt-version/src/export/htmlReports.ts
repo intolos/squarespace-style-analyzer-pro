@@ -6,7 +6,28 @@ import { generateAggregatedStylesReport, generateAggregatedTOC } from './aggrega
 import { generatePageByPageReport, generatePageByPageTOC } from './pageByPageReport';
 import { calculateQualityChecks, type QualityCheckResult } from './qualityChecks';
 import { downloadFile, escapeHtml } from './utils';
-import { platformStrings } from '../utils/platform';
+import { platformStrings, isSqs } from '../utils/platform';
+
+/**
+ * Generates a platform badge string for reports (generic version only).
+ * IMPORTANT: This provides the platform detection message in exported HTML reports.
+ * Factor counts are documented in documentation-md/architecture/*.md files.
+ */
+function generatePlatformBadge(data: ReportData): string {
+  // Only show platform badge in generic version
+  if (isSqs) return '';
+
+  // Check for platform detection stored in metadata (if available)
+  const platform = (data as any).detectedPlatform;
+  if (platform && platform.message) {
+    return `<p style="font-size: 0.95rem; color: #475569; margin: 5px 0 10px 0;">${platform.message}</p>`;
+  }
+
+  // Fallback: Try to detect from URLs in pagesAnalyzed
+  // This won't have platform-specific elements, so we'll show no badge
+  // The proper solution is to store platform info during analysis
+  return '';
+}
 
 /**
  * Generate and download a specialized quality check report (e.g., broken heading hierarchy)
@@ -243,6 +264,7 @@ export function exportAnalysisReport(data: ReportData): void {
         <div class="header">
           <h1>🔬 ${domain} Website Analysis</h1>
           <p>Professional Design Audit by ${platformStrings.productName}</p>
+          ${generatePlatformBadge(data)}
           <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
         </div>
 

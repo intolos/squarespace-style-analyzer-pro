@@ -7,25 +7,13 @@ export async function analyzeButtons(
   results: any,
   navigationName: string,
   colorTracker: ColorTracker,
-  colorData: ColorData
+  colorData: ColorData,
+  buttonSelectors: string[]
 ): Promise<void> {
-  const buttonSelectors = [
-    'button:not([aria-hidden="true"])',
-    'a.button',
-    'a.btn',
-    'a[class*="sqs-button"]',
-    'a[class*="sqs-block-button"]',
-    '.sqs-block-button-element',
-    'a[href][class*="btn"]',
-    'a[href][class*="button"]',
-    'input[type="submit"]',
-    'input[type="button"]',
-    '.button-block a',
-    'a[role="button"]',
-    '.sqs-button-element--primary',
-    '.sqs-button-element--secondary',
-    '.sqs-button-element--tertiary',
-  ];
+  if (!buttonSelectors || buttonSelectors.length === 0) {
+    // Fallback if empty (should not happen if wired correctly)
+    buttonSelectors = ['button', 'a.button', 'a.btn', 'input[type="submit"]'];
+  }
 
   const buttons = document.querySelectorAll(buttonSelectors.join(', '));
   console.log('Found potential buttons:', buttons.length);

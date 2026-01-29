@@ -137,12 +137,29 @@ export function isGenericImageFilename(filename: string | null): string | null {
   return null;
 }
 
-export function analyzeImages(results: any, navigationName: string): void {
-  const allImages = document.querySelectorAll('img');
+export function analyzeImages(
+  results: any,
+  navigationName: string,
+  imageSelectors: string[]
+): void {
+  const selectorString =
+    imageSelectors && imageSelectors.length > 0 ? imageSelectors.join(', ') : 'img';
+
+  const allImages = document.querySelectorAll(selectorString);
   const seenImages = new Set<string>();
 
   for (let i = 0; i < allImages.length; i++) {
-    const img = allImages[i];
+    const element = allImages[i];
+    let img: HTMLImageElement | null = null;
+
+    if (element.tagName === 'IMG') {
+      img = element as HTMLImageElement;
+    } else {
+      // Handle wrapper elements by looking for an img inside
+      img = element.querySelector('img');
+    }
+
+    if (!img) continue; // Skip if no image found
 
     // Basic visibility check
     const style = window.getComputedStyle(img);

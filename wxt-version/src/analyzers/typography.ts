@@ -14,9 +14,16 @@ export async function analyzeHeadings(
   results: any,
   navigationName: string,
   colorTracker: any, // Legacy
-  colorData: ColorData
+  colorData: ColorData,
+  headingSelectors: string[]
 ): Promise<void> {
-  const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  // Use expanded selectors or fallback to standard tags
+  const selectorString =
+    headingSelectors && headingSelectors.length > 0
+      ? headingSelectors.join(', ')
+      : 'h1, h2, h3, h4, h5, h6';
+
+  const headings = document.querySelectorAll(selectorString);
   console.log('Found headings:', headings.length);
 
   let h1Count = 0;
@@ -33,7 +40,18 @@ export async function analyzeHeadings(
   for (let i = 0; i < headings.length; i++) {
     const heading = headings[i] as HTMLElement;
     const tagName = heading.tagName.toLowerCase();
-    const headingLevel = parseInt(tagName.charAt(1));
+
+    // robust level detection for non-h* tags (e.g. div with role=heading or class)
+    let headingLevel = 2; // Default to H2 for semantic-less major headings
+    if (tagName.startsWith('h') && tagName.length === 2) {
+      const level = parseInt(tagName.charAt(1));
+      if (!isNaN(level)) headingLevel = level;
+    } else {
+      // Try to deduce from aria-level
+      const ariaLevel = heading.getAttribute('aria-level');
+      if (ariaLevel) headingLevel = parseInt(ariaLevel) || 2;
+    }
+
     const headingType = 'heading-' + headingLevel;
 
     if (tagName === 'h1') h1Count++;
@@ -218,7 +236,7 @@ async function analyzeListItems(
   const listItems = document.querySelectorAll('li');
 
   for (let i = 0; i < listItems.length; i++) {
-    const listItem = listItems[i];
+    const listItem = listItems[i] as HTMLElement;
     const text = (listItem.textContent || '').trim();
 
     if (text.length <= 10) continue;
@@ -310,9 +328,13 @@ export async function analyzeParagraphs(
   navigationName: string,
   squarespaceThemeStyles: any,
   colorTracker: any,
-  colorData: ColorData
+  colorData: ColorData,
+  paragraphSelectors: string[]
 ): Promise<void> {
-  const paragraphs = document.querySelectorAll('p');
+  const selectorString =
+    paragraphSelectors && paragraphSelectors.length > 0 ? paragraphSelectors.join(', ') : 'p';
+
+  const paragraphs = document.querySelectorAll(selectorString);
   console.log('Found paragraphs:', paragraphs.length);
 
   const paragraphsInLists = new Set<Element>();

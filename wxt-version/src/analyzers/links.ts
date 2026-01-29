@@ -3,34 +3,35 @@ import { getStyleDefinition } from './styleExtractor';
 import { ColorTracker } from '../utils/colorUtils';
 import { ColorData } from './colors';
 
+import { PlatformSelectors } from '../platforms/selectorManager';
+
 export async function analyzeLinks(
   results: any,
   navigationName: string,
   colorTracker: ColorTracker,
-  colorData: ColorData
+  colorData: ColorData,
+  selectors: PlatformSelectors
 ): Promise<void> {
-  const contentAreas = document.querySelectorAll(
-    'main, article, section, .content, .page-content, [role="main"], .sqs-block-content'
-  );
+  // Use platform section selectors + generics
+  const defaultSections = ['main', 'article', 'section', '[role="main"]'];
+  const sectionSelectors =
+    selectors && selectors.sections
+      ? [...new Set([...selectors.sections, ...defaultSections])]
+      : defaultSections;
+
+  const contentAreas = document.querySelectorAll(sectionSelectors.join(', '));
   const processedLinkKeys = new Set<string>();
 
-  const excludeSelectors = [
-    'nav a',
-    'header a',
-    'footer a',
-    '.navigation a',
-    '.menu a',
-    '[class*="nav"] a',
-    '[class*="footer"] a',
-    '[class*="social"] a',
-    '[class*="share"] a',
-    'a.button',
-    'a.btn',
-    'a[class*="sqs-button"]',
-    'a[class*="btn"]',
-    'a[role="button"]',
-    '.button-block a',
-  ];
+  // Prepare exclusion checks
+  const navSelectorString =
+    selectors && selectors.nav && selectors.nav.length > 0
+      ? selectors.nav.join(', ')
+      : 'nav, header, footer';
+
+  const buttonSelectorString =
+    selectors && selectors.buttons && selectors.buttons.length > 0
+      ? selectors.buttons.join(', ')
+      : 'button, .button, .btn';
 
   for (let ca = 0; ca < contentAreas.length; ca++) {
     const contentArea = contentAreas[ca];
@@ -40,12 +41,13 @@ export async function analyzeLinks(
       const link = allLinks[li];
 
       let shouldExclude = false;
-      for (const selector of excludeSelectors) {
-        if (link.matches(selector) || link.closest(selector.replace(' a', ''))) {
-          shouldExclude = true;
-          break;
-        }
-      }
+
+      // key check: is it inside a nav?
+      if (link.closest(navSelectorString)) shouldExclude = true;
+
+      // key check: is it a button?
+      if (!shouldExclude && link.matches(buttonSelectorString)) shouldExclude = true;
+
       if (shouldExclude) continue;
 
       const text = (link.textContent || '').trim();

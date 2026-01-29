@@ -1030,3 +1030,21 @@ body.premium-active #statusSection {
 .btn-lifetime:hover:not(:disabled) {
   background: linear-gradient(135deg, #434190 0%, #44337a 100%);
 }
+
+/* Platform Detection Banner - Generic version only */
+.platform-banner {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 0.8rem;
+  color: #1e3a5f;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.platform-banner-post {
+  margin-top: 12px;
+  margin-bottom: 0;
+}

@@ -12,6 +12,8 @@ import { scanAllPageColors } from '../src/analyzers/colorScanner';
 import { AnalysisResult } from '../src/types';
 import { LiveInspector } from '../src/utils/inspector';
 import { ScreenshotUtils } from '../src/utils/screenshot';
+import { detectPlatform } from '../src/platforms/index';
+import { PlatformSelectorManager } from '../src/platforms/selectorManager';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -325,21 +327,45 @@ export default defineContentScript({
       // 6. Get Navigation Name
       const navigationName = getNavigationName();
 
+      // 6a. Detect Platform and Load Selectors
+      const platformInfo = detectPlatform();
+      console.log('Detected platform:', platformInfo.platform);
+      const selectors = PlatformSelectorManager.getSelectors(platformInfo.platform);
+
+      // Store detected platform in results so it can be passed to UI/Reports
+      if (platformInfo.detected) {
+        // @ts-ignore - Adding dynamic property
+        results.detectedPlatform = platformInfo;
+      }
+
       // 7. Store Contrast Issues
       (results.colorData as any).contrastPairs = axeContrastIssues;
 
       // 8. Run Analyzers
-      await analyzeButtons(results, navigationName, colorTracker, results.colorData);
-      await analyzeHeadings(results, navigationName, colorTracker, results.colorData);
+      await analyzeButtons(
+        results,
+        navigationName,
+        colorTracker,
+        results.colorData,
+        selectors.buttons
+      );
+      await analyzeHeadings(
+        results,
+        navigationName,
+        colorTracker,
+        results.colorData,
+        selectors.headings
+      );
       await analyzeParagraphs(
         results,
         navigationName,
         squarespaceThemeStyles,
         colorTracker,
-        results.colorData
+        results.colorData,
+        selectors.paragraphs
       );
-      await analyzeLinks(results, navigationName, colorTracker, results.colorData);
-      await analyzeImages(results, navigationName);
+      await analyzeLinks(results, navigationName, colorTracker, results.colorData, selectors);
+      await analyzeImages(results, navigationName, selectors.images);
 
       // 9. Scan remaining page colors
       scanAllPageColors(results.colorData);

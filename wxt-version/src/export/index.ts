@@ -43,6 +43,11 @@ export class ExportManager {
       return;
     }
 
+    // Inject detected platform info for reports (generic version)
+    if (analyzer.detectedPlatform && analyzer.accumulatedResults) {
+      analyzer.accumulatedResults.detectedPlatform = analyzer.detectedPlatform;
+    }
+
     exportAnalysisReport(analyzer.accumulatedResults);
     analyzer.showSuccess('✅ Audit Reports exported!');
 

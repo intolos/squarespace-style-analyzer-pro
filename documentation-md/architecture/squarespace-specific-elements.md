@@ -13,7 +13,30 @@ This document catalogs all Squarespace-specific elements in the codebase. These 
 - **Squarespace Style Analyzer Pro**: Always active, branding included
 - **Website Style Analyzer Pro**: Auto-activated when SQS site detected, no SQS branding
 
-**Element Count for Platform Detection Messaging**: **15+ elements** (used in generic version's bonus message)
+---
+
+## Factor Count Summary
+
+The following table documents all Squarespace-specific analysis factors implemented in the extension:
+
+| Category                     | Count  | Details                                                                                                          |
+| ---------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Button Selectors**         | 6      | `sqs-button`, `sqs-block-button`, primary/secondary/tertiary variants                                            |
+| **Navigation Selectors**     | 5      | `data-content-field="navigation"`, `.header-nav`, `.header-nav-wrapper`, `.header-menu`, `[data-nc-group="top"]` |
+| **Heading Selectors**        | 4      | `.sqs-block-content h1`, `h2`, `h3`, `h4`                                                                        |
+| **Paragraph Selectors**      | 2      | `.sqs-block-content p`, `.sqs-block-html p`                                                                      |
+| **Image Selectors**          | 2      | `.sqs-block-image img`, `img[data-src]` (lazy-loaded)                                                            |
+| **Link Selectors**           | 1      | `.sqs-block-content a:not([class*="sqs-button"])`                                                                |
+| **Block Selectors**          | 3      | `.sqs-block`, `.sqs-row`, `.sqs-col`                                                                             |
+| **Section Selectors**        | 2      | `[data-section-id]`, `.page-section`                                                                             |
+| **Data Attributes**          | 5      | `data-block-type`, `data-section-id`, `data-collection-id`, `data-item-id`, `data-content-field`                 |
+| **Theme Patterns**           | 4      | RegEx patterns for `header-*`, `footer-*`, `sqs-*`, `Index-*`                                                    |
+| **Image URL Patterns**       | 2      | `images.squarespace-cdn.com`, `static1.squarespace.com`                                                          |
+| **YUI ID Detection**         | 1      | Filters unstable `yui_*` dynamic IDs from selectors                                                              |
+| **CSS Variables**            | 1      | `--sqs-misc-font` theme variable detection                                                                       |
+| **Adaptive Delay**           | 1      | 3-second delay for SQS sites (vs 1s for others)                                                                  |
+| **Image Filename Detection** | 1      | `sqs-image-*`, `hero-image*` default filename patterns                                                           |
+| **Total**                    | **40** | **Individual factors across 15 categories**                                                                      |
 
 ---
 

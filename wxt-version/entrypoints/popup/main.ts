@@ -20,6 +20,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
   isDomainAnalyzing: boolean = false;
   licenseData: any = null;
   showDomainConfirmation: boolean = true;
+  detectedPlatform: any = null; // Stores platform info for reports
 
   // File naming constant
   FILENAME_BRAND: string = platformStrings.filenameVariable;
@@ -539,6 +540,11 @@ class SquarespaceAnalyzer implements AnalyzerController {
           // IMPORTANT: Only show siteInfo if no results are currently displayed.
           siteInfo.style.display = this.accumulatedResults ? 'none' : 'block';
         }
+        // IMPORTANT: Detect platform and show banner (generic version only)
+        // Only show if no results are currently displayed (before analysis)
+        if (!this.accumulatedResults && tab.id) {
+          await this.detectPlatformForBanner(tab.id);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -570,6 +576,141 @@ class SquarespaceAnalyzer implements AnalyzerController {
     }
   }
 
+  /**
+   * IMPORTANT: Detects the website platform and shows a banner in the generic version.
+   * This runs the detectPlatform function in the page context and updates the banner UI.
+   * Only runs for the generic version (!isSqs).
+   */
+  async detectPlatformForBanner(tabId: number): Promise<void> {
+    // Only show platform banner in generic version
+    if (isSqs) return;
+
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: () => {
+          // Inline platform detection (matches platforms/index.ts logic)
+          const isSqsPage = !!(
+            document.querySelector('meta[name="generator"][content*="Squarespace"]') ||
+            document.querySelector('.sqs-block') ||
+            document.querySelector('[data-section-id]') ||
+            document.querySelector('[data-block-id]')
+          );
+          if (isSqsPage) {
+            return {
+              platform: 'squarespace',
+              factorCount: 40,
+              message: 'Squarespace detected. Using 40 platform-specific analysis factors.',
+            };
+          }
+
+          const isShopify = !!(
+            document.querySelector('meta[name="shopify-checkout-api-token"]') ||
+            document.querySelector('link[href*="/cdn/shop/"]') ||
+            document.querySelector('.shopify-section') ||
+            document.querySelector('[data-shopify]')
+          );
+          if (isShopify) {
+            return {
+              platform: 'shopify',
+              factorCount: 47,
+              message: 'Shopify detected. Using 47 platform-specific analysis factors.',
+            };
+          }
+
+          const isWebflow = !!(
+            document.querySelector('meta[name="generator"][content*="Webflow"]') ||
+            document.querySelector('html[data-wf-domain]') ||
+            document.querySelector('.w-nav')
+          );
+          if (isWebflow) {
+            return {
+              platform: 'webflow',
+              factorCount: 52,
+              message: 'Webflow detected. Using 52 platform-specific analysis factors.',
+            };
+          }
+
+          const isWP = !!(
+            document.querySelector('meta[name="generator"][content*="WordPress"]') ||
+            document.querySelector('.wp-block') ||
+            document.querySelector('#wpadminbar') ||
+            document.querySelector('link[href*="wp-content"]')
+          );
+          if (isWP) {
+            return {
+              platform: 'wordpress',
+              factorCount: 50,
+              message: 'WordPress detected. Using 50 platform-specific analysis factors.',
+            };
+          }
+
+          const isWix = !!(
+            document.querySelector('meta[name="generator"][content*="Wix"]') ||
+            document.querySelector('[id^="comp-"]') ||
+            document.querySelector('[data-mesh-id]')
+          );
+          if (isWix) {
+            return {
+              platform: 'wix',
+              factorCount: 45,
+              message: 'Wix detected. Using 45 platform-specific analysis factors.',
+            };
+          }
+
+          return { platform: 'generic', factorCount: 0, message: '' };
+        },
+      });
+
+      const platformInfo = results[0]?.result;
+      if (platformInfo && platformInfo.message) {
+        this.detectedPlatform = platformInfo; // Save for reports
+        this.showPlatformBanner(platformInfo.message, false /* not post-analysis */);
+      }
+    } catch (e) {
+      console.error('Platform detection failed:', e);
+    }
+  }
+
+  /**
+   * Shows the platform detection banner in the specified location.
+   * @param message The platform message to display
+   * @param postAnalysis If true, shows in post-analysis location (below export buttons)
+   */
+  showPlatformBanner(message: string, postAnalysis: boolean): void {
+    // Hide both banners first
+    const preBanner = document.getElementById('platformDetectionBanner');
+    const postBanner = document.getElementById('platformBannerPostAnalysis');
+
+    if (preBanner) preBanner.style.display = 'none';
+    if (postBanner) postBanner.style.display = 'none';
+
+    // Show appropriate banner
+    if (postAnalysis) {
+      const postMsg = document.getElementById('platformMessagePost');
+      if (postBanner && postMsg) {
+        postMsg.textContent = message;
+        postBanner.style.display = 'block';
+      }
+    } else {
+      const preMsg = document.getElementById('platformMessage');
+      if (preBanner && preMsg) {
+        preMsg.textContent = message;
+        preBanner.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * Hides the platform detection banners (used on reset).
+   */
+  hidePlatformBanners(): void {
+    const preBanner = document.getElementById('platformDetectionBanner');
+    const postBanner = document.getElementById('platformBannerPostAnalysis');
+    if (preBanner) preBanner.style.display = 'none';
+    if (postBanner) postBanner.style.display = 'none';
+  }
+
   async resetAnalysis() {
     const wasReset = await ResultsManager.resetAnalysis(
       this.showSuccess.bind(this),
@@ -598,6 +739,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
       // IMPORTANT: resetAnalysis is the ONLY place where siteInfo visibility is restored
       // after it has been hidden by starting an analysis or loading results.
       if (siteInfo) siteInfo.style.display = 'block';
+
+      // Hide platform banners and re-detect platform (for generic version)
+      this.hidePlatformBanners();
+      await this.checkCurrentSite();
     }
   }
 
