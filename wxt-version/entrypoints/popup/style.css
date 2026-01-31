@@ -1,3 +1,10 @@
+html {
+  width: 380px;
+  min-height: 600px;
+  padding: 0;
+  margin: 0;
+}
+
 body {
   width: 380px;
   min-height: 600px;
@@ -689,7 +696,7 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   padding: 20px 20px 40px 20px; /* Generous bottom padding to prevent button clipping */
   box-sizing: border-box;
-  max-height: 560px; /* Ensure tall modals don't go off-screen in the 600px popup */
+  max-height: 480px; /* Reduced to 480px to ensure it fits within 600px body without double scroll */
   overflow-y: auto;
 }
 
@@ -725,8 +732,6 @@ body.premium-active #statusSection {
 }
 
 .navigation-sections {
-  max-height: 300px;
-  overflow-y: auto;
   margin-bottom: 15px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -1045,6 +1050,7 @@ body.premium-active #statusSection {
 }
 
 .platform-banner-post {
-  margin-top: 12px;
-  margin-bottom: 0;
+  order: 6;
+  margin-top: 10px;
+  margin-bottom: 15px;
 }

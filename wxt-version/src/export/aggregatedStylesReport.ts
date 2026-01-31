@@ -3,17 +3,18 @@
 // Single Responsibility: Generate the "Organized by Styles, Aggregated for All Pages" report
 
 import { StyleComparisonUtils } from '../utils/styleComparisonUtils';
+import { generateStyledElementSection } from './reportComponents';
 
-interface Location {
-  url: string;
-  navigationName?: string;
-  selector?: string;
-  text?: string;
-  styleDefinition?: string;
-}
+// Location interface was here. We can remove it if we use ReportLocation or just keep it for now.
+// Let's keep it to minimize diff, but we need to ensure compatibility.
+// Actually, let's remove it and use ReportLocation from types if possible, or just implicit.
+// But we need to define types for `TypeData`. `TypeData` uses `Location`.
+// Let's import ReportLocation from './types' and use it.
+import type { ReportLocation } from './types';
 
+// We need to redefine TypeData to use ReportLocation
 interface TypeData {
-  locations: Location[];
+  locations: ReportLocation[];
   displayName?: string;
 }
 
@@ -79,129 +80,7 @@ function generateSubsectionHeader(
     `;
 }
 
-/**
- * Generate a single type section with navigation (e.g., H1, P2, Primary Button)
- */
-function generateTypeSectionWithNav(
-  typeName: string,
-  typeLabel: string,
-  locations: Location[],
-  escapeHtmlFn: (s: string) => string,
-  sectionId: string,
-  nextSectionId: string | null
-): string {
-  const styleGroups = StyleComparisonUtils.groupByStyleDefinition(locations);
-  const hasVariations = styleGroups.length > 1;
-  const baseline = styleGroups.length > 0 ? styleGroups[0].styleWithoutColors : null;
-
-  // Navigation arrows
-  const arrows = `
-      <div style="flex-shrink: 0;">
-        <a href="#agg-toc" style="color: #667eea; text-decoration: none; font-size: 1.1rem; margin-right: 8px;">⬆️</a>
-        ${
-          nextSectionId
-            ? `<a href="#${nextSectionId}" style="color: #667eea; text-decoration: none; font-size: 1.1rem;">⬇️</a>`
-            : ''
-        }
-      </div>
-    `;
-
-  let html = `<div id="${sectionId}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 5px solid ${
-    hasVariations ? '#e53e3e' : '#48bb78'
-  };">`;
-  html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">`;
-  html += `<h3 style="margin: 0; color: #2d3748;">${typeLabel} `;
-  html += `<span style="font-size: 0.85rem; font-weight: normal; color: ${
-    hasVariations ? '#e53e3e' : '#48bb78'
-  };">`;
-
-  if (locations.length === 0) {
-    html += '(not used)';
-  } else {
-    html += `(${locations.length} instance${locations.length === 1 ? '' : 's'}`;
-    html += hasVariations ? `, ${styleGroups.length} variations)` : ', consistent)';
-  }
-  html += `</span></h3>`;
-  html += arrows;
-  html += `</div>`;
-
-  if (locations.length === 0) {
-    html += `<p style="color: #718096; margin: 0;">Not used on any analyzed pages.</p>`;
-  } else {
-    for (let i = 0; i < styleGroups.length; i++) {
-      const group = styleGroups[i];
-      const isBaseline = i === 0;
-      const differences = isBaseline
-        ? []
-        : StyleComparisonUtils.getStyleDifferences(baseline, group.styleWithoutColors);
-
-      html += `<div class="location accordion-container" style="margin-bottom: 10px;">`;
-      html += `<div class="accordion-header">`;
-      html += `<div class="accordion-title">`;
-      html += `<span class="accordion-label">`;
-
-      if (isBaseline) {
-        html += `<span style="background: #48bb78; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">BASELINE (most common)</span>`;
-      } else {
-        html += `<span style="background: #e53e3e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">VARIATION ${i}</span>`;
-      }
-
-      html += `</span>`;
-      html += `<span class="accordion-icon">▶</span>`;
-      html += `<span class="accordion-count">${group.instances.length} instance${
-        group.instances.length === 1 ? '' : 's'
-      }</span>`;
-      html += `</div>`;
-
-      // Show style (with differences bolded for variations)
-      const formattedStyle = isBaseline
-        ? StyleComparisonUtils.formatStyleWithoutColors(group.styleDefinition, escapeHtmlFn)
-        : StyleComparisonUtils.formatStyleWithDifferences(
-            group.styleDefinition,
-            differences,
-            escapeHtmlFn
-          );
-      html += `<div class="location-style" style="margin-top: 8px;">Style: ${formattedStyle}</div>`;
-      html += `</div>`;
-
-      // Accordion content - list of instances
-      html += `<div class="accordion-content">`;
-      for (let j = 0; j < group.instances.length; j++) {
-        const loc = group.instances[j] as Location;
-        html += `<div class="accordion-item" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">`;
-        html += `<div style="display: flex; gap: 10px; flex: 1;">`;
-        html += `<div class="accordion-item-number">#${j + 1}</div>`;
-        html += `<div style="flex: 1;">`;
-        html += `<div>📍 ${escapeHtmlFn(loc.navigationName || 'Unknown')} — <a href="${escapeHtmlFn(
-          loc.url
-        )}" target="_blank" style="color: #667eea; text-decoration: underline;">${escapeHtmlFn(
-          loc.url
-        )}</a></div>`;
-        if (loc.selector) {
-          html += `<div style="margin-top: 5px; text-align: right;"><a href="${loc.url}${
-            loc.url.includes('?') ? '&' : '?'
-          }ssa-inspect-selector=${encodeURIComponent(
-            loc.selector
-          )}" target="_blank" style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate</a></div>`;
-        }
-        if (loc.text) {
-          const displayText = escapeHtmlFn(loc.text.substring(0, 150));
-          html += `<div class="location-text">"${displayText}${
-            loc.text.length > 150 ? '...' : ''
-          }"</div>`;
-        }
-        html += `</div>`;
-        html += `</div>`;
-        html += `</div>`;
-      }
-      html += `</div>`;
-      html += `</div>`;
-    }
-  }
-
-  html += `</div>`;
-  return html;
-}
+// removed local generateSidebar/Section functions that were here
 
 /**
  * Build navigation order for aggregated report
@@ -397,9 +276,7 @@ export function generateAggregatedTOC(data: ReportData): string {
             }</a>
           </li>
         </ul>
-        <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
-           <strong>💡 NOTE:</strong> To properly use the Locate link, in the In-Content Links section, the item will be identified with a red outline as soon as it appears on the page. For the most accurate placement, it is recommended to let the page finish loading.
-        </p>
+
       </div>
     `;
 }
@@ -431,14 +308,10 @@ export function generateAggregatedStylesReport(
     const locations = typeData && typeData.locations ? typeData.locations : [];
     const subsectionId = `agg-${type.key}`;
     const nextId = getNextSection(subsectionId, navOrder);
-    html += generateTypeSectionWithNav(
-      type.key,
-      type.label,
-      locations,
-      escapeHtmlFn,
-      subsectionId,
-      nextId
-    );
+    html += generateStyledElementSection(type.label, locations, escapeHtmlFn, {
+      sectionId: subsectionId,
+      nextSectionId: nextId,
+    });
   }
 
   // Paragraphs Section
@@ -460,14 +333,10 @@ export function generateAggregatedStylesReport(
     const locations = typeData && typeData.locations ? typeData.locations : [];
     const subsectionId = `agg-${type.key}`;
     const nextId = getNextSection(subsectionId, navOrder);
-    html += generateTypeSectionWithNav(
-      type.key,
-      type.label,
-      locations,
-      escapeHtmlFn,
-      subsectionId,
-      nextId
-    );
+    html += generateStyledElementSection(type.label, locations, escapeHtmlFn, {
+      sectionId: subsectionId,
+      nextSectionId: nextId,
+    });
   }
 
   // Buttons Section
@@ -485,14 +354,10 @@ export function generateAggregatedStylesReport(
     const locations = typeData && typeData.locations ? typeData.locations : [];
     const subsectionId = `agg-button-${type.key}`;
     const nextId = getNextSection(subsectionId, navOrder);
-    html += generateTypeSectionWithNav(
-      type.key,
-      type.label,
-      locations,
-      escapeHtmlFn,
-      subsectionId,
-      nextId
-    );
+    html += generateStyledElementSection(type.label, locations, escapeHtmlFn, {
+      sectionId: subsectionId,
+      nextSectionId: nextId,
+    });
   }
 
   // Links Section
@@ -507,14 +372,10 @@ export function generateAggregatedStylesReport(
       : [];
   const linkSubsectionId = 'agg-links-in-content';
   const linkNextId = 'page-report-start';
-  html += generateTypeSectionWithNav(
-    'in-content',
-    'IN-CONTENT LINKS',
-    linkLocations,
-    escapeHtmlFn,
-    linkSubsectionId,
-    linkNextId
-  );
+  html += generateStyledElementSection('IN-CONTENT LINKS', linkLocations, escapeHtmlFn, {
+    sectionId: linkSubsectionId,
+    nextSectionId: linkNextId,
+  });
 
   // Footer with up arrow to TOC
   html += `

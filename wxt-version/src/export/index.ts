@@ -2,11 +2,6 @@
 // Orchestrates all export functions
 // Migrated from export-manager.js
 
-import { exportCSV } from './csv';
-import { exportImagesReport } from './imagesReport';
-import { exportMobileReport } from './mobileReport';
-import { exportStyleGuide } from './styleGuide';
-import { exportAnalysisReport } from './htmlReports';
 import { downloadFile, escapeHtml } from './utils';
 
 /**
@@ -16,7 +11,7 @@ export class ExportManager {
   /**
    * Export CSV spreadsheet
    */
-  static exportCSV(analyzer: any): void {
+  static async exportCSV(analyzer: any): Promise<void> {
     if (this.isMobileOnlyData(analyzer)) {
       alert(
         'No data to export. This analysis only contains mobile usability data. Use the Mobile Report button instead.'
@@ -24,6 +19,7 @@ export class ExportManager {
       return;
     }
 
+    const { exportCSV } = await import('./csv');
     exportCSV(
       analyzer.accumulatedResults,
       analyzer.FILENAME_BRAND,
@@ -35,7 +31,7 @@ export class ExportManager {
   /**
    * Export HTML reports (bulk export)
    */
-  static exportHTMLReport(analyzer: any): void {
+  static async exportHTMLReport(analyzer: any): Promise<void> {
     if (this.isMobileOnlyData(analyzer)) {
       alert(
         'No data to export. This analysis only contains mobile usability data. Use the Mobile Report button instead.'
@@ -48,20 +44,21 @@ export class ExportManager {
       analyzer.accumulatedResults.detectedPlatform = analyzer.detectedPlatform;
     }
 
+    const { exportAnalysisReport } = await import('./htmlReports');
     exportAnalysisReport(analyzer.accumulatedResults);
     analyzer.showSuccess('✅ Audit Reports exported!');
 
     // Also export images report automatically with bulk export
     // Add a delay to avoid browser download collision
-    setTimeout(() => {
-      this.exportImagesReport(analyzer, true);
+    setTimeout(async () => {
+      await this.exportImagesReport(analyzer, true);
     }, 1500);
   }
 
   /**
    * Export images analysis report
    */
-  static exportImagesReport(analyzer: any, isBulkExport = false): void {
+  static async exportImagesReport(analyzer: any, isBulkExport = false): Promise<void> {
     if (!analyzer.accumulatedResults) {
       if (!isBulkExport) alert('No data to export. Please analyze a page first.');
       return;
@@ -71,6 +68,7 @@ export class ExportManager {
     const imagesWithoutAlt = qualityChecks.missingAltText || [];
     const genericImageNames = qualityChecks.genericImageNames || [];
 
+    const { exportImagesReport } = await import('./imagesReport');
     exportImagesReport(
       analyzer.accumulatedResults,
       imagesWithoutAlt,
@@ -87,7 +85,7 @@ export class ExportManager {
   /**
    * Export style guide (typography + colors)
    */
-  static exportStyleGuide(analyzer: any): void {
+  static async exportStyleGuide(analyzer: any): Promise<void> {
     if (this.isMobileOnlyData(analyzer)) {
       alert(
         'No data to export. This analysis only contains mobile usability data. Use the Mobile Report button instead.'
@@ -95,6 +93,7 @@ export class ExportManager {
       return;
     }
 
+    const { exportStyleGuide } = await import('./styleGuide');
     exportStyleGuide(
       analyzer.accumulatedResults,
       analyzer.FILENAME_BRAND,
@@ -106,7 +105,7 @@ export class ExportManager {
   /**
    * Export mobile usability report
    */
-  static exportMobileReport(analyzer: any): void {
+  static async exportMobileReport(analyzer: any): Promise<void> {
     if (!analyzer.accumulatedResults) {
       alert('No data to export. Please analyze a page first.');
       return;
@@ -123,6 +122,7 @@ export class ExportManager {
     const mobileIssues = analyzer.accumulatedResults.mobileIssues?.issues || [];
     const domain = analyzer.accumulatedResults.metadata?.domain || 'website';
 
+    const { exportMobileReport } = await import('./mobileReport');
     exportMobileReport(
       analyzer.accumulatedResults,
       mobileIssues,
@@ -163,15 +163,7 @@ export class ExportManager {
 }
 
 // Export individual functions and utils for direct use
-export {
-  exportCSV,
-  exportImagesReport,
-  exportMobileReport,
-  exportStyleGuide,
-  exportAnalysisReport,
-  downloadFile,
-  escapeHtml,
-};
+export { downloadFile, escapeHtml };
 
 // Default export
 export default ExportManager;

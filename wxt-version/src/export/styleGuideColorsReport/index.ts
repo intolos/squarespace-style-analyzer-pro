@@ -96,8 +96,8 @@ ${COLOR_REPORT_STYLES}
   </style>
 </head>
 <body>
+  ${generateHeader(domain, data)}
   <div class="container">
-    ${generateHeader(domain)}
     ${sections}
   </div>
   ${getContrastCheckerScript()}

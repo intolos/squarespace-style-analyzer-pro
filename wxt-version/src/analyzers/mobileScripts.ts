@@ -121,7 +121,8 @@ export const MobileCheckScripts = {
       const ariaLabelContent = (el.getAttribute('aria-label') || '').trim().toLowerCase();
       const checkText = textContent || ariaLabelContent;
 
-      const excludedPatterns = [
+      /* Refactored: Accept exclusions from options to use centralized list from issueFilters.ts */
+      const excludedPatterns = options.excludedPatterns || [
         'open menu',
         'skip to content',
         'skip to',

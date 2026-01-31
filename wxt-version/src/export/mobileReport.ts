@@ -1,4 +1,5 @@
 import { platformStrings } from '../utils/platform';
+import { generateReportHeader } from './reportComponents';
 
 export function formatIssueDescription(issue: any): string {
   const typeLabels: Record<string, string> = {
@@ -117,9 +118,9 @@ export function exportMobileReport(
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
+    .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid #667eea; }
     .header h1 { font-size: 2.7rem; margin: 0 0 10px 0; color: #2d3748; }
-    .header p { color: #7180D8; font-size: 1.8rem; }
+    .header p { color: #7180D8; font-size: 1.8rem; margin: 5px 0; }
     .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 40px; }
     .summary-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
     .summary-card.errors { border-left: 4px solid #e53e3e; }
@@ -139,7 +140,8 @@ export function exportMobileReport(
     .section-header { background: #667eea; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
     .section-header h2 { margin: 0; color: white; }
     .section-header a { color: white; text-decoration: none; font-size: 1.5rem; }
-    .issue-item { background: #f8f9fa; padding: 15px 20px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #e53e3e; }
+    .issue-item { background: #f8f9fa; padding: 15px 20px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #e53e3e; transition: background 0.2s; }
+    .issue-item:hover { background: #e2e8f0; }
     .issue-item.warning { border-left-color: #ed8936; }
     .issue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
     .issue-severity { padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
@@ -163,12 +165,13 @@ export function exportMobileReport(
   </style>
 </head>
 <body>
+  ${generateReportHeader({
+    title: 'Mobile Usability',
+    domain: domain,
+    data: data,
+    emoji: '📱',
+  })}
   <div class="container">
-    <div class="header">
-      <h1>📱 ${domain} Mobile Usability</h1>
-      <p>Professional Design Audit by ${platformStrings.productName}</p>
-      <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
-    </div>
     
     <div class="summary">
       <div class="summary-card total">
@@ -206,7 +209,7 @@ export function exportMobileReport(
             .map(
               (page: string) => `
             <li style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: #2d3748;">
-              ${escapeHtmlFn(page)}
+              ${escapeHtmlFn(page === '/' ? 'Home (/)' : page)}
             </li>
           `
             )
@@ -246,7 +249,7 @@ export function exportMobileReport(
           <strong>Touch Targets Too Small:</strong> We are using the generally accepted minimum font size for links and body text on mobile sites of 16px. If you want to be more strict or need legal compliance, the WCAG 2.2 AA minimum target is 24 x 24 pixels.
         </p>
          <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
-           <strong>💡 NOTE:</strong> To properly use the Locate link, the item will be identified with a red outline as soon as it appears on the page. For the most accurate placement, it is recommended to let the page finish loading.
+
          </p>
       </div>
     </div>

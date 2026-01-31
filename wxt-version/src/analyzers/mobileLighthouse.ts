@@ -1,4 +1,10 @@
 import { MobileCheckScripts } from './mobileScripts';
+import { UNIVERSAL_TEXT_EXCLUSIONS } from '../utils/issueFilters';
+
+// ... (existing imports)
+
+// Inside the function where options are prepared (I need to see the file content to be exact, but assumingly:)
+// Actually let me view the file first to be precise.
 
 // Constants
 const MOBILE_DEVICE_CONFIG = {
@@ -126,6 +132,7 @@ export const MobileLighthouseAnalyzer = {
   async checkTapTargets(tabId: number): Promise<any[]> {
     const options = {
       minSize: LIGHTHOUSE_THRESHOLDS.minTapTargetSize,
+      excludedPatterns: UNIVERSAL_TEXT_EXCLUSIONS,
     };
 
     const result = await this.sendDebuggerCommand(tabId, 'Runtime.evaluate', {

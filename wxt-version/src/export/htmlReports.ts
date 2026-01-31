@@ -7,27 +7,7 @@ import { generatePageByPageReport, generatePageByPageTOC } from './pageByPageRep
 import { calculateQualityChecks, type QualityCheckResult } from './qualityChecks';
 import { downloadFile, escapeHtml } from './utils';
 import { platformStrings, isSqs } from '../utils/platform';
-
-/**
- * Generates a platform badge string for reports (generic version only).
- * IMPORTANT: This provides the platform detection message in exported HTML reports.
- * Factor counts are documented in documentation-md/architecture/*.md files.
- */
-function generatePlatformBadge(data: ReportData): string {
-  // Only show platform badge in generic version
-  if (isSqs) return '';
-
-  // Check for platform detection stored in metadata (if available)
-  const platform = (data as any).detectedPlatform;
-  if (platform && platform.message) {
-    return `<p style="font-size: 0.95rem; color: #475569; margin: 5px 0 10px 0;">${platform.message}</p>`;
-  }
-
-  // Fallback: Try to detect from URLs in pagesAnalyzed
-  // This won't have platform-specific elements, so we'll show no badge
-  // The proper solution is to store platform info during analysis
-  return '';
-}
+import { generateReportHeader } from './reportComponents';
 
 /**
  * Generate and download a specialized quality check report (e.g., broken heading hierarchy)
@@ -85,15 +65,11 @@ export function exportQualityCheckReport(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${brand} - ${title}</title>
       <link rel="icon" type="image/png" href="${platformStrings.favicon}">
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        h1 { color: #2d3748; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
-        .error { background: #fed7d7; color: #c53030; }
-      </style>
-    </head>
-    <body>
-      <h1>${brand} - ${title}</h1>
+      </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px;">
+      ${generateReportHeader({ title: title, domain: domain, data: data, emoji: '🔬' })}
+      ${issueHtml}
+    </body>
       <p>Generated: ${new Date().toLocaleString()}</p>
       <p>Domain: <a href="https://${domain}" target="_blank">${domain}</a></p>
       ${issueHtml}
@@ -113,7 +89,7 @@ function generateQualityScorecard(score: number, checks: QualityCheckResult['che
 
   let html = `
     <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
-      <h2 style="margin: 0 0 30px 0; color: #2d3748; font-size: 2rem;">Quality Score</h2>
+      <h2 style="margin: 0 0 30px 0; color: #2d3748; font-size: 3rem; font-weight: bold;">Quality Score</h2>
       
       <div style="width: 150px; height: 150px; border-radius: 50%; background: ${scoreColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; margin: 0 auto 30px;">
         ${score}%
@@ -161,10 +137,16 @@ function generateQualityScorecard(score: number, checks: QualityCheckResult['che
       </div>
       <br />
       <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
-        <div id="note-text" class="note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-          NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization. We also want you to know that it is much easier to architect and create website code than to audit and analyze it afterwards. This is due to deciphering the wide variety of disparate coding styles, the inherent complexity of tracing deep nesting layers, navigating the intricate web of parent-child dependencies that evolve over time, and more. Our coding in this extension includes numerous situations to catch all possibilities for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.
+        <div class="note-text note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
+          💡 NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization. We also want you to know that it is much easier to architect and create website code than to audit and analyze it afterwards. This is due to deciphering the wide variety of disparate coding styles, the inherent complexity of tracing deep nesting layers, navigating the intricate web of parent-child dependencies that evolve over time, and more. Our coding in this extension includes numerous situations to catch all possibilities for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.
         </div>
-        <button id="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
+        <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
+      </div>
+      <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
+        <div class="note-text note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
+          💡 NOTE: To properly use the Locate link, you must let the page load until you see a red outline around the item to be identified. After it appears, it will disappear as soon as you click or scroll the page. If you perform any action on the page before you see it, it will cancel the process to show it.
+        </div>
+        <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
       </div>
     </div>
   `;
@@ -211,7 +193,7 @@ export function exportAnalysisReport(data: ReportData): void {
           .header p { color: #7180D8; font-size: 1.8rem; margin: 5px 0; }
           
           /* Reports Nav Block */
-          .reports-nav { background: linear-gradient(135deg, #5562D8 0%, #764ba2 100%); padding: 25px; border-radius: 12px; margin-bottom: 40px; text-align: center; }
+          .reports-nav { background: #667eea; padding: 25px; border-radius: 12px; margin-bottom: 40px; text-align: center; }
           .reports-nav h3 { color: white; margin: 0 0 25px 0; font-size: 1.8rem; font-weight: 800; }
           .reports-nav-links { display: flex; flex-direction: column; gap: 12px; }
           .reports-nav-link { font-size: 1.3rem; background: rgba(255,255,255,0.10); padding: 15px 20px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600; transition: all 0.2s ease; display: block; text-align: left; }
@@ -243,12 +225,13 @@ export function exportAnalysisReport(data: ReportData): void {
           .accordion-icon { transition: transform 0.2s ease; margin-left: 10px; color: #a0aec0; font-size: 0.8rem; }
           .accordion-count { background: #edf2f7; color: #718096; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 10px; }
           .accordion-content { display: none; padding: 15px; border-top: 1px solid #e2e8f0; background: #f8fafc; }
-          .accordion-container.active .accordion-icon { transform: rotate(90deg); }
-          .accordion-container.active .accordion-content { display: block; }
+          .accordion-container.open .accordion-icon { transform: rotate(90deg); }
+          .accordion-container.open .accordion-content { display: block; }
 
-          .accordion-item { padding: 10px; border-bottom: 1px solid #edf2f7; }
-          .accordion-item:last-child { border-bottom: none; }
-          .accordion-item-number { color: #cbd5e0; font-weight: bold; font-size: 0.9rem; min-width: 30px; }
+          .accordion-item { padding: 10px; border-bottom: 1px solid #edf2f7; border: 1px solid #e2e8f0; border-radius: 6px; margin: 8px 0; background: #f8f9fa; transition: background 0.2s; }
+          .accordion-item:hover { background: #e2e8f0; }
+          .accordion-item:last-child { border-bottom: 1px solid #e2e8f0; }
+          .accordion-item-number { color: #2d3748; font-weight: bold; font-size: 0.9rem; min-width: 30px; }
           
           .note-expanded { -webkit-line-clamp: unset !important; display: block !important; }
           
@@ -261,12 +244,12 @@ export function exportAnalysisReport(data: ReportData): void {
         </style>
       </head>
       <body>
-        <div class="header">
-          <h1>🔬 ${domain} Website Analysis</h1>
-          <p>Professional Design Audit by ${platformStrings.productName}</p>
-          ${generatePlatformBadge(data)}
-          <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
-        </div>
+        ${generateReportHeader({
+          title: 'Website Analysis',
+          domain: domain,
+          data: data,
+          emoji: '🔬',
+        })}
 
         <div class="container">
           <!-- Quality Scorecard -->
@@ -276,7 +259,11 @@ export function exportAnalysisReport(data: ReportData): void {
             <h2>📋 Analysis Summary</h2>
             <div style="margin-top: 20px;">
               <div class="metadata-label">Pages Analyzed:</div>
-              <div class="metadata-value">${data.metadata.pagesAnalyzed ? data.metadata.pagesAnalyzed.join(', ') : 'Current Page'}</div>
+              <div class="metadata-value">${
+                data.metadata.pagesAnalyzed
+                  ? data.metadata.pagesAnalyzed.map(p => (p === '/' ? 'Home (/)' : p)).join(', ')
+                  : 'Current Page'
+              }</div>
             </div>
             ${
               data.failedPages && data.failedPages.length > 0
@@ -353,19 +340,21 @@ export function exportAnalysisReport(data: ReportData): void {
             accordions.forEach(header => {
               header.addEventListener('click', function() {
                 const container = this.parentElement;
-                container.classList.toggle('active');
+                container.classList.toggle('open');
               });
             });
 
             // NOTE section toggle logic
-            const noteToggle = document.getElementById('note-toggle');
-            const noteText = document.getElementById('note-text');
-            if (noteToggle && noteText) {
-              noteToggle.addEventListener('click', function() {
-                const isExpanded = noteText.classList.toggle('note-expanded');
-                noteToggle.textContent = isExpanded ? 'Read Less' : 'Read More';
+            document.querySelectorAll('.note-toggle').forEach(function(toggle) {
+              toggle.addEventListener('click', function() {
+                const wrapper = this.parentElement;
+                const text = wrapper.querySelector('.note-text');
+                if (text) {
+                  const isExpanded = text.classList.toggle('note-expanded');
+                  this.textContent = isExpanded ? 'Read Less' : 'Read More';
+                }
               });
-            }
+            });
           });
         </script>
       </body>

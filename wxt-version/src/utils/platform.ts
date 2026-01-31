@@ -7,7 +7,7 @@ export const platformStrings = {
   auditTitle: isSqs ? 'Professional Squarespace Design Audit' : 'Professional Website Design Audit',
   notSqsTitle: isSqs ? '⚠️ Not a Squarespace Site' : '',
   notSqsDescription: isSqs
-    ? 'This extension works on all websites. However, it has over 15 Squarespace-specific factors. To analyze this site, use the standard procedures.'
+    ? 'This extension works on all websites. However, it has over 40 Squarespace-specific factors.'
     : '',
   showNotSqsWarning: isSqs,
   useCaseTitle: isSqs

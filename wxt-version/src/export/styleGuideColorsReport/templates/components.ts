@@ -2,6 +2,7 @@
 
 import { platformStrings } from '../../../utils/platform';
 import type { ColorAnalysis, ColorData, DevToolsColorSummary } from '../types';
+import { generateReportHeader } from '../../reportComponents';
 
 /**
  * Generate section header with navigation arrows
@@ -171,16 +172,14 @@ export function generateColorSwatchTable(
 /**
  * Generate report header
  */
-export function generateHeader(domain: string): string {
-  return `
-    <div class="header">
-      <h1>🎨 ${domain} Brand Style Guide</h1>
-      <h1>Colors</h1>
-      <h1>Including Accessbility for Text Contrast</h1>
-      <p>Professional Design Audit by ${platformStrings.productName}</p>
-      <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
-    </div>
-  `;
+export function generateHeader(domain: string, data?: any): string {
+  return generateReportHeader({
+    title: 'Brand Style Guide',
+    domain: domain,
+    data: data,
+    emoji: '🎨',
+    subtitle: 'Colors & Accessibility for Text Contrast',
+  });
 }
 
 /**

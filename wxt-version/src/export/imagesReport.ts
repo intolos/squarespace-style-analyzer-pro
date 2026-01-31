@@ -1,4 +1,5 @@
 import { platformStrings } from '../utils/platform';
+import { generateReportHeader } from './reportComponents';
 
 export function exportImagesReport(
   data: any,
@@ -65,7 +66,7 @@ export function exportImagesReport(
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
+    .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid #667eea; }
     .header h1 { font-size: 2.7rem; margin: 0 0 10px 0; color: #2d3748; }
     .header p { color: #7180D8; font-size: 1.8rem; margin: 5px 0; }
     .toc { background: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 40px; border: 2px solid #667eea; }
@@ -85,8 +86,8 @@ export function exportImagesReport(
     .accordion-count { background: #667eea; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
     .accordion-content { display: none; padding: 0; background: white; }
     .accordion-container.open .accordion-content { display: block; }
-    .accordion-item { padding: 12px 15px; border-top: 1px solid #e2e8f0; }
-    .accordion-item:hover { background: #f7fafc; }
+    .accordion-item { padding: 12px 15px; border-top: 1px solid #e2e8f0; border-left: 4px solid #e53e3e; margin-left: 0; background: #f8f9fa; transition: background 0.2s; }
+    .accordion-item:hover { background: #e2e8f0; }
     .item-row { display: grid; grid-template-columns: 1fr 200px 120px 150px 100px; gap: 15px; align-items: start; }
     .item-row.alt-text { grid-template-columns: 1fr 150px 120px 100px; }
     .item-label { font-size: 0.75rem; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
@@ -98,12 +99,13 @@ export function exportImagesReport(
   </style>
 </head>
 <body>
+  ${generateReportHeader({
+    title: 'Images Analysis',
+    domain: domain,
+    data: data,
+    emoji: '🖼️',
+  })}
   <div class="container">
-    <div class="header">
-      <h1>🖼️ ${domain} Images Analysis</h1>
-      <p>Professional Design Audit by ${platformStrings.productName}</p>
-      <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}</span></p>
-    </div>
 
     <!-- Table of Contents -->
     <div id="images-toc" class="toc">
@@ -125,9 +127,7 @@ export function exportImagesReport(
           )
           .join('')}
       </ul>
-        <p style="margin-top: 15px; font-size: 0.85rem; color: black; line-height: 1.4;">
-           <strong>💡 NOTE:</strong> To properly use the Locate link for the highest accuracy, you must let the page finish loading entirely. You can go to another page and come back to it. The item will be identified with a red outline. As soon as you move the cursor, the outline will go away.
-        </p>
+
     </div>
 
     ${
@@ -167,7 +167,7 @@ export function exportImagesReport(
             <div class="accordion-item">
               <div class="item-row alt-text">
                 <div>
-                  <div class="item-label">Image URL</div>
+                  <div class="item-label"><span style="color: #2d3748; font-weight: bold;">#${page.items.indexOf(img) + 1}</span> Image URL</div>
                   <div class="item-value"><a href="${
                     img.src || img.imageSrc
                   }" target="_blank">${img.src || img.imageSrc}</a></div>
@@ -252,7 +252,7 @@ export function exportImagesReport(
             <div class="accordion-item">
               <div class="item-row">
                 <div>
-                  <div class="item-label">Image URL</div>
+                  <div class="item-label"><span style="color: #2d3748; font-weight: bold;">#${page.items.indexOf(img) + 1}</span> Image URL</div>
                   <div class="item-value"><a href="${img.src}" target="_blank">${img.src}</a></div>
                 </div>
                 <div>

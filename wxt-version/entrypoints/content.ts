@@ -1,7 +1,13 @@
 import { defineContentScript } from 'wxt/sandbox';
 import axe from 'axe-core';
 import { createColorTracker, finalizeColorPalette, ColorTracker } from '../src/utils/colorUtils';
-import { getNavigationName, generateSelector } from '../src/utils/domHelpers';
+import {
+  getNavigationName,
+  generateSelector,
+  getTextNodeFontSize,
+  getSectionInfo,
+  getBlockInfo,
+} from '../src/utils/domHelpers';
 import { initializeColorData, trackColor, ColorData } from '../src/analyzers/colors'; // ColorAnalyzer methods
 import { captureSquarespaceThemeStyles } from '../src/analyzers/themeCapture';
 import { analyzeButtons } from '../src/analyzers/buttons';
@@ -212,6 +218,17 @@ export default defineContentScript({
               element.getAttribute('title') ||
               'No text';
 
+            // Filter out typing cursors (Regex for pipe with optional whitespace at end)
+            if (/\|\s*$/.test(elementText)) {
+              console.log('[SSA] Filtered out typing cursor:', elementText);
+              continue;
+            }
+
+            // Filter out WordPress button wrappers (we analyze the inner link instead)
+            if (element.classList && element.classList.contains('wp-block-button')) {
+              continue;
+            }
+
             // Screenshots
             let elementThumbnail: string | null = null;
             let elementContext: string | null = null;
@@ -231,25 +248,36 @@ export default defineContentScript({
 
             if (elementThumbnail || elementContext) {
               const stableSelector = generateSelector(element);
+              const { fontSize, fontSizeString, fontSizeUndetermined } =
+                getTextNodeFontSize(element);
+
+              // Get accurate Section/Block info even for Generic/Axe issues
+              const section = getSectionInfo(element);
+              const block = getBlockInfo(element);
+
               axeContrastIssues.push({
                 textColor: data.fgColor || 'unknown',
                 backgroundColor: data.bgColor || 'unknown',
                 ratio: data.contrastRatio || 0,
                 passes: false,
                 wcagLevel: 'Fail',
-                isLargeText: data.fontSize >= 18 || (data.fontSize >= 14 && data.fontWeight >= 700),
+                isLargeText: fontSize >= 18 || (fontSize >= 14 && data.fontWeight >= 700),
                 page: window.location.href,
                 pageTitle: document.title || 'Unknown',
                 location: stableSelector,
                 selector: stableSelector,
                 elementText: elementText,
-                section: 'N/A', // Could refine
-                block: 'N/A',
+                section: section,
+                block: block,
                 element: node.html,
                 elementScreenshot: elementThumbnail,
                 elementContext: elementContext,
                 impact: node.impact,
                 message: node.failureSummary,
+                fontSize: Math.round(fontSize),
+                fontSizeString: fontSizeString,
+                fontSizeUndetermined: fontSizeUndetermined,
+                fontWeight: parseInt(data.fontWeight) || 400,
               });
             }
           }
@@ -338,8 +366,9 @@ export default defineContentScript({
         results.detectedPlatform = platformInfo;
       }
 
-      // 7. Store Contrast Issues
-      (results.colorData as any).contrastPairs = axeContrastIssues;
+      // 7. Store Contrast Issues - DEFERRED to after custom analyzers
+      // We want custom analyzers (which have better section/block info) to take precedence.
+      // (results.colorData as any).contrastPairs will be populated by analyzers below.
 
       // 8. Run Analyzers
       await analyzeButtons(
@@ -369,6 +398,15 @@ export default defineContentScript({
 
       // 9. Scan remaining page colors
       scanAllPageColors(results.colorData);
+
+      // 10. Add Axe Core Contrast Issues (as fallback/supplement)
+      // We add these LAST so that if there are duplicates, the custom analysis (with better metadata)
+      // appears first in the array.
+      if (axeContrastIssues.length > 0) {
+        // Filter out issues that might have been caught by custom analyzers to avoid duplicates?
+        // For now, we just append them. The report generator handles some deduplication.
+        (results.colorData as any).contrastPairs.push(...axeContrastIssues);
+      }
 
       // 10. Finalize
       results.colorPalette = finalizeColorPalette(colorTracker);

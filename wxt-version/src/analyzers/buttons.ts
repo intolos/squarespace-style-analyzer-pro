@@ -2,6 +2,7 @@ import { getSectionInfo, getBlockInfo, generateSelector } from '../utils/domHelp
 import { getStyleDefinition } from './styleExtractor';
 import { ColorTracker } from '../utils/colorUtils';
 import { ColorData } from './colors';
+import { UNIVERSAL_TEXT_EXCLUSIONS } from '../utils/issueFilters';
 
 export async function analyzeButtons(
   results: any,
@@ -18,20 +19,8 @@ export async function analyzeButtons(
   const buttons = document.querySelectorAll(buttonSelectors.join(', '));
   console.log('Found potential buttons:', buttons.length);
 
-  const excludedPatterns = [
-    'open menu',
-    'skip to content',
-    'skip to',
-    'close menu',
-    'folder:',
-    'cookie',
-    'large images',
-    'all images',
-    'images (>100kb)',
-    'pause background',
-    'play background',
-    'background',
-  ];
+  /* Refactored: Using centralized exclusions from issueFilters.ts */
+  const excludedPatterns = UNIVERSAL_TEXT_EXCLUSIONS;
   const processedButtonKeys = new Set<string>();
 
   for (let i = 0; i < buttons.length; i++) {

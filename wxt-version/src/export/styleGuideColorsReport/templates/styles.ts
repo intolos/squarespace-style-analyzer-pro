@@ -1,4 +1,4 @@
-// templates/styles.ts - CSS styles for color report
+import { ACCORDION_STYLES, ACCORDION_SCRIPT } from '../../reportStyles';
 
 export const COLOR_REPORT_STYLES = `
     body {
@@ -8,6 +8,8 @@ export const COLOR_REPORT_STYLES = `
       margin: 0px;
       padding: 20px;
     }
+
+    ${ACCORDION_STYLES}
 
     .container {
       max-width: 1200px;
@@ -91,13 +93,6 @@ export const COLOR_REPORT_STYLES = `
       border-radius: 8px;
       border: 2px solid #e2e8f0;
       margin-bottom: 8px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    
-    .swatch:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     
     .swatch-label {
@@ -112,6 +107,14 @@ export const COLOR_REPORT_STYLES = `
       color: #718096;
     }
     
+    .color-category-section {
+      background: #f7fafc;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #667eea;
+    }
+
     .color-group {
       background: #f7fafc;
       padding: 20px;
@@ -216,6 +219,11 @@ export const COLOR_REPORT_STYLES = `
       border-radius: 6px;
       margin-bottom: 15px;
       border-left: 4px solid #e53e3e;
+      transition: background 0.2s;
+    }
+    
+    .contrast-issue:hover {
+      background: #fed7d7;
     }
     
     .contrast-header {
@@ -263,6 +271,7 @@ export const COLOR_REPORT_STYLES = `
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 15px;
+      border-left: 4px solid #667eea;
     }
     
     .page-breakdown h3 {
@@ -301,61 +310,6 @@ export const COLOR_REPORT_STYLES = `
       border: 1px solid #cbd5e0;
     }
     
-    .accordion-container {
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 15px;
-    }
-    
-    .accordion-header {
-      padding: 15px;
-      background: #edf2f7;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .accordion-header:hover {
-      background: #e2e8f0;
-    }
-    
-    .accordion-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .accordion-icon {
-      font-size: 1.3rem;
-      color: #667eea;
-      transition: transform 0.2s ease;
-    }
-    
-    .accordion-container.open .accordion-icon {
-      transform: rotate(90deg);
-    }
-    
-    .accordion-count {
-      background: #667eea;
-      color: white;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    
-    .accordion-content {
-      display: none;
-      padding: 15px;
-      background: white;
-    }
-    
-    .accordion-container.open .accordion-content {
-      display: block;
-    }
-    
     .issues-list {
       list-style: none;
       padding: 0;
@@ -368,6 +322,11 @@ export const COLOR_REPORT_STYLES = `
       border-radius: 6px;
       border-left: 4px solid #e53e3e;
       color: #742a2a;
+      transition: background 0.2s;
+    }
+    
+    .issues-list li:hover {
+      background: #fed7d7;
     }
     
     .warnings-list {
@@ -382,20 +341,12 @@ export const COLOR_REPORT_STYLES = `
       border-radius: 6px;
       border-left: 4px solid #ed8936;
       color: #7c2d12;
+      transition: background 0.2s;
+    }
+    
+    .warnings-list li:hover {
+      background: #feebc8;
     }
 `;
 
-export const ACCORDION_SCRIPT = `
-  <script>
-    // Accordion functionality
-    document.addEventListener('click', function(e) {
-      const header = e.target.closest('.accordion-header');
-      if (header) {
-        const container = header.closest('.accordion-container');
-        if (container) {
-          container.classList.toggle('open');
-        }
-      }
-    });
-  </script>
-`;
+export { ACCORDION_SCRIPT };

@@ -3,6 +3,7 @@
 
 import { exportStyleGuideColorsReport } from './styleGuideColorsReport';
 import { platformStrings } from '../utils/platform';
+import { generateReportHeader } from './reportComponents';
 
 interface ThemeStyles {
   colors?: {
@@ -69,9 +70,9 @@ export function exportStyleGuide(
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
+    .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid #667eea; }
     .header h1 { font-size: 2.7rem; margin: 0 0 10px 0; color: #2d3748; }
-    .header p { color: #7180D8; font-size: 1.8rem; }
+    .header p { color: #7180D8; font-size: 1.8rem; margin: 5px 0; }
     .section { margin-bottom: 50px; page-break-inside: avoid; }
     .section-title { font-size: 2rem; color: #2d3748; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; }
     .style-group { margin-bottom: 30px; }
@@ -84,13 +85,14 @@ export function exportStyleGuide(
   </style>
 </head>
 <body>
+  ${generateReportHeader({
+    title: 'Brand Style Guide',
+    domain: domain,
+    data: data,
+    emoji: '🎯',
+    subtitle: 'Typography',
+  })}
   <div class="container">
-    <div class="header">
-      <h1>🎯 ${domain} Brand Style Guide</h1>
-			<h1>Typography</h1>
-      <p>Professional Design Audit by ${platformStrings.productName}</p>
-      <p><span style="font-size: 1.2rem;">Generated on ${new Date().toLocaleString()}<span></p>
-    </div>
 
     <div class="section">
       <h2 class="section-title">✏️ Typography</h2>

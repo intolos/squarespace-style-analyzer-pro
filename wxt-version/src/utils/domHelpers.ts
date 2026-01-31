@@ -246,21 +246,56 @@ export function getSectionInfo(element: Element | null): string {
     const tagName = parent.tagName ? parent.tagName.toLowerCase() : '';
     const id = parent.id || '';
     const className = (typeof parent.className === 'string' ? parent.className : '').toLowerCase();
+    const role = parent.getAttribute('role');
+    const ariaLabel = parent.getAttribute('aria-label');
 
-    if (tagName === 'header' || className.includes('header') || id.includes('header'))
+    // Semantic HTML & Landmarks
+    if (tagName === 'header' || role === 'banner' || className.includes('site-header'))
       return 'Header';
-    if (tagName === 'footer' || className.includes('footer') || id.includes('footer'))
+    if (tagName === 'footer' || role === 'contentinfo' || className.includes('site-footer'))
       return 'Footer';
-    if (tagName === 'nav' || className.includes('nav') || id.includes('navigation'))
+    if (tagName === 'nav' || role === 'navigation' || className.includes('nav'))
       return 'Navigation';
+    if (tagName === 'main' || role === 'main') return 'Main Content';
+    if (tagName === 'article' || role === 'article') return 'Article';
+    if (tagName === 'aside' || role === 'complementary') return 'Sidebar';
 
+    // Squarespace Specific
     const sqsSection = parent.getAttribute('data-section-id');
     if (sqsSection) return 'Section (' + sqsSection + ')';
 
+    // WordPress Specific
+    if (
+      className.includes('wp-block-group') ||
+      className.includes('wp-block-cover') ||
+      className.includes('wp-block-columns')
+    ) {
+      if (ariaLabel) return 'Group: ' + ariaLabel;
+      if (className.includes('cover')) return 'Cover Block';
+      if (className.includes('columns')) return 'Columns Block';
+      return 'Content Group';
+    }
+
+    // Generic Section Detection
     if (tagName === 'section' || id.includes('section') || className.includes('section')) {
-      if (id && !id.startsWith('yui_')) return 'Section #' + id;
+      if (ariaLabel) return 'Section: ' + ariaLabel;
+      if (id && !id.startsWith('yui_') && !isDynamicId(id)) return 'Section #' + id;
+
+      // Try to find a heading inside the section to name it
+      const firstHeading = parent.querySelector('h1, h2, h3, h4, h5, h6');
+      if (firstHeading && firstHeading.textContent) {
+        return 'Section: ' + firstHeading.textContent.substring(0, 30).trim() + '...';
+      }
+      // Fallback: Use class name if available
+      if (className) {
+        const meaningfulClass = className
+          .split(' ')
+          .find(c => c !== 'section' && !c.includes('wp-block-') && !isDynamicId(c));
+        if (meaningfulClass) return 'Section (' + meaningfulClass + ')';
+      }
       return 'Section';
     }
+
     parent = parent.parentElement;
     depth++;
   }
@@ -271,37 +306,53 @@ export function getBlockInfo(element: Element): string {
   let parent: Element | null = element;
   let depth = 0;
 
+  // Strategy 1: Look for explicit IDs (Generic & Squarespace)
   while (parent && depth < 20) {
     const id = parent.getAttribute('id');
-    if (id) {
+    if (id && !isDynamicId(id)) {
+      // Use isDynamicId to filter junk
       const lowerCaseId = id.toLowerCase();
-      if (lowerCaseId.startsWith('block-') || id.startsWith('Block') || id.startsWith('block'))
+      // Generic block-like IDs
+      if (
+        lowerCaseId.includes('block') ||
+        lowerCaseId.includes('widget') ||
+        lowerCaseId.includes('content')
+      ) {
         return '#' + id;
+      }
+      // Squarespace specific format
+      if (lowerCaseId.startsWith('block-')) return '#' + id;
     }
     parent = parent.parentElement;
     depth++;
   }
 
+  // Strategy 2: Look for data attributes & typical block classes
   parent = element;
   depth = 0;
   while (parent && depth < 20) {
+    // Squarespace
     const dataBlockId = parent.getAttribute('data-block-id');
     if (dataBlockId) return '#block-' + dataBlockId;
 
     const blockType = parent.getAttribute('data-block-type');
-    if (blockType) {
-      const parentId = parent.getAttribute('id');
-      if (
-        parentId &&
-        (parentId.toLowerCase().startsWith('block-') || parentId.startsWith('Block'))
-      ) {
-        return '#' + parentId;
+    if (blockType) return 'block-type-' + blockType;
+
+    // WordPress
+    if (parent.className && typeof parent.className === 'string') {
+      const classes = parent.className.split(' ');
+      const wpBlock = classes.find(
+        c => c.startsWith('wp-block-') && c !== 'wp-block-group' && c !== 'wp-block-column'
+      );
+      if (wpBlock) {
+        return wpBlock.replace('wp-block-', ''); // e.g. "image", "paragraph", "button"
       }
-      return 'block-type-' + blockType;
     }
+
     parent = parent.parentElement;
     depth++;
   }
+
   return 'unknown-block';
 }
 
@@ -309,4 +360,60 @@ export function extractFontSize(styleDefinition: string | null): string | null {
   if (!styleDefinition) return null;
   const match = styleDefinition.match(/font-size:\s*([0-9.]+px)/);
   return match ? match[1] : null;
+}
+
+/**
+ * Gets the actual font size of visible text within an element.
+ * Uses TreeWalker to find the first text node with content and reads
+ * the computed font size from its direct parent element.
+ *
+ * IMPORTANT: This is more accurate than reading from the container element
+ * because the text may be in a nested element with different styling.
+ *
+ * @param element - The element to analyze
+ * @returns Object with fontSize (number), fontSizeString (e.g., "16px"), and fontSizeUndetermined flag
+ */
+export function getTextNodeFontSize(element: Element): {
+  fontSize: number;
+  fontSizeString: string;
+  fontSizeUndetermined: boolean;
+} {
+  // Use TreeWalker to efficiently find text nodes
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+    acceptNode: node => {
+      // Only accept text nodes with actual content (not just whitespace)
+      return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    },
+  });
+
+  const textNode = walker.nextNode();
+
+  if (textNode && textNode.parentElement) {
+    // Read computed style from the text node's direct parent
+    const computed = window.getComputedStyle(textNode.parentElement);
+    const fontSizeValue = parseFloat(computed.fontSize) || 0;
+
+    // IMPORTANT: For visible text, this should NEVER be 0.
+    // If it is, we flag it as undetermined for special handling in the report.
+    if (fontSizeValue === 0) {
+      console.warn('[SSA] Unexpected 0px font size for visible text:', textNode.parentElement);
+    }
+
+    return {
+      fontSize: fontSizeValue,
+      fontSizeString: computed.fontSize || '',
+      fontSizeUndetermined: fontSizeValue === 0,
+    };
+  }
+
+  // Fallback: If no text node found (shouldn't happen since we already checked hasDirectText),
+  // read from the element itself
+  const computed = window.getComputedStyle(element);
+  const fontSizeValue = parseFloat(computed.fontSize) || 0;
+
+  return {
+    fontSize: fontSizeValue,
+    fontSizeString: computed.fontSize || '',
+    fontSizeUndetermined: fontSizeValue === 0,
+  };
 }

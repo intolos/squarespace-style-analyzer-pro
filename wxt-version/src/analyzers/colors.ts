@@ -4,7 +4,8 @@ import {
   getWCAGLevel,
   isTransparentColor,
 } from '../utils/colorUtils';
-import { generateSelector } from '../utils/domHelpers';
+import { shouldFilterElement } from '../utils/issueFilters';
+import { generateSelector, getTextNodeFontSize } from '../utils/domHelpers';
 
 export interface ContrastIssue {
   textColor: string;
@@ -21,6 +22,9 @@ export interface ContrastIssue {
   element: string;
   elementText: string;
   fontSize: number;
+  fontSizeString: string;
+  fontSizeUndetermined: boolean;
+  fontWeight: number;
   coords: {
     top: number;
     bottom: number;
@@ -454,7 +458,17 @@ export async function trackContrastPair(
   const rect = element.getBoundingClientRect();
 
   const computed = window.getComputedStyle(element);
-  const fontSize = parseFloat(computed.fontSize) || 0;
+
+  // IMPORTANT: Get accurate font size by finding the text node's actual rendering context.
+  // This is more accurate than reading from the container element because
+  // the text may be in a nested element with different styling.
+  const { fontSize, fontSizeString, fontSizeUndetermined } = getTextNodeFontSize(element);
+
+  /* Refactored: Centralized filtering via issueFilters.ts */
+  if (shouldFilterElement(element, 'contrast')) {
+    return;
+  }
+
   const fontWeight = parseInt(computed.fontWeight, 10) || 400;
   const isLargeText = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
   const wcagLevel = getWCAGLevel(ratio, isLargeText);
@@ -484,6 +498,9 @@ export async function trackContrastPair(
     element: element.tagName,
     elementText: element.textContent?.trim() || '',
     fontSize: Math.round(fontSize),
+    fontSizeString: fontSizeString,
+    fontSizeUndetermined: fontSizeUndetermined,
+    fontWeight: fontWeight,
     coords: coords,
     selector: generateSelector(element),
   };

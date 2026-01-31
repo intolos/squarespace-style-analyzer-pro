@@ -98,6 +98,9 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
   async loadAccumulatedResults() {
     this.accumulatedResults = await ResultsManager.loadAccumulatedResults();
+    // Load detected platform if available
+    const data = await chrome.storage.local.get(['detectedPlatform']);
+    this.detectedPlatform = data.detectedPlatform || null;
   }
 
   async saveAccumulatedResults() {
@@ -485,10 +488,18 @@ class SquarespaceAnalyzer implements AnalyzerController {
   // --- Actions ---
 
   async analyzeSite() {
+    // Show platform banner in post-analysis position immediately
+    if (!isSqs && this.detectedPlatform && this.detectedPlatform.message) {
+      this.showPlatformBanner(this.detectedPlatform.message, true);
+    }
     await SinglePageAnalysisUI.analyzeSite(this);
   }
 
   async analyzeDomain() {
+    // Show platform banner in post-analysis position immediately
+    if (!isSqs && this.detectedPlatform && this.detectedPlatform.message) {
+      this.showPlatformBanner(this.detectedPlatform.message, true);
+    }
     await DomainAnalysisUI.analyzeDomain(this);
   }
 
@@ -540,10 +551,20 @@ class SquarespaceAnalyzer implements AnalyzerController {
           // IMPORTANT: Only show siteInfo if no results are currently displayed.
           siteInfo.style.display = this.accumulatedResults ? 'none' : 'block';
         }
-        // IMPORTANT: Detect platform and show banner (generic version only)
-        // Only show if no results are currently displayed (before analysis)
-        if (!this.accumulatedResults && tab.id) {
-          await this.detectPlatformForBanner(tab.id);
+
+        // IMPORTANT: Handle Platform Detection Banner
+        // Check if we already have results (Post-Analysis state)
+        if (this.accumulatedResults) {
+          // If we have stored platform info, show it in the post-analysis position
+          if (this.detectedPlatform && this.detectedPlatform.message) {
+            this.showPlatformBanner(this.detectedPlatform.message, true); // Show Post-Analysis Banner
+          }
+        } else {
+          // No results yet (Pre-Analysis state)
+          // Run detection if needed and show Pre-Analysis banner
+          if (tab.id) {
+            await this.detectPlatformForBanner(tab.id);
+          }
         }
       }
     } catch (e) {
@@ -665,6 +686,8 @@ class SquarespaceAnalyzer implements AnalyzerController {
       const platformInfo = results[0]?.result;
       if (platformInfo && platformInfo.message) {
         this.detectedPlatform = platformInfo; // Save for reports
+        // Persist to storage
+        chrome.storage.local.set({ detectedPlatform: platformInfo });
         this.showPlatformBanner(platformInfo.message, false /* not post-analysis */);
       }
     } catch (e) {
@@ -689,14 +712,22 @@ class SquarespaceAnalyzer implements AnalyzerController {
     if (postAnalysis) {
       const postMsg = document.getElementById('platformMessagePost');
       if (postBanner && postMsg) {
-        postMsg.textContent = message;
+        postMsg.innerHTML = message;
         postBanner.style.display = 'block';
+        // Apply high contrast styling
+        postBanner.style.background = '#213DE5'; // Bright Blue
+        postBanner.style.color = '#FFFFFF';
+        postBanner.style.border = '1px solid #2C5282';
       }
     } else {
       const preMsg = document.getElementById('platformMessage');
       if (preBanner && preMsg) {
-        preMsg.textContent = message;
+        preMsg.innerHTML = message;
         preBanner.style.display = 'block';
+        // Apply high contrast styling
+        preBanner.style.background = '#213DE5'; // Bright Blue
+        preBanner.style.color = '#FFFFFF';
+        preBanner.style.border = '1px solid #2C5282';
       }
     }
   }
@@ -729,8 +760,12 @@ class SquarespaceAnalyzer implements AnalyzerController {
         'singlePageAnalysisResults',
         'singlePageAnalysisError',
         'domainAnalysisMobileOnly',
+        'singlePageAnalysisError',
+        'domainAnalysisMobileOnly',
         'domainAnalysisUseMobileViewport',
+        'detectedPlatform', // Clear platform info on reset
       ]);
+      this.detectedPlatform = null;
       const analyzeBtn = document.getElementById('analyzeBtn');
       const analyzeDomainBtn = document.getElementById('analyzeDomainBtn');
       const siteInfo = document.getElementById('siteInfo');
@@ -752,20 +787,20 @@ class SquarespaceAnalyzer implements AnalyzerController {
     ResultsManager.displayResults(this.accumulatedResults);
   }
 
-  exportCSV() {
-    ExportManager.exportCSV(this);
+  async exportCSV() {
+    await ExportManager.exportCSV(this);
   }
-  exportHTMLReport() {
-    ExportManager.exportHTMLReport(this);
+  async exportHTMLReport() {
+    await ExportManager.exportHTMLReport(this);
   }
-  exportImagesReport() {
-    ExportManager.exportImagesReport(this);
+  async exportImagesReport() {
+    await ExportManager.exportImagesReport(this);
   }
-  exportStyleGuide() {
-    ExportManager.exportStyleGuide(this);
+  async exportStyleGuide() {
+    await ExportManager.exportStyleGuide(this);
   }
-  exportMobileReport() {
-    ExportManager.exportMobileReport(this);
+  async exportMobileReport() {
+    await ExportManager.exportMobileReport(this);
   }
 
   async checkPremiumStatus() {

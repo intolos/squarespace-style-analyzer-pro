@@ -6,6 +6,7 @@ This module handles all color-related logic. It is split into two parts:
 
 - **Logic Orchestrator:** `src/analyzers/colors.ts`
 - **Pixel Scanner:** `src/analyzers/colorScanner.ts`
+- **Filter Utility:** `src/utils/issueFilters.ts` (Centralized exclusions & safety checks)
 
 ## Critical Logic & "The Why"
 

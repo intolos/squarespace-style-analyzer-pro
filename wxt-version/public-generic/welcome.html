@@ -1018,6 +1018,7 @@
     <a href="#whydesignaudit">Why Our Design Audit?</a>
     <a href="#how">How It Works</a>
     <a href="#pricing">Pricing</a>
+    <a href="#testimonials">Success Story</a>
     <a href="#permissions">Permissions</a>
     <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank">Get it at Chrome Web Store</a>
     <div class="scroll-indicator" id="scrollIndicator">▼ Scroll for more</div>
@@ -1596,25 +1597,60 @@ In contrast, our report shows a listing of only the images with missing alt text
   
   
 <!-- BEGIN TESTIMONIALS -->
-  
-<!--
   <div class="testimonials" id="testimonials">
     <div class="container">
-      <h2 class="section-title">What Our Users Say</h2>
-      <p class="section-subtitle">Trusted by website professionals worldwide</p>
+      <h2 class="section-title">One User’s Success Story</h2>
+<!--      <p class="section-subtitle">Trusted by Squarespace professionals worldwide</p>  -->
       
       <div class="testimonial-grid">
         <div class="testimonial">
-          <p class="testimonial-text">“This extension saved me hours of manually documenting site styles. The export feature is fantastic for client handoffs.”</p>
+          <p class="testimonial-text">
+							<section>
+									<h3 style="color:#4B68E7;">Does Website Style Analyzer Pro provide real value for me?</h1>
+									<p><strong>Yes, absolutely.</strong> As a web designer who works with existing websites, this extension provides real practical value. It gives me structured, technical, and visual information that I can directly use in my work when analyzing or improving a client’s website.</p>
+							</section>
+							<br />
+							<section>
+									<h3>Website audit and client reporting</h2>
+									<p>When a client already has a website but wants to improve it, this extension helps me quickly understand the current state of the site.</p>
+									
+									<p>I can identify issues such as:</p>
+										<ul>
+												<li>missing alt text on images</li>
+												<li>missing or incorrect H1/H2 headings</li>
+												<li>inconsistent typography or styles and much more</li>
+										</ul>
+									
+									<p>This allows me to prepare a clear, minimal audit or report for the client, which is very helpful both for communication and for justifying design or structural changes.</p>
+							</section>
+							<br />
+							<section>
+									<h3>Huge time saver and centralized style overview</h2>
+									<p>The extension saves a lot of time by collecting all style information in one place.</p>
+									<p>In many cases, clients don’t have design files, brand guidelines, or source materials. With one scan, I can extract typography, colors, and styling directly from the live site instead of manually inspecting everything.</p>
+							</section>
+							<br />
+							<section>
+									<h3>Easier onboarding for redesign or collaboration</h2>
+									<p>When working on redesigns, improvements, or taking over an existing project, this tool helps me get up to speed very quickly. It reduces guesswork and helps me make more consistent design decisions based on what already exists.</p>
+							</section>
+							<br />
+							<section>
+									<p><strong>One thing I really liked is that the reports show the <em>exact location of issues</em></strong>. For example, where an image without alt text is located or where a heading is missing. This makes fixing problems extremely fast and practical.</p>
+							</section>
+          </p><br />
           <div class="testimonial-author">
-            <div class="author-avatar">SJ</div>
+            <div class="author-avatar">AM</div>
             <div class="author-info">
-              <h4>Sarah Johnson</h4>
-              <p>Website Designer</p>
+              <h4>Aliya M.</h4>
+              <p>Squarespace Designer</p>
             </div>
           </div>
         </div>
-
+			</div>
+		</div>
+	</div>
+<!--
         <div class="testimonial">
           <p class="testimonial-text">“The domain analysis feature is a game-changer. I can analyze entire sites and spot inconsistencies instantly.”</p>
           <div class="testimonial-author">
@@ -1686,6 +1722,7 @@ In contrast, our report shows a listing of only the images with missing alt text
           <li><a href="#whydesignaudit">Why Our Design Audit?</a></li>          
           <li><a href="#how">How It Works</a></li>
           <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#testimonials">Success Story</a></li>
           <li><a href="#permissions">Permissions</a></li>
 						<table>
 						<tr>
@@ -1728,66 +1765,6 @@ In contrast, our report shows a listing of only the images with missing alt text
   </div>
 
   <!-- HAMBURGER MENU JAVASCRIPT -->
-  <script>
-    (function() {
-      const hamburgerBtn = document.getElementById('hamburgerBtn');
-      const navDropdown = document.getElementById('navDropdown');
-
-      // Toggle dropdown on hamburger click
-      hamburgerBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        navDropdown.classList.toggle('open');
-      });
-
-      // Close dropdown when clicking a link
-      navDropdown.querySelectorAll('a').forEach(function(link) {
-        link.addEventListener('click', function() {
-          navDropdown.classList.remove('open');
-        });
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!navDropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
-          navDropdown.classList.remove('open');
-        }
-      });
-
-      // Scroll indicator logic
-      const scrollIndicator = document.getElementById('scrollIndicator');
-      
-      function updateScrollIndicator() {
-        // Temporarily hide the indicator so it doesn't affect scrollHeight
-        scrollIndicator.classList.add('hidden');
-        
-        // Add a small buffer (2px) to account for subpixel rendering
-        const isScrollable = navDropdown.scrollHeight > navDropdown.clientHeight + 2;
-        const isAtBottom = navDropdown.scrollTop + navDropdown.clientHeight >= navDropdown.scrollHeight - 10;
-        
-        // Only show if content necessitates scrolling and we aren't at the bottom
-        if (isScrollable && !isAtBottom) {
-          scrollIndicator.classList.remove('hidden');
-        }
-      }
-      
-      navDropdown.addEventListener('scroll', updateScrollIndicator);
-      
-      navDropdown.addEventListener('transitionend', function(e) {
-        // Only trigger if the transition happened on the dropdown itself (not a child)
-        // and check if it's open (to avoid unnecessary checks when closing)
-        if (e.target === navDropdown && navDropdown.classList.contains('open')) {
-          updateScrollIndicator();
-        }
-      });
-      
-      // Check on menu open (immediate check as fallback/start)
-      hamburgerBtn.addEventListener('click', function() {
-        // We rely on transitionend for the final state, but we can clear any stale state here
-      });
-      
-      // Check on window resize
-      window.addEventListener('resize', updateScrollIndicator);
-    })();
-  </script>
+  <script src="welcome.js"></script>
 </body>
 </html>

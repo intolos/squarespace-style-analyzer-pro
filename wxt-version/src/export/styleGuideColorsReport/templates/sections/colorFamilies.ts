@@ -52,18 +52,20 @@ export function buildNeutralsSection(
   return `
     ${generateSectionHeader('neutrals-section', `Neutral Colors (${analysis.grays.length} neutrals found)`, '⚪', getNextSection('neutrals-section'))}
     <div class="section">
-      <div class="color-swatch-grid">
-        ${analysis.grays
-          .map(
-            color => `
-          <div class="color-swatch">
-            <div class="swatch" style="background-color: ${color};"></div>
-            <div class="swatch-label">${color}</div>
-            <div class="swatch-count">${colors[color].count} uses</div>
-          </div>
-        `
-          )
-          .join('')}
+      <div class="color-category-section">
+        <div class="color-swatch-grid">
+          ${analysis.grays
+            .map(
+              color => `
+            <div class="color-swatch">
+              <div class="swatch" style="background-color: ${color};"></div>
+              <div class="swatch-label">${color}</div>
+              <div class="swatch-count">${colors[color].count} uses</div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
       </div>
     </div>
   `;

@@ -47,7 +47,7 @@ export const CONTRAST_CHECKER_HTML = `<!DOCTYPE html>
       <div class="color-inputs"><input type="color" id="bgColorPicker" value="#FFFFFF"><input type="text" id="bgColorInput" value="#FFFFFF" maxlength="7"></div>
     </div>
   </div>
-  <div class="instructions">Make your browser window narrower so you can keep this Contrast Checker side-by-side. Click each color box to show a color picker icon (small eyedropper) to click on then click a color from your web page. Or you can click, or drag, on the color rectangle. Or enter a color hex code. A new Color Contrast Score is shown. Multiple options makes it easy to find an acceptable combination of colors.</div>
+  <div class="instructions">Make your browser window narrower so you can keep this Contrast Checker side-by-side. 1. Click each color box. Click on the color picker icon (small eyedropper). Click a color from your web page. 2. Or you can click, or drag, on the color rectangle. 3. Or enter a color hex code. A new Color Contrast Score and Pass/Fail indicators are shown. Multiple options makes it easy to find an acceptable combination of colors.</div>
   <div class="results-container">
     <div class="result-box">
       <div id="ratioValue" class="ratio-value">21.00</div>

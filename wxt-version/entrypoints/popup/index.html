@@ -4,6 +4,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="description" content="Professional Design Audit tool for websites. Quality Checks of over 70 Aspects of Design. Critical checks not shown in SEO audits.">
+  <style>
+    html, body {
+      width: 380px;
+      height: 600px;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+  </style>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +27,7 @@
     <div class="card">
       <div id="notSquarespace" class="not-squarespace" style="display: none;">
         <strong id="uiNotSqsTitle">⚠️ Not a Squarespace Site</strong><br>
-        <span id="uiNotSqsDescription">This extension works on all websites. However, it has over 40 Squarespace-specific factors. To analyze this site, use the standard procedures.</span>
+        <span id="uiNotSqsDescription">This extension works on all websites. However, it has over 40 Squarespace-specific factors.</span>
       </div>
       
       <!-- Loading spinner shown on initial load -->
@@ -138,12 +149,15 @@
           </div>
 
           <!-- Platform banner relocated here after analysis (populated by JS) -->
-          <div id="platformBannerPostAnalysis" class="platform-banner platform-banner-post" style="display: none;">
-            <span id="platformMessagePost"></span>
-          </div>
+
         </div>
 
 
+
+        <!-- Platform banner relocated here after analysis (populated by JS) -->
+        <div id="platformBannerPostAnalysis" class="platform-banner platform-banner-post" style="display: none;">
+          <span id="platformMessagePost"></span>
+        </div>
 
         <div class="multi-page-info">
           <strong>📚 Multi-Page Analysis:</strong>
