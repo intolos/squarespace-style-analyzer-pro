@@ -74,9 +74,65 @@ export class LiveInspector {
         transition: none;
       `;
 
+      // Helper: Find the UNION of all visible descendant rects if the element itself is collapsed (0x0)
+      const getVisibleBoundingRect = (element: Element): DOMRect => {
+        let rect = element.getBoundingClientRect();
+
+        // If element has dimensions, use them
+        if (rect.width > 0 && rect.height > 0) return rect;
+
+        let minLeft = Infinity;
+        let minTop = Infinity;
+        let maxRight = -Infinity;
+        let maxBottom = -Infinity;
+        let foundVisibleContent = false;
+
+        const checkChildren = (parent: Element) => {
+          const children = parent.children;
+          for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childRect = child.getBoundingClientRect();
+
+            // If child has dimensions, include it in union
+            if (childRect.width > 0 && childRect.height > 0) {
+              foundVisibleContent = true;
+              minLeft = Math.min(minLeft, childRect.left);
+              minTop = Math.min(minTop, childRect.top);
+              maxRight = Math.max(maxRight, childRect.right);
+              maxBottom = Math.max(maxBottom, childRect.bottom);
+            }
+
+            // Recursively check if this child is also collapsed but has content
+            if (child.children.length > 0) {
+              checkChildren(child);
+            }
+          }
+        };
+
+        checkChildren(element);
+
+        if (foundVisibleContent) {
+          // Return the Union Rect
+          return {
+            left: minLeft,
+            top: minTop,
+            width: maxRight - minLeft,
+            height: maxBottom - minTop,
+            right: maxRight,
+            bottom: maxBottom,
+            x: minLeft,
+            y: minTop,
+            toJSON: () => {},
+          } as DOMRect;
+        }
+
+        // Fallback to original if no visible content found
+        return rect;
+      };
+
       // Update position to match element's current viewport position
       const updatePosition = () => {
-        const rect = el!.getBoundingClientRect();
+        const rect = getVisibleBoundingRect(el!);
         highlight.style.top = rect.top + 'px';
         highlight.style.left = rect.left + 'px';
         highlight.style.width = rect.width + 'px';
