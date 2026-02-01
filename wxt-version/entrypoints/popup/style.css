@@ -1054,3 +1054,16 @@ body.premium-active #statusSection {
   margin-top: 10px;
   margin-bottom: 15px;
 }
+
+/* Platform Banner - Matched to site-info styling per user request */
+.platform-banner {
+  background: #b4d3ff;
+  color: #000000;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid #8eb9ff; /* Adjusted border to match new background */
+}

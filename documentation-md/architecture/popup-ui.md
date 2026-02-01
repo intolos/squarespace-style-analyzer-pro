@@ -36,11 +36,32 @@ To ensure a "Premium" feel, the popup is architected to be instantly visible and
 
 ## Critical Implementation Details
 
-- **Site Info Visibility**: `#siteInfo` is hidden whenever analysis results exist or while an analysis is in progress. It is **only** restored when the user clicks **Reset Extension**.
-- **Usage Counter Protection**: For premium users, `#statusSection` is hidden by default in HTML, removed from the DOM on popup load, and protected by a `MutationObserver` ("Nuclear Option") in `main.ts` to prevent accidental reappearance.
-- **Modal Positioning**: The File Selection modal is forcibly prepended to the top of its parent container using `mainInterface.insertBefore(modal, mainInterface.firstChild)`.
-- **Contrast**: All buttons use dark backgrounds specifically chosen to maintain high text contrast (`#44337a` for Lifetime Premium, `#22543d` for activation, etc.).
 - **Async Exports**: Because of lazy loading, all `ExportManager` methods are now `async`. Calls in `main.ts` must use `await` to ensure proper feedback (like success messages) is shown only after the chunk is loaded and the export finishes.
+
+## 🛡️ Safety & Security (Added 2026-01-31)
+
+### 1. Restricted URL Handling
+
+- **The Problem**: Browser extensions are strictly forbidden from injecting scripts into internal browser pages (e.g., `chrome://`, `about:`, `edge://`). Attempting to do so triggers a `Cannot access a chrome:// URL` error.
+- **The Solution**: The `checkCurrentSite` method in `main.ts` now identifies restricted schemes before any detection logic runs.
+- **Implementation**:
+  ```typescript
+  const restrictedSchemes = ['chrome:', 'about:', 'edge:', 'chrome-extension:', 'moz-extension:'];
+  const isRestricted = restrictedSchemes.some(scheme => tab.url?.startsWith(scheme));
+  ```
+- **Result**: On restricted pages, the extension gracefully skips script-based platform detection, avoiding console errors and potential crashes.
+
+## 🛠️ Dynamic UI Logic (Added 2026-01-31)
+
+### 1. Version-Specific Premium Benefits
+
+To maintain high conversion and relevance, the "Premium Benefits" list is now generated dynamically in `main.ts` via `setPremiumBenefits()`:
+
+- **Priority Reordering**: "80 aspects of design" is hardcoded to the 2nd position for max visibility.
+- **Platform-Specific "Hook"**:
+  - **SQS Version**: Mentions exactly 40 SQS factors.
+  - **Generic Version**: Lists counts for WP (50), Wix (45), Shopify (47), and Webflow (52).
+- **Fallback Avoidance**: By using JS-driven injection, we ensure that if a version-specific count is updated (e.g., from 40 to 45), it only needs to be changed in one logic block rather than multiple HTML files.
 
 ## Report Consistency
 

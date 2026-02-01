@@ -141,10 +141,10 @@ export interface PlatformConfig {
 
 Detection runs in this order (first match wins):
 
-1. **Squarespace** - Most specific indicators
-2. **Shopify** - Checkout meta tag is definitive
+1. **Squarespace** - Most specific indicators (.sqs- classes, YUI references)
+2. **Shopify** - Enhanced detection (CDN links, payment buttons, window.Shopify, and checkout meta tags)
 3. **Webflow** - `data-wf-*` attributes are unique
-4. **WordPress** - Then sub-detect builder
+4. **WordPress** - Then sub-detect builder (Elementor/Divi/Gutenberg)
 5. **Wix** - `comp-*` IDs and data-testid
 6. **Generic** - Fallback
 
@@ -377,20 +377,23 @@ const delay = getDelayForPlatform(platformInfo.platform);
 window.__platformInfo = platformInfo;
 ```
 
-### 2. Popup UI
+### 2. Popup UI (Centralized Injection)
 
 ```typescript
 // In popup/main.ts
 async checkCurrentSite() {
-  // ... existing code ...
+  // ... safety checks for restricted URLs ...
 
   // Platform detection (generic version only)
   if (!isSqs) {
-    const platformInfo = await this.detectPlatformViaContentScript(tab.id!);
-    this.showPlatformBanner(platformInfo);
+    // Injects the centralized detectPlatform function directly into the page context
+    await this.detectPlatformForBanner(tab.id!);
   }
 }
 ```
+
+> [!IMPORTANT]
+> To ensure the popup and the core analyzer always agree on the platform, the popup now uses the **centralized** `detectPlatform` utility from `src/platforms/index.ts`. This eliminates duplication and ensures that fixes to detection (like the 2026-01-31 Shopify enhancement) apply globally.
 
 ### 3. Report Generation
 
