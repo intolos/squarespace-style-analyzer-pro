@@ -1,0 +1,19 @@
+filename,purpose,lines
+to-do-email-sending.md,To-Do: Email Sending via Cloudflare Worker,148
+2026-01-15-migrating-export-functions.md,WXT Migration Task Tracker,39
+2026-01-19-ui-reordering-and-visibility-fixes.md,Task: Reorder Domain Analysis UI (File Selection to Top),18
+2026-01-21-branding-license-fix.md,Task List: Branding & License Fix (Archive),27
+2026-01-20-stripe-lifetime-tasks.md,"Task: Fix Time Estimate, Subscription Buttons, and Add E2E Tests",19
+2026-01-19-mobile-usability-and-cancel-buttons.md,Task List,42
+2026-01-11-screenshot-quota-and-style-guide-export.md,Tasks,47
+2026-01-10-test-website-and-report-fixes.md,Task List,25
+2026-01-20-final-ui-fixes-and-versioning.md,Task: Fix Domain Analysis UI Issues,22
+2026-01-16-modular-automated-test-suite.md,Task: Automated Test Suite Implementation,14
+2026-01-20-stripe-architecture-plan.md,Architecture Redesign: Dynamic & Cross-Product Licensing,38
+2026-01-15-refining-squarespace-element-analysis.md,Task: Dual Extension Architecture Documentation,13
+2026-01-19-ui-updates-and-premium-logic.md,Task: UI Refinement & Premium UX Enhancement,20
+2026-01-19-fix-premium-ui-activation.md,Task: Debug Premium UI Hybrid Issue,16
+2026-01-13-documenting-critical-analyses.md,Locate Button Functionality Restoration,13
+2026-01-17-regression-fixes-and-standardized-filenames.md,Task: Fix Export Report Regressions,24
+2026-01-19-subscription-persistence-fix.md,Task: Fix Subscription Buttons & Persistence (2026-01-19),10
+2026-01-14-fixing-console-logs.md,Code Review Task,19

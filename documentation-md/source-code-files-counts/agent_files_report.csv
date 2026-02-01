@@ -1,0 +1,3 @@
+filename,purpose,lines,folder_path
+documentation.md,Documentation Workflow,40,workflows
+critical-workflow-rules.md,CRITICAL WORKFLOW RULES:,14,rules

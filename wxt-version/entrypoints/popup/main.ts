@@ -7,6 +7,7 @@ import { SinglePageAnalysisUI } from '../../src/ui/singlePageAnalysisUI';
 import { UIHelpers, customAlert, customPrompt } from '../../src/utils/uiHelpers';
 import { platformStrings, isSqs } from '../../src/utils/platform';
 import { UserData } from '../../src/utils/storage';
+import { detectPlatform } from '../../src/platforms/index';
 
 class SquarespaceAnalyzer implements AnalyzerController {
   usageCount: number = 0;
@@ -39,6 +40,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
     await this.loadUserData();
     await this.loadAccumulatedResults();
     this.updateUI();
+    this.setPremiumBenefits();
     this.repositionMobileSectionForUser();
     this.bindEvents();
     this.bindDomainAnalysisEvents();
@@ -529,6 +531,23 @@ class SquarespaceAnalyzer implements AnalyzerController {
       const tab = tabs[0];
       if (!tab.url) return;
 
+      // Skip script injection for restricted URLs (browser internal pages)
+      const restrictedSchemes = [
+        'chrome:',
+        'about:',
+        'edge:',
+        'chrome-extension:',
+        'moz-extension:',
+      ];
+      const isRestricted = restrictedSchemes.some(scheme => tab.url?.startsWith(scheme));
+
+      if (isRestricted) {
+        console.log('Restricted URL detected, skipping platform detection');
+        const currentUrlEl = document.getElementById('currentUrl');
+        if (currentUrlEl) currentUrlEl.textContent = new URL(tab.url).hostname || tab.url;
+        return;
+      }
+
       const isSquarespace = await this.checkIfSquarespace(tab.id!);
       const hostname = new URL(tab.url).hostname;
       const currentUrlEl = document.getElementById('currentUrl');
@@ -598,6 +617,52 @@ class SquarespaceAnalyzer implements AnalyzerController {
   }
 
   /**
+   * Sets the Premium Benefits list based on the extension version (SQS vs Generic).
+   * Reorders items and adds version-specific bullets as requested by the user.
+   */
+  setPremiumBenefits(): void {
+    const list = document.getElementById('premiumBenefitsList');
+    if (!list) return;
+
+    const commonItems = [
+      'Full style detection',
+      'Color palette extraction',
+      'Brand Style Guide Typography',
+      'Brand Style Guide Colors',
+      'Headings analysis',
+      'Paragraphs analysis',
+      'Buttons analysis',
+      'Images alt text analysis',
+      'Check for generic image filenames',
+      'CSV export for spreadsheet analysis',
+      'HTML reports for beautiful presentations for so many design audit analyses in one place you will not find anywhere else',
+      'Up to 12 reports generated depending on what is discovered on your website',
+      'Priority support',
+      'Lifetime updates',
+    ];
+
+    let versionBullet = '';
+    if (isSqs) {
+      versionBullet =
+        'This extension works on all websites. However, it has 40 Squarespace-specific factors.';
+    } else {
+      versionBullet =
+        'This extension works on all websites. In particular, it has 50 WordPress-specific factors including logic for the major builders of Elementor, Divi, and the native Gutenberg editor; 40 Squarespace-specific factors; 45 Wix-specific factors, 47 Shopify-specific factors; and 52 Webflow-specific factors. (If you use another development platform and want us to create the specific factors for it, use the contact info below.)';
+    }
+
+    const html = `
+      <li>Unlimited website analyses</li>
+      <li>Critical quality checks of over 80 aspects of design</li>
+      <li>${versionBullet}</li>
+      <li>Page-by-page analysis</li>
+      <li>Full domain analysis via sitemap. For larger websites, you are able to select groups of pages, in the Premium feature of page selection, to analyze your entire site in sections if desired to save time.</li>
+      ${commonItems.map(item => `<li>${item}</li>`).join('')}
+    `;
+
+    list.innerHTML = html;
+  }
+
+  /**
    * IMPORTANT: Detects the website platform and shows a banner in the generic version.
    * This runs the detectPlatform function in the page context and updates the banner UI.
    * Only runs for the generic version (!isSqs).
@@ -609,78 +674,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
     try {
       const results = await chrome.scripting.executeScript({
         target: { tabId },
-        func: () => {
-          // Inline platform detection (matches platforms/index.ts logic)
-          const isSqsPage = !!(
-            document.querySelector('meta[name="generator"][content*="Squarespace"]') ||
-            document.querySelector('.sqs-block') ||
-            document.querySelector('[data-section-id]') ||
-            document.querySelector('[data-block-id]')
-          );
-          if (isSqsPage) {
-            return {
-              platform: 'squarespace',
-              factorCount: 40,
-              message: 'Squarespace detected. Using 40 platform-specific analysis factors.',
-            };
-          }
-
-          const isShopify = !!(
-            document.querySelector('meta[name="shopify-checkout-api-token"]') ||
-            document.querySelector('link[href*="/cdn/shop/"]') ||
-            document.querySelector('.shopify-section') ||
-            document.querySelector('[data-shopify]')
-          );
-          if (isShopify) {
-            return {
-              platform: 'shopify',
-              factorCount: 47,
-              message: 'Shopify detected. Using 47 platform-specific analysis factors.',
-            };
-          }
-
-          const isWebflow = !!(
-            document.querySelector('meta[name="generator"][content*="Webflow"]') ||
-            document.querySelector('html[data-wf-domain]') ||
-            document.querySelector('.w-nav')
-          );
-          if (isWebflow) {
-            return {
-              platform: 'webflow',
-              factorCount: 52,
-              message: 'Webflow detected. Using 52 platform-specific analysis factors.',
-            };
-          }
-
-          const isWP = !!(
-            document.querySelector('meta[name="generator"][content*="WordPress"]') ||
-            document.querySelector('.wp-block') ||
-            document.querySelector('#wpadminbar') ||
-            document.querySelector('link[href*="wp-content"]')
-          );
-          if (isWP) {
-            return {
-              platform: 'wordpress',
-              factorCount: 50,
-              message: 'WordPress detected. Using 50 platform-specific analysis factors.',
-            };
-          }
-
-          const isWix = !!(
-            document.querySelector('meta[name="generator"][content*="Wix"]') ||
-            document.querySelector('[id^="comp-"]') ||
-            document.querySelector('[data-mesh-id]')
-          );
-          if (isWix) {
-            return {
-              platform: 'wix',
-              factorCount: 45,
-              message: 'Wix detected. Using 45 platform-specific analysis factors.',
-            };
-          }
-
-          return { platform: 'generic', factorCount: 0, message: '' };
-        },
+        func: detectPlatform,
       });
 
       const platformInfo = results[0]?.result;
@@ -714,20 +708,16 @@ class SquarespaceAnalyzer implements AnalyzerController {
       if (postBanner && postMsg) {
         postMsg.innerHTML = message;
         postBanner.style.display = 'block';
-        // Apply high contrast styling
-        postBanner.style.background = '#213DE5'; // Bright Blue
-        postBanner.style.color = '#FFFFFF';
-        postBanner.style.border = '1px solid #2C5282';
+        // Styling handled by CSS class .platform-banner (matches site-info)
+        // High contrast inline styles removed per user request (2026-01-31)
       }
     } else {
       const preMsg = document.getElementById('platformMessage');
       if (preBanner && preMsg) {
         preMsg.innerHTML = message;
         preBanner.style.display = 'block';
-        // Apply high contrast styling
-        preBanner.style.background = '#213DE5'; // Bright Blue
-        preBanner.style.color = '#FFFFFF';
-        preBanner.style.border = '1px solid #2C5282';
+        // Styling handled by CSS class .platform-banner (matches site-info)
+        // High contrast inline styles removed per user request (2026-01-31)
       }
     }
   }

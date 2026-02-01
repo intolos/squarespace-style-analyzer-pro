@@ -1,0 +1,20 @@
+filename,purpose,lines
+2026-01-19-fixing-scroll-position-and-ui-messages.md,Walkthrough: Fixing Scroll Position and UI Messages,100
+2026-01-19-ui-reordering-and-visibility-fixes.md,Walkthrough: UI Reordering and Visibility Fixes,41
+2026-01-23-metadata-passthrough-and-button-fix.md,Walkthrough - Extension Metadata Passthrough & Button Fix,40
+2026-01-11-screenshot-quota-and-style-guide-export.md,"Walkthrough - UI Fixes, Style Guide Export, and Performance Stability",27
+2026-01-23-variable-license-system-restoration.md,Variable-Based License System Restoration,81
+2026-01-23-report-and-license-refinements.md,Walkthrough - Report & License Refinements (2026-01-23),47
+2026-01-10-test-website-and-report-fixes.md,"Extension Fixes & Test Website Updates (Jan 10, 2026)",78
+2026-01-16-modular-automated-test-suite.md,Walkthrough - Modular Automated Test Suite,63
+2026-01-20-troubleshooting-lifetime-subscription.md,Walkthrough: troubleshooting lifetime subscription,80
+2026-01-18-fix-recovery-guide.md,"Fixes & Recovery Guide (Jan 18, 2026)",89
+2026-01-21-setup-stripe-webhooks.md,Guide: How to Setup Stripe Webhooks,46
+2026-01-19-ui-updates-and-premium-logic.md,UI Updates & Premium Logic Walkthrough (v11),26
+2026-01-19-fix-premium-ui-activation.md,Walkthrough: Premium Activation Flow & UI Fixes,23
+2026-01-19-revert-premium-prefill.md,Walkthrough: Premium Activation Flow & UI Fixes,23
+2026-01-21-branding-license-walkthrough.md,Walkthrough: Branding & License Fix (Archive),38
+2026-01-17-regression-fixes-and-standardized-filenames.md,Regression Fixes Walkthrough,74
+2026-01-19-subscription-persistence-fix.md,Walkthrough: Fix Subscription Buttons & Persistence,34
+2026-01-20-refactor-modal-padding-fix.md,Walkthrough: refactor modal padding fix,40
+2026-01-23-expiration-notification.md,Expiration Notification Implementation,185

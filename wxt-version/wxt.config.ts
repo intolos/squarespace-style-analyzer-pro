@@ -18,7 +18,7 @@ export default defineConfig(((env: any) => {
     manifest: {
       name: isSqs ? 'Squarespace Style Analyzer Pro' : 'Website Style Analyzer Pro',
       description:
-        'Professional Design Audit tool for websites. Quality Checks of over 70 Aspects of Design. Critical checks not shown in SEO audits.',
+        'Professional Design Audit tool for websites. Quality Checks of over 80 Aspects of Design. Critical checks not shown in SEO audits.',
       permissions: ['activeTab', 'scripting', 'storage', 'tabs', 'debugger', 'unlimitedStorage'],
       host_permissions: ['<all_urls>'],
       icons: {

@@ -1,0 +1,21 @@
+filename,purpose,lines
+theme-capture.md,Theme & Style Capture Documentation (`src/analyzers/themeCapture.ts`),65
+dual-build-system.md,Dual Extension Build & Wording Instructions,85
+webflow-specific-elements.md,Webflow-Specific Elements Analysis,498
+font-size-capture-accessibility.md,Font Size Capture for Accessibility Analysis,294
+multi-platform-architecture.md,Multi-Platform Detection Architecture,435
+popup-ui.md,Popup UI Architecture,102
+locate-button.md,Locate Button Functionality Documentation,118
+shopify-specific-elements.md,Shopify-Specific Elements Analysis,469
+shared-report-components.md,Shared Report Components Architecture,96
+issue-filters.md,Architecture: Accessibility Issue Filters,109
+squarespace-specific-elements.md,Squarespace-Specific Elements Analysis,294
+content-analysis.md,Content & Layout Analysis Documentation (`src/analyzers/`),90
+license-system.md,License System Architecture,174
+wordpress-specific-elements.md,WordPress-Specific Elements Analysis,326
+domain-analysis.md,Domain Analysis Documentation (`src/analyzers/domain/`),69
+mobile-analysis.md,Mobile Analysis Documentation (`src/analyzers/mobileLighthouse.ts`),62
+color-analysis.md,Color Analysis Documentation (`src/analyzers/colors.ts`),82
+wix-specific-elements.md,Wix-Specific Elements Analysis,392
+CONTACT_EMAIL_MAPPING.md,Contact Email Mapping,69
+product-strategy.md,Product Strategy: Dual Extension Architecture,191

@@ -40,8 +40,12 @@ export function detectPlatform(): PlatformInfo {
   const isShopify = !!(
     document.querySelector('meta[name="shopify-checkout-api-token"]') ||
     document.querySelector('link[href*="/cdn/shop/"]') ||
+    document.querySelector('link[href*="cdn.shopify.com"]') ||
+    document.querySelector('script[src*="cdn.shopify.com"]') ||
     document.querySelector('.shopify-section') ||
+    document.querySelector('.shopify-payment-button') ||
     document.querySelector('[data-shopify]') ||
+    window.location.hostname.includes('myshopify.com') ||
     (window as any).Shopify !== undefined
   );
 
