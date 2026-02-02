@@ -521,7 +521,24 @@
       margin-bottom: 20px;
       line-height: 1.8;
     }
+    
+    .testimonial-features li {
+			list-style: none;
+      padding: 0;
+      color: #4a5568;
+      border-bottom: 1px solid #f7fafc;
+    }
 
+    .testimonial-features li:before {
+      content: "✓";
+      color: #48bb78;
+      font-weight: bold;
+      margin-right: 10px;
+			font-size: 1.1rem;      /* Adjust size as needed (e.g., 20px, 1.2em) */
+			vertical-align: middle; /* Keeps the larger icon aligned with the text */
+			line-height: 1;					/* Prevents the larger icon from adding extra height to the row */
+    }
+    
     .testimonial-author {
       display: flex;
       align-items: center;
@@ -1578,6 +1595,7 @@ In contrast, our report shows a listing of only the images with missing alt text
             <li>Paragraphs analysis</li>
             <li>Buttons analysis</li>
             <li>Images alt text analysis</li>
+            <li>Lightning fast. Analyze web pages in seconds and entire websites in minutes</li>
             <li>CSV export for spreadsheet analysis</li>
             <li>HTML reports for beautiful presentations for so many design audit analyses in one place you will not find anywhere else</li>
           </ul>
@@ -1602,6 +1620,7 @@ In contrast, our report shows a listing of only the images with missing alt text
             <li>Paragraphs analysis</li>
             <li>Buttons analysis</li>
             <li>Images alt text analysis</li>
+            <li>Lightning fast. Analyze web pages in seconds and entire websites in minutes</li>
             <li>CSV export for spreadsheet analysis</li>
             <li>HTML reports for beautiful presentations for so many design audit analyses in one place you will not find anywhere else</li>
             <li>Priority support</li>
@@ -1632,7 +1651,7 @@ In contrast, our report shows a listing of only the images with missing alt text
         <div class="testimonial">
           <p class="testimonial-text">
 							<section>
-									<h3 style="color:#4B68E7;">Does Website Style Analyzer Pro provide real value for me?</h1>
+									<h3 style="color:#4B68E7;">Does Website Style Analyzer Pro provide real value for me?</h3>
 									<p><strong>Yes, absolutely.</strong> As a web designer who works with existing websites, this extension provides real practical value. It gives me structured, technical, and visual information that I can directly use in my work when analyzing or improving a client’s website.</p>
 							</section>
 							<br />
@@ -1641,7 +1660,7 @@ In contrast, our report shows a listing of only the images with missing alt text
 									<p>When a client already has a website but wants to improve it, this extension helps me quickly understand the current state of the site.</p>
 									
 									<p>I can identify issues such as:</p>
-										<ul>
+										<ul class="testimonial-features">
 												<li>missing alt text on images</li>
 												<li>missing or incorrect H1/H2 headings</li>
 												<li>inconsistent typography or styles and much more</li>
@@ -1662,7 +1681,8 @@ In contrast, our report shows a listing of only the images with missing alt text
 							</section>
 							<br />
 							<section>
-									<p><strong>One thing I really liked is that the reports show the <em>exact location of issues</em></strong>. For example, where an image without alt text is located or where a heading is missing. This makes fixing problems extremely fast and practical.</p>
+									<h3>One thing I really liked is that the reports show the exact location of issues</h3>
+									<p>For example, where an image without alt text is located or where a heading is missing. This makes fixing problems extremely fast and practical.</p>
 							</section>
           </p><br />
           <div class="testimonial-author">
