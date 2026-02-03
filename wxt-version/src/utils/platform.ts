@@ -62,4 +62,23 @@ export const platformStrings = {
   favicon: isSqs
     ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon32.png'
     : 'https://intolos.github.io/website-style-analyzer-pro/icon32.png',
+  reviewUrl: (() => {
+    // defaults to chrome if undefined
+    const browser = import.meta.env.BROWSER || 'chrome';
+    if (isSqs) {
+      if (browser === 'firefox')
+        return 'https://addons.mozilla.org/en-US/firefox/addon/squarespace-style-analyzer/'; // Placeholder
+      if (browser === 'edge')
+        return 'https://microsoftedge.microsoft.com/addons/detail/squarespace-style-analyzer/'; // Placeholder
+      // Default to Chrome
+      return 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi/reviews';
+    } else {
+      if (browser === 'firefox')
+        return 'https://addons.mozilla.org/en-US/firefox/addon/website-style-analyzer/'; // Placeholder
+      if (browser === 'edge')
+        return 'https://microsoftedge.microsoft.com/addons/detail/website-style-analyzer/'; // Placeholder
+      // Default to Chrome
+      return 'https://chromewebstore.google.com/detail/website-style-analyzer/bhbgppapclpojpeemgdpdkannonmohbo/reviews';
+    }
+  })(),
 };

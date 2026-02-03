@@ -250,6 +250,8 @@ class SquarespaceAnalyzer implements AnalyzerController {
     setAttr('uiContactEmail', 'href', `mailto:${platformStrings.questionsEmail}`);
     set('uiQuestionsEmail', platformStrings.questionsEmail); // For backwards compatibility or other uses if needed
     set('uiContactEmail', 'Contact Us by Email');
+    setAttr('uiReviewLink', 'href', platformStrings.reviewUrl);
+    setAttr('uiBenefitsLinkInText', 'href', platformStrings.benefitsUrl);
     if (!platformStrings.showQuickDetection) {
       const detectionTitleInfo = document.getElementById('uiDetectionTitle');
       if (detectionTitleInfo) {

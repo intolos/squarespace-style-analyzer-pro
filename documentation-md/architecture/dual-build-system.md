@@ -8,15 +8,17 @@ The build system is configured to use WXT "modes". Each mode loads its respectiv
 
 ### Squarespace Style Analyzer Pro
 
-- **Build**: `npm run build:sqs`
+- **Build (Chrome)**: `npm run build:sqs` (or `npx wxt build --mode sqs`)
+- **Build (Firefox)**: `npx wxt build --mode sqs -b firefox`
 - **Zip for Store**: `npm run zip:sqs`
-- **Output Folder**: `.output/chrome-mv3` (Note: Build outputs overwrite each other, so build one at a time).
+- **Output Folder**: `.output/sqs/chrome-mv3` or `.output/sqs/firefox-mv2`
 
 ### Website Style Analyzer Pro (Generic)
 
-- **Build**: `npm run build:generic`
+- **Build (Chrome)**: `npm run build:generic` (or `npx wxt build --mode generic`)
+- **Build (Firefox)**: `npx wxt build --mode generic -b firefox`
 - **Zip for Store**: `npm run zip:generic`
-- **Output Folder**: `.output/chrome-mv3`
+- **Output Folder**: `.output/generic/chrome-mv3` or `.output/generic/firefox-mv2`
 
 ---
 
@@ -39,14 +41,20 @@ To avoid maintaining two separate sets of HTML files, we use environment variabl
 
 ### How to use variables in code:
 
-In TypeScript files, you can use `import.meta.env.VITE_PRODUCT_NAME` or check `import.meta.env.VITE_IS_SQS_VERSION`.
+### How to use variables in code:
+
+In TypeScript files, you can use:
+
+- `import.meta.env.VITE_PRODUCT_NAME`: The product name.
+- `import.meta.env.VITE_IS_SQS_VERSION`: Boolean string ('true'/'false').
+- `import.meta.env.BROWSER`: The target browser ('chrome', 'firefox', 'edge'). Used for generating correct review URLs in `platform.ts`.
 
 ### Plan for Popup UI:
 
-1.  **Current Status**: `entrypoints/popup/index.html` has hardcoded "Squarespace" text.
-2.  **Next Step**: Refactor `index.html` and `main.ts` to replace hardcoded strings with dynamic text populated at runtime.
-    - Example: Replace `Squarespace Style Analyzer Pro` with a span `<span id="extName"></span>`.
-    - Populate it in `main.ts`: `document.getElementById('extName').textContent = import.meta.env.VITE_PRODUCT_NAME;`
+1.  **Current Status**: `entrypoints/popup/index.html` uses placeholders like `<span id="uiToolsBrand"></span>` and anchor tags with IDs like `uiBenefitsLinkInText`.
+2.  **Implementation**: `main.ts` uses `updatePlatformBranding()` to populate these dynamically from `platformStrings` in `platform.ts`.
+    - Example: `set('uiToolsBrand', platformStrings.toolsBrand);`
+    - Example: `setAttr('uiBenefitsLinkInText', 'href', platformStrings.benefitsUrl);`
 
 ---
 

@@ -1,116 +1,119 @@
-filename,purpose,lines,folder_path
-wxt.config.ts,WXT Framework Configuration,37,.
-run-tests-ui.sh,run-tests-ui.sh - Interactive Test Runner for Squarespace Style Analyzer Pro,85,.
-package-lock.json,NPM Dependency Lock File,8224,.
-package.json,NPM Project Configuration & Dependencies,39,.
-tsconfig.json,TypeScript Compilation Rules,3,.
-playwright.config.ts,Playwright E2E Testing Configuration,40,.
-vitest.config.ts,Vitest Unit Testing Configuration,9,.
-welcome.js,Toggle dropdown on hamburger click,64,public-generic
-welcome.html,Extension Welcome & Onboarding Page,1799,public-generic
-platform.test.ts,N/A,25,tests/unit/logic
-qualityChecks.test.ts,We need to handle the import and potentially mock dependencies,68,tests/unit/logic
-colorLogic.test.ts,N/A,59,tests/unit/logic
-export.test.ts,N/A,33,tests/unit/logic
-resultsManager.test.ts,Mock chrome.storage,118,tests/unit/logic
-styleComparison.test.ts,N/A,88,tests/unit/logic
-content.spec.ts,N/A,45,tests/e2e
-images.spec.ts,N/A,27,tests/e2e
-exports.spec.ts,N/A,37,tests/e2e
-domain.spec.ts,N/A,26,tests/e2e
-popup-ui.spec.ts,N/A,96,tests/e2e
-colors.spec.ts,N/A,44,tests/e2e
-mobile.spec.ts,N/A,26,tests/e2e
-extension.ts,N/A,37,tests/e2e/fixtures
-mock-site.html,N/A,67,tests/e2e/fixtures
-welcome.js,Toggle dropdown on hamburger click,64,public-sqs
-welcome.html,Extension Welcome & Onboarding Page,1799,public-sqs
-counter.ts,N/A,9,components
-verify-export-migration.sh,verify-export-migration.sh,88,scripts
-content.ts,N/A,418,entrypoints
-background.ts,N/A,597,entrypoints
-index.html,Popup Main Interface Structure,364,entrypoints/popup
-main.ts,N/A,965,entrypoints/popup
-style.css,N/A,1069,entrypoints/popup
-index.html,Popup Main Interface Structure,85,playwright-report
-index.html,Popup Main Interface Structure,43,playwright-report/trace
-uiMode.Btcz36p_.css,N/A,1,playwright-report/trace
-xtermModule.DYP7pi_n.css,N/A,32,playwright-report/trace
-defaultSettingsView.ConWv5KN.css,N/A,1,playwright-report/trace
-codeMirrorModule.C3UTv-Ge.css,N/A,1,playwright-report/trace
-uiMode.BWTwXl41.js,N/A,5,playwright-report/trace
-snapshot.html,N/A,21,playwright-report/trace
-index.C4Y3Aw8n.css,N/A,1,playwright-report/trace
-index.BxQ34UMZ.js,N/A,2,playwright-report/trace
-sw.bundle.js,N/A,3,playwright-report/trace
-uiMode.html,N/A,17,playwright-report/trace
-codeMirrorModule-Bucv2d7q.js,N/A,25,playwright-report/trace/assets
-defaultSettingsView-BEpdCv1S.js,N/A,266,playwright-report/trace/assets
-.last-run.json,N/A,6,test-results
-types.ts,N/A,114,src
-pageSelectionUI.ts,N/A,426,src/ui
-singlePageAnalysisUI.ts,N/A,293,src/ui
-domainAnalysisUI.ts,N/A,710,src/ui
-colors.ts,N/A,524,src/analyzers
-themeCapture.ts,analyzers/themeCapture.ts,267,src/analyzers
-mobileConverter.ts,N/A,221,src/analyzers
-mobileLighthouse.ts,... (existing imports),165,src/analyzers
-images.ts,N/A,271,src/analyzers
-buttons.ts,N/A,166,src/analyzers
-styleExtractor.ts,analyzers/styleExtractor.ts,158,src/analyzers
-colorScanner.ts,analyzers/colorScanner.ts,204,src/analyzers
-links.ts,N/A,84,src/analyzers
-mobileScripts.ts,N/A,501,src/analyzers
-typography.ts,analyzers/typography.ts,459,src/analyzers
-crawler.ts,N/A,20,src/analyzers/domain
-types.ts,N/A,40,src/analyzers/domain
-index.ts,N/A,319,src/analyzers/domain
-pageAnalyzer.ts,N/A,307,src/analyzers/domain
-selectorManager.ts,N/A,124,src/platforms
-index.ts,N/A,118,src/platforms
-selectors.ts,N/A,89,src/platforms/webflow
-themeCapture.ts,Helper function to get most common style for a heading type,257,src/platforms/squarespace
-selectors.ts,Squarespace-specific element selectors,73,src/platforms/squarespace
-selectors.ts,N/A,97,src/platforms/wordpress
-selectors.ts,N/A,84,src/platforms/shopify
-selectors.ts,Generic element selectors for non-platform-specific analysis,30,src/platforms/generic
-selectors.ts,N/A,82,src/platforms/wix
-branding.ts,N/A,15,src/config
-resultsManager.ts,managers/resultsManager.ts,432,src/managers
-domainAnalysis.ts,Domain Analysis Manager,818,src/managers
-licenseManager.ts,managers/licenseManager.ts,248,src/managers
-styleComparisonUtils.ts,utils/styleComparisonUtils.ts,212,src/utils
-uiHelpers.ts,UI Helper Functions and Custom Modals,200,src/utils
-screenshot.ts,N/A,86,src/utils
-storage.ts,utils/storage.ts,61,src/utils
-domHelpers.ts,N/A,419,src/utils
-platform.ts,N/A,65,src/utils
-inspector.ts,N/A,185,src/utils
-colorUtils.ts,N/A,125,src/utils
-issueFilters.ts,N/A,206,src/utils
-imagesReport.ts,N/A,327,src/export
-htmlReports.ts,export/htmlReports.ts,373,src/export
-aggregatedStylesReport.ts,export/aggregatedStylesReport.ts,390,src/export
-pageByPageReport.ts,export/pageByPageReport.ts,400,src/export
-csv.ts,N/A,284,src/export
-mobileReport.ts,N/A,440,src/export
-utils.ts,export/utils.ts,28,src/export
-reportComponents.ts,Shared components for report generation,209,src/export
-README.md,Export Module - Refactored Structure,234,src/export
-types.ts,N/A,101,src/export
-reportStyles.ts,export/reportStyles.ts,72,src/export
-qualityChecks.ts,export/qualityChecks.ts,505,src/export
-styleGuide.ts,styleGuide.ts - Typography Style Guide Export,279,src/export
-index.ts,index.ts - Export Manager,169,src/export
-types.ts,types.ts - Type definitions for color report,86,src/export/styleGuideColorsReport
-index.ts,index.ts - Main export function for color style guide report,128,src/export/styleGuideColorsReport
-analysis.ts,analysis.ts - Color analysis logic,288,src/export/styleGuideColorsReport
-components.ts,templates/components.ts - Reusable HTML components,194,src/export/styleGuideColorsReport/templates
-styles.ts,N/A,352,src/export/styleGuideColorsReport/templates
-contrastChecker.ts,templates/contrastChecker.ts - WCAG Contrast Checker Tool,156,src/export/styleGuideColorsReport/templates
-accessibility.ts,templates/sections/accessibility.ts - Accessibility/contrast section,232,src/export/styleGuideColorsReport/templates/sections
-outliers.ts,templates/sections/outliers.ts - Outlier colors section,59,src/export/styleGuideColorsReport/templates/sections
-scoreCard.ts,templates/sections/scoreCard.ts - Score display section,49,src/export/styleGuideColorsReport/templates/sections
-distribution.ts,templates/sections/distribution.ts - Page distribution section,104,src/export/styleGuideColorsReport/templates/sections
-colorFamilies.ts,templates/sections/colorFamilies.ts - Color families and variations,72,src/export/styleGuideColorsReport/templates/sections
-issues.ts,templates/sections/issues.ts - Issues and warnings sections,36,src/export/styleGuideColorsReport/templates/sections
+filename,purpose,lines,folder_path,,
+wxt.config.ts,WXT Framework Configuration,37,.,,
+run-tests-ui.sh,run-tests-ui.sh - Interactive Test Runner for Squarespace Style Analyzer Pro,85,.,85,
+package-lock.json,NPM Dependency Lock File,8224,.,,
+package.json,NPM Project Configuration & Dependencies,39,.,,
+tsconfig.json,TypeScript Compilation Rules,3,.,,
+playwright.config.ts,Playwright E2E Testing Configuration,40,.,40,
+vitest.config.ts,Vitest Unit Testing Configuration,9,.,9,
+welcome.js,Toggle dropdown on hamburger click,64,public-generic,,64
+welcome.html,Extension Welcome & Onboarding Page,1799,public-generic,,1799
+platform.test.ts,N/A,25,tests/unit/logic,25,
+qualityChecks.test.ts,We need to handle the import and potentially mock dependencies,68,tests/unit/logic,68,
+colorLogic.test.ts,N/A,59,tests/unit/logic,59,
+export.test.ts,N/A,33,tests/unit/logic,33,
+resultsManager.test.ts,Mock chrome.storage,118,tests/unit/logic,118,
+styleComparison.test.ts,N/A,88,tests/unit/logic,88,
+content.spec.ts,N/A,45,tests/e2e,45,
+images.spec.ts,N/A,27,tests/e2e,27,
+exports.spec.ts,N/A,37,tests/e2e,37,
+domain.spec.ts,N/A,26,tests/e2e,26,
+popup-ui.spec.ts,N/A,96,tests/e2e,96,
+colors.spec.ts,N/A,44,tests/e2e,44,
+mobile.spec.ts,N/A,26,tests/e2e,26,
+extension.ts,N/A,37,tests/e2e/fixtures,37,
+mock-site.html,N/A,67,tests/e2e/fixtures,67,
+welcome.js,Toggle dropdown on hamburger click,64,public-sqs,64,
+welcome.html,Extension Welcome & Onboarding Page,1799,public-sqs,1799,
+counter.ts,N/A,9,components,,
+verify-export-migration.sh,verify-export-migration.sh,88,scripts,,
+content.ts,N/A,418,entrypoints,,
+background.ts,N/A,597,entrypoints,,
+index.html,Popup Main Interface Structure,364,entrypoints/popup,,
+main.ts,N/A,965,entrypoints/popup,,
+style.css,N/A,1069,entrypoints/popup,,
+index.html,Popup Main Interface Structure,85,playwright-report,85,
+index.html,Popup Main Interface Structure,43,playwright-report/trace,43,
+uiMode.Btcz36p_.css,N/A,1,playwright-report/trace,1,
+xtermModule.DYP7pi_n.css,N/A,32,playwright-report/trace,32,
+defaultSettingsView.ConWv5KN.css,N/A,1,playwright-report/trace,1,
+codeMirrorModule.C3UTv-Ge.css,N/A,1,playwright-report/trace,1,
+uiMode.BWTwXl41.js,N/A,5,playwright-report/trace,5,
+snapshot.html,N/A,21,playwright-report/trace,21,
+index.C4Y3Aw8n.css,N/A,1,playwright-report/trace,1,
+index.BxQ34UMZ.js,N/A,2,playwright-report/trace,2,
+sw.bundle.js,N/A,3,playwright-report/trace,3,
+uiMode.html,N/A,17,playwright-report/trace,17,
+codeMirrorModule-Bucv2d7q.js,N/A,25,playwright-report/trace/assets,25,
+defaultSettingsView-BEpdCv1S.js,N/A,266,playwright-report/trace/assets,266,
+.last-run.json,N/A,6,test-results,6,
+types.ts,N/A,114,src,,
+pageSelectionUI.ts,N/A,426,src/ui,,
+singlePageAnalysisUI.ts,N/A,293,src/ui,,
+domainAnalysisUI.ts,N/A,710,src/ui,,
+colors.ts,N/A,524,src/analyzers,,
+themeCapture.ts,analyzers/themeCapture.ts,267,src/analyzers,,
+mobileConverter.ts,N/A,221,src/analyzers,,
+mobileLighthouse.ts,... (existing imports),165,src/analyzers,,
+images.ts,N/A,271,src/analyzers,,
+buttons.ts,N/A,166,src/analyzers,,
+styleExtractor.ts,analyzers/styleExtractor.ts,158,src/analyzers,,
+colorScanner.ts,analyzers/colorScanner.ts,204,src/analyzers,,
+links.ts,N/A,84,src/analyzers,,
+mobileScripts.ts,N/A,501,src/analyzers,,
+typography.ts,analyzers/typography.ts,459,src/analyzers,,
+crawler.ts,N/A,20,src/analyzers/domain,,
+types.ts,N/A,40,src/analyzers/domain,,
+index.ts,N/A,319,src/analyzers/domain,,
+pageAnalyzer.ts,N/A,307,src/analyzers/domain,,
+selectorManager.ts,N/A,124,src/platforms,,
+index.ts,N/A,118,src/platforms,,
+selectors.ts,N/A,89,src/platforms/webflow,,
+themeCapture.ts,Helper function to get most common style for a heading type,257,src/platforms/squarespace,,
+selectors.ts,Squarespace-specific element selectors,73,src/platforms/squarespace,,
+selectors.ts,N/A,97,src/platforms/wordpress,,
+selectors.ts,N/A,84,src/platforms/shopify,,
+selectors.ts,Generic element selectors for non-platform-specific analysis,30,src/platforms/generic,,
+selectors.ts,N/A,82,src/platforms/wix,,
+branding.ts,N/A,15,src/config,,
+resultsManager.ts,managers/resultsManager.ts,432,src/managers,,
+domainAnalysis.ts,Domain Analysis Manager,818,src/managers,,
+licenseManager.ts,managers/licenseManager.ts,248,src/managers,,
+styleComparisonUtils.ts,utils/styleComparisonUtils.ts,212,src/utils,,
+uiHelpers.ts,UI Helper Functions and Custom Modals,200,src/utils,,
+screenshot.ts,N/A,86,src/utils,,
+storage.ts,utils/storage.ts,61,src/utils,,
+domHelpers.ts,N/A,419,src/utils,,
+platform.ts,N/A,65,src/utils,,
+inspector.ts,N/A,185,src/utils,,
+colorUtils.ts,N/A,125,src/utils,,
+issueFilters.ts,N/A,206,src/utils,,
+imagesReport.ts,N/A,327,src/export,,
+htmlReports.ts,export/htmlReports.ts,373,src/export,,
+aggregatedStylesReport.ts,export/aggregatedStylesReport.ts,390,src/export,,
+pageByPageReport.ts,export/pageByPageReport.ts,400,src/export,,
+csv.ts,N/A,284,src/export,,
+mobileReport.ts,N/A,440,src/export,,
+utils.ts,export/utils.ts,28,src/export,,
+reportComponents.ts,Shared components for report generation,209,src/export,,
+README.md,Export Module - Refactored Structure,234,src/export,,
+types.ts,N/A,101,src/export,,
+reportStyles.ts,export/reportStyles.ts,72,src/export,,
+qualityChecks.ts,export/qualityChecks.ts,505,src/export,,
+styleGuide.ts,styleGuide.ts - Typography Style Guide Export,279,src/export,,
+index.ts,index.ts - Export Manager,169,src/export,,
+types.ts,types.ts - Type definitions for color report,86,src/export/styleGuideColorsReport,,
+index.ts,index.ts - Main export function for color style guide report,128,src/export/styleGuideColorsReport,,
+analysis.ts,analysis.ts - Color analysis logic,288,src/export/styleGuideColorsReport,,
+components.ts,templates/components.ts - Reusable HTML components,194,src/export/styleGuideColorsReport/templates,,
+styles.ts,N/A,352,src/export/styleGuideColorsReport/templates,,
+contrastChecker.ts,templates/contrastChecker.ts - WCAG Contrast Checker Tool,156,src/export/styleGuideColorsReport/templates,,
+accessibility.ts,templates/sections/accessibility.ts - Accessibility/contrast section,232,src/export/styleGuideColorsReport/templates/sections,,
+outliers.ts,templates/sections/outliers.ts - Outlier colors section,59,src/export/styleGuideColorsReport/templates/sections,,
+scoreCard.ts,templates/sections/scoreCard.ts - Score display section,49,src/export/styleGuideColorsReport/templates/sections,,
+distribution.ts,templates/sections/distribution.ts - Page distribution section,104,src/export/styleGuideColorsReport/templates/sections,,
+colorFamilies.ts,templates/sections/colorFamilies.ts - Color families and variations,72,src/export/styleGuideColorsReport/templates/sections,,
+issues.ts,templates/sections/issues.ts - Issues and warnings sections,36,src/export/styleGuideColorsReport/templates/sections,,
+,,31820,,3302,1863
+,,,,,5165
+,,26655,,,

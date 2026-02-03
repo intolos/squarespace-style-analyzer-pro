@@ -63,6 +63,15 @@ To maintain high conversion and relevance, the "Premium Benefits" list is now ge
   - **Generic Version**: Lists counts for WP (50), Wix (45), Shopify (47), and Webflow (52).
 - **Fallback Avoidance**: By using JS-driven injection, we ensure that if a version-specific count is updated (e.g., from 40 to 45), it only needs to be changed in one logic block rather than multiple HTML files.
 
+### 2. Questions, Suggestions, Reviews Section
+
+This section at the bottom of the popup remains visible to encourage user engagement.
+
+- **Dynamic Content**:
+  - **Benefits Link**: The word "Benefits" is wrapped in an anchor (`#uiBenefitsLinkInText`) which is dynamically assigned the same URL as the main "Click to See" button (`platformStrings.benefitsUrl`).
+  - **Review Link**: The "Add Your “Success Story” Review" link (`#uiReviewLink`) is dynamically assigned a URL based on the browser (Chrome Store vs Firefox Add-ons) and product version via `platformStrings.reviewUrl`.
+- **Styling**: Uses specific font-size (`0.8rem` for footer, `0.9rem` for body) and `display: block` structure to ensure clean rendering.
+
 ## Report Consistency
 
 - See [shared-report-components.md](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/documentation-md/architecture/shared-report-components.md) for details on how we unified the UI across all exports.
