@@ -1,11 +1,20 @@
-<!DOCTYPE html>
+
+
+
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - WordPress Style Analyzer Pro</title>
-  <link rel="icon" href="icon32.png" type="image/png">
+  <title>Privacy Policy - WordPress Style Analyzer Pro - Website Design Audit for Visual Consistency</title>
+  <link rel="icon" href="https://intolos.github.io/wordpress-style-analyzer-pro/icon32.png" type="image/png">
   <style>
+    html {
+      font-size: 18px !important;
+      --base-font-size: 1rem;
+      scroll-behavior: smooth;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -13,48 +22,82 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      font-size: 1rem;
       line-height: 1.6;
       color: #2d3748;
-      background: #f7fafc;
-      padding: 20px;
+      overflow-x: clip;
+      padding-top: 60px;
+    }
+
+    /* Premium Shared Styles */
+    .hero {
+      background: linear-gradient(135deg, #4B68E7 0%, #764ba2 100%);
+      color: white;
+      padding: 40px 20px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      text-align: center;
+    }
+
+    .header-logo {
+      height: 4rem;
+      width: auto;
+      margin-right: 15px;
+    }
+
+    .header-title {
+      font-size: 2.5rem;
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2.2rem;
+      margin-bottom: 0px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      color: white;
+      border-bottom: none;
+      margin-top: 0;
     }
 
     .container {
       max-width: 900px;
       margin: 0 auto;
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 40px 20px;
     }
 
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 40px;
-      border-radius: 8px;
-      margin-bottom: 40px;
-      text-align: center;
-    }
-
-    .header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-    }
-
-    .header p {
-      font-size: 2.5rem;
-      opacity: 1;
-      color: white;
-    }
-
+    /* Privacy Policy Specific Content Styles (Retained) */
     h2 {
-      color: #667eea;
-      margin-top: 40px;
+      color: #4B68E7;
+      margin-top: 25px;
       margin-bottom: 20px;
       font-size: 1.8rem;
-      border-bottom: 2px solid #667eea;
+      border-bottom: 2px solid #4B68E7;
       padding-bottom: 10px;
     }
 
@@ -80,62 +123,13 @@
       margin-bottom: 10px;
     }
 
-    .highlight-box {
-      background: #edf2f7;
-      border-left: 4px solid #667eea;
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 4px;
-    }
-
-    .highlight-box strong {
-      color: #667eea;
-      display: block;
-      margin-bottom: 10px;
-      font-size: 1.1rem;
-    }
-
-    .contact-box {
-      background: #f7fafc;
-      border: 2px solid #667eea;
-      padding: 30px;
-      border-radius: 8px;
-      margin-top: 40px;
-      text-align: center;
-    }
-
-    .contact-box h3 {
-      color: #667eea;
-      margin-top: 0;
-    }
-
-    .contact-box a {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 1.2rem;
-    }
-
-    .contact-box a:hover {
-      text-decoration: underline;
-    }
-
-    .footer {
-      margin-top: 40px;
-      padding-top: 30px;
-      border-top: 2px solid #e2e8f0;
-      text-align: center;
-      color: #718096;
-      font-size: 0.9rem;
-    }
-
     .last-updated {
       background: #fef5e7;
       color: #c05621;
       padding: 10px 20px;
       border-radius: 6px;
       display: inline-block;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
       font-weight: 600;
     }
 
@@ -157,32 +151,246 @@
       color: #22543d;
     }
 
-    @media (max-width: 768px) {
-      .container {
-        padding: 20px;
-      }
+    .highlight-box {
+      background: #edf2f7;
+      border-left: 4px solid #4B68E7;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
 
-      .header {
-        padding: 30px 20px;
-      }
+    .highlight-box strong {
+      color: #4B68E7;
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
 
-      .header h1 {
-        font-size: 2rem;
-      }
+    .contact-box {
+      background: #f8fafc;
+      border: 2px solid #4B68E7;
+      padding: 30px;
+      border-radius: 8px;
+      margin-top: 40px;
+      text-align: center;
+    }
 
-      h2 {
-        font-size: 1.5rem;
-      }
+    .contact-box h3 {
+      color: #4B68E7;
+      margin-top: 0;
+    }
+
+    .contact-box a {
+      color: #4B68E7;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .contact-box a:hover {
+      text-decoration: underline;
+    }
+
+    /* ====== STICKY HAMBURGER MENU ====== */
+    .sticky-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #284ED2;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      padding-left: 20px;
+      gap: 15px;
+    }
+
+    .sticky-header-logo {
+      height: 48px;
+      width: 48px;
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .hamburger-btn span {
+      display: block;
+      width: 28px;
+      height: 3px;
+      background: white;
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .hamburger-btn:hover span {
+      background: #cce0ff;
+    }
+
+    .nav-dropdown {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      background: #284ED2;
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .nav-dropdown.open {
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 15px 25px;
+    }
+
+    .nav-dropdown a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 12px 0;
+      font-size: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      transition: color 0.2s ease;
+    }
+
+    .nav-dropdown a:last-child {
+      border-bottom: none;
+    }
+
+    .nav-dropdown a:hover {
+      color: #cce0ff;
+    }
+
+    .scroll-indicator {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      padding: 8px 0;
+      background: linear-gradient(transparent, #284ED2 50%);
+      position: sticky;
+      bottom: 0;
+      margin-top: 5px;
+      pointer-events: none;
+    }
+
+    .scroll-indicator.hidden {
+      display: none;
+    }
+    /* ====== END STICKY HAMBURGER MENU ====== */
+
+    /* Footer Styles */
+    .footer {
+      background: #284ED2;
+      color: white;
+      padding: 60px 20px 30px;
+      margin-top: 60px;
+    }
+
+    .footer p {
+      color: white;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer h3 {
+      margin-bottom: 20px;
+      color: #ffffff;
+    }
+
+    .footer-links {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 10px;
+    }
+
+    .footer-links a {
+      color: #E1E6EB;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+      color: white;
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid #4a5568;
+      color: #cbd5e0;
+    }
+
+    .footer-bottom p {
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .header-title { font-size: 1.8rem; }
+      .header-logo { height: 3rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🔒 Privacy Policy</h1>
-      <p>WordPress Style Analyzer Pro</p>
-    </div>
+  <!-- BEGIN STICKY HAMBURGER NAVIGATION -->
+  <header class="sticky-header">
+    <a href="benefits.html"><img src="https://intolos.github.io/wordpress-style-analyzer-pro/icon48.png" alt="Logo" class="sticky-header-logo"></a>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+  <nav class="nav-dropdown" id="navDropdown">
+    <a href="benefits.html#topofpage">Top of Page</a>
+    <a href="benefits.html#features">Features</a>
+    <a href="benefits.html#compareseo">Design Audit Compared to SEO Audit</a>
+    <a href="benefits.html#use">Why Would You Use WordPress Style Analyzer Pro?</a>
+    <a href="benefits.html#benefits">Why Do You Need Over 80 Aspects of Design?</a>
+    <a href="benefits.html#whydesignaudit">Why Our Design Audit?</a>
+    <a href="benefits.html#how">How It Works</a>
+    <a href="benefits.html#pricing">Pricing</a>
+    <a href="benefits.html#testimonials">Success Story</a>
+    <a href="benefits.html#permissions">Permissions</a>
+    <a href="changelog.html">Changelog</a>
+    <a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank">Get it at Chrome Web Store</a>
+    <div class="scroll-indicator" id="scrollIndicator">▼ Scroll for more</div>
+  </nav>
+  <!-- END STICKY HAMBURGER NAVIGATION -->
 
+  <div class="hero"><br />
+    <div class="hero-content">
+			<div class="header-container">
+				<div class="header-content">
+					<img src="https://intolos.github.io/wordpress-style-analyzer-pro/icon128.png" alt="WordPress Style Analyzer Pro" class="header-logo">
+					<h1 class="header-title">WordPress Style Analyzer Pro</h1>
+				</div>
+			</div>
+      
+      <h2 class="section-title">Privacy Policy</h2>
+    </div>
+  </div>
+
+  <div class="container">
     <div class="last-updated">
       Last Updated: January 3, 2026
     </div>
@@ -283,6 +491,7 @@
     </ul>
 
     <h2>Permissions Explanation</h2>
+		<p>This extension requires only the minimum permissions necessary for its core functionality. All data processing occurs locally on the user's device. No personal information is collected, stored, or transmitted. These permissions are used only for the core functionality of analyzing websites. We do not use them to track or monitor your browsing.</p>
     <p>The Extension requests the following Chrome permissions:</p>
     <ul>
       <li><strong>activeTab:</strong> Required to analyze the current webpage you're viewing</li>
@@ -291,7 +500,19 @@
       <li><strong>tabs:</strong> Required to open new tabs for domain analysis feature</li>
       <li><strong>host_permissions (http://*/* and https://*/*):</strong> Required to analyze any website you visit</li>
     </ul>
-    <p><strong>Important:</strong> These permissions are used ONLY for the core functionality of analyzing websites. We do not use them to track or monitor your browsing.</p>
+		<p>There are two permissions in particular for which we want to give you ease.<br />
+			 <ul style="padding-left: 40px;">
+					<li>Access the page debugger backend</li>
+					<li>Read and change all your data on all websites</li>
+				</ul>
+		</p>
+		<p>The extension uses Chrome DevTools Protocol for accurate mobile testing. This requires debugger permission of “Read and change all your data on all websites” but we assure you the extension does not alter anything on your site. All data storage about the website being analyzed is temporary and user-session-based:
+				 <ul style="padding-left: 40px;">
+						<li>All analysis data is automatically deleted when users start a new analysis or click the Reset button</li>
+						<li>Data is cleared after successful export to ensure no stale data accumulates</li>
+						<li>No data persists beyond the current analysis session</li>
+					</ul>
+		 </p>
 
     <h2>Children's Privacy</h2>
     <p>The Extension is not directed to children under 13 years of age. We do not knowingly collect information from children under 13.</p>
@@ -326,17 +547,59 @@
 
     <h2>Consent</h2>
     <p>By installing and using WordPress Style Analyzer Pro, you consent to this Privacy Policy and agree to its terms.</p>
+  </div>
 
-    <div class="contact-box">
-      <h3>📧 Contact Us</h3>
-      <p>If you have questions about this Privacy Policy or the Extension's privacy practices:</p>
-      <a href="mailto:webbyinsights+wordpress@gmail.com">Contact Us by Email</a>
+  <div class="footer">
+    <div class="footer-content">
+      <div>
+        <h3>WordPress Style Analyzer Pro</h3>
+				<p style="line-height: 1.8;">Professional <strong><em>Design Audit</em></strong> tool for WordPress websites. Immediately analyze all styles, headings, paragraphs, buttons, and color palette for <strong><em>consistency</em></strong>. Critical <strong><em>Quality Checks using over 80 Aspects of Design</em></strong> for quality assurance. And much more. Detailed and beautiful reports. Within minutes, we automate your design audit for quality assurance. We save you 5, 10, 15, or more, hours of manual review which could easily miss important inconsistencies. You will rarely, if ever, find our design audit elements, Quality Checks, and reports in any SEO extensions.</p>
+      </div>
+
+      <div>
+        <h3>Product</h3>
+        <ul class="footer-links">
+					<li><a href="benefits.html#topofpage">Introduction</a></li>
+          <li><a href="benefits.html#features">Features</a></li>
+          <li><a href="benefits.html#compareseo">Design Audit Compared to SEO Audit</a></li>
+          <li><a href="benefits.html#use">Why Would You Use WordPress Style Analyzer Pro?</a></li>
+          <li><a href="benefits.html#benefits">Why Do You Need Over 80 Aspects of Design?</a></li>
+          <li><a href="benefits.html#whydesignaudit">Why Our Design Audit?</a></li>          
+          <li><a href="benefits.html#how">How It Works</a></li>
+          <li><a href="benefits.html#pricing">Pricing</a></li>
+          <li><a href="benefits.html#testimonials">Success Story</a></li>
+          <li><a href="benefits.html#permissions">Permissions</a></li>
+          <li><a href="changelog.html">Changelog</a></li>
+						<table>
+						<tr>
+						<td><img src="https://intolos.github.io/wordpress-style-analyzer-pro/icon128.png" alt="WordPress Style Analyzer Pro" style="height: auto; width: auto; vertical-align: top; margin-right: 5px;">
+						</td>
+						<td><a href="https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo" target="_blank">Get the Extension Now from the Chrome Web Store</a>
+						</td>
+						</tr>
+						</table>
+					</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>Support</h3>
+        <ul class="footer-links">
+          <li><a href="mailto:webbyinsights+WordPress@gmail.com">Contact Us by Email</a></li>
+          <li><a href="https://intolos.github.io/wordpress-style-analyzer-pro/privacy-policy.html" target="_blank">Privacy Policy</a></li>
+          <li><a href="https://intolos.github.io/wordpress-style-analyzer-pro/terms-of-service.html" target="_blank">Terms of Service</a></li>
+        </ul>
+      </div>
     </div>
 
-    <div class="footer">
-      <p><strong>Note for Chrome Web Store:</strong> This extension requires only the minimum permissions necessary for its core functionality. All data processing occurs locally on the user's device. No personal information is collected, stored, or transmitted.</p>
-      <p style="margin-top: 20px;">© 2025 Intolos. All rights reserved.</p>
+    <div class="footer-bottom">
+      <p>© 2025 Edward Mass. All rights reserved.</p>
+			
     </div>
   </div>
+
+  <!-- HAMBURGER MENU JAVASCRIPT -->
+  <script src="welcome.js"></script>
 </body>
 </html>
+
