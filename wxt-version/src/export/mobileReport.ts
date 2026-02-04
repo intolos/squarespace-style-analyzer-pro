@@ -109,11 +109,13 @@ export function exportMobileReport(
     });
   });
 
+  const cleanDomain = domain.replace(/^www\./, '');
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${domain} Mobile Usability</title>
+  <title>${cleanDomain} Mobile Usability</title>
   <link rel="icon" type="image/png" href="${platformStrings.favicon}">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
@@ -167,7 +169,7 @@ export function exportMobileReport(
 <body>
   ${generateReportHeader({
     title: 'Mobile Usability',
-    domain: domain,
+    domain: cleanDomain,
     data: data,
     emoji: '📱',
   })}
@@ -321,9 +323,7 @@ export function exportMobileReport(
                           issue.selector
                             ? `
                           <div style="margin-left: 15px;">
-                            <a href="${issue.url}${
-                              issue.url.includes('?') ? '&' : '?'
-                            }ssa-inspect-selector=${encodeURIComponent(issue.selector)}"
+                            <a href="${issue.url}#ssa-inspect-selector=${encodeURIComponent(issue.selector)}"
                                target="_blank"
                                class="live-inspect-btn"
                                style="display: inline-block; padding: 8px 12px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; transition: background 0.2s;"
@@ -435,6 +435,6 @@ export function exportMobileReport(
 </body>
 </html>`;
 
-  const filename = `${domain}-${filenameBrand}-mobile-usability-report.html`;
+  const filename = `${cleanDomain}-${filenameBrand}-mobile-usability-report.html`;
   downloadFileFn(filename, html, 'text/html');
 }

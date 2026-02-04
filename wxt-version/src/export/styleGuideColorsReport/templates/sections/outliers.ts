@@ -31,7 +31,7 @@ export function buildOutliersSection(
                   firstInstance.selector
                     ? `
                   <div style="margin-left: auto;">
-                    <a href="${firstInstance.page}${firstInstance.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(firstInstance.selector)}" 
+                    <a href="${firstInstance.page}#ssa-inspect-selector=${encodeURIComponent(firstInstance.selector)}" 
                        target="_blank" 
                        style="display: inline-block; padding: 6px 10px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate

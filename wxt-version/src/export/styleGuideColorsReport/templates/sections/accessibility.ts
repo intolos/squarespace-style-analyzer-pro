@@ -197,7 +197,7 @@ export function buildAccessibilitySection(
               failure.selector
                 ? `
             <div class="contrast-inspect">
-              <a href="${failure.page}${failure.page.includes('?') ? '&' : '?'}ssa-inspect-selector=${encodeURIComponent(failure.selector)}" 
+              <a href="${failure.page}#ssa-inspect-selector=${encodeURIComponent(failure.selector)}" 
                  target="_blank" 
                  style="display: inline-flex; align-items: center; padding: 8px 16px; background: #667eea; color: white; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);"
                  onmouseover="this.style.background='#5a67d8'; this.style.transform='translateY(-1px)';"

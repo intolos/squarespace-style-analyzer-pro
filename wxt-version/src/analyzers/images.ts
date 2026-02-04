@@ -218,7 +218,7 @@ export function analyzeImages(
 
     results.images.push({
       navigationName: navigationName,
-      url: window.location.href,
+      url: window.location.href.replace(/[?&]ssa-inspect-selector=[^&]+/, '').replace(/\?$/, ''),
       pageTitle: document.title || 'Unknown',
       src: src,
       alt: alt || '(missing alt text)',
@@ -234,7 +234,7 @@ export function analyzeImages(
 
     if (shouldReportAlt) {
       results.qualityChecks.missingAltText.push({
-        url: window.location.href,
+        url: window.location.href.replace(/[?&]ssa-inspect-selector=[^&]+/, '').replace(/\?$/, ''),
         pageTitle: document.title || 'Unknown',
         navigationName: navigationName,
         issue: 'Missing alt text on image',
@@ -253,7 +253,9 @@ export function analyzeImages(
         const pattern = isGenericImageFilename(filename);
         if (pattern) {
           results.qualityChecks.genericImageNames.push({
-            url: window.location.href,
+            url: window.location.href
+              .replace(/[?&]ssa-inspect-selector=[^&]+/, '')
+              .replace(/\?$/, ''),
             navigationName: navigationName,
             src: src,
             filename: filename,

@@ -20,11 +20,12 @@ import { LiveInspector } from '../src/utils/inspector';
 import { ScreenshotUtils } from '../src/utils/screenshot';
 import { detectPlatform } from '../src/platforms/index';
 import { PlatformSelectorManager } from '../src/platforms/selectorManager';
+import { platformStrings } from '../src/utils/platform';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
-    console.log('Squarespace Style Analyzer content script loaded (WXT)');
+    console.log(`[SSA-${platformStrings.productNameShort}] content script loaded (WXT)`);
 
     // Initialize Live Inspector
     LiveInspector.initialize();
@@ -262,7 +263,9 @@ export default defineContentScript({
                 passes: false,
                 wcagLevel: 'Fail',
                 isLargeText: fontSize >= 18 || (fontSize >= 14 && data.fontWeight >= 700),
-                page: window.location.href,
+                page: window.location.href
+                  .replace(/[?&]ssa-inspect-selector=[^&]+/, '')
+                  .replace(/\?$/, ''),
                 pageTitle: document.title || 'Unknown',
                 location: stableSelector,
                 selector: stableSelector,
@@ -332,7 +335,9 @@ export default defineContentScript({
           issues: [],
         },
         metadata: {
-          url: window.location.href,
+          url: window.location.href
+            .replace(/[?&]ssa-inspect-selector=[^&]+/, '')
+            .replace(/\?$/, ''),
           domain: window.location.hostname,
           title: document.title || 'Unknown',
           pathname: window.location.pathname,

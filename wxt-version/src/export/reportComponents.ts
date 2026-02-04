@@ -180,9 +180,7 @@ export function generateStyledElementSection(
         // Locate Button (No shrinking, aligns right)
         if (loc.selector) {
           html += `<div style="flex-shrink: 0;">`;
-          html += `<a href="${loc.url}${
-            loc.url.includes('?') ? '&' : '?'
-          }ssa-inspect-selector=${encodeURIComponent(
+          html += `<a href="${loc.url}#ssa-inspect-selector=${encodeURIComponent(
             loc.selector
           )}" target="_blank" style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate</a>`;
           html += `</div>`;

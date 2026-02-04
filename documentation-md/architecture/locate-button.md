@@ -115,4 +115,72 @@ function checkUrlForInspection() {
     window.addEventListener('keydown', removeHighlight, { passive: true, capture: true });
   };
 }
+
+---
+
+## Debugging & Stabilization (2026-02-03)
+
+**Status:** WORKING for standard elements. FAILED for carousel images.
+
+### 1. What IS Working
+The "Nuclear" configuration that finally stabilized the Locate function consists of:
+
+1.  **Hydration Bypass (Critical)**:
+    -   **Logic:** `setTimeout(() => startInspection(), 2000)` inside `checkUrlForInspection`.
+    -   **Why:** SPA frameworks (React/Squarespace) often "hydrate" the page shortly after load, wiping the DOM and strictly enforcing their own component tree. Our injected highlight elements were being deleted milliseconds after creation. The 2-second delay waits for this process to settle.
+
+2.  **No Side-Effects ("Nuclear" Mode)**:
+    -   **Logic:** URL Parameter `?ssa-inspect-selector=...` is **NOT** removed.
+    -   **Why:** Calling `history.replaceState` to clean the URL was triggering the Squarespace Router to re-render the view, which wiped our UI.
+    -   **Logic:** Auto-removal listeners (`wheel`, `mousemove`) are **DISABLED**.
+    -   **Why:** Inertial scrolling or stray mouse events were triggering immediate removal. The UI is now "forced persistent".
+
+3.  **Robust Scroll Logic**:
+    -   **Logic:**
+        -   **Large Elements (> Viewport Height):** `scrollIntoView({ block: 'start' })`. Aligns top of element to top of screen.
+        -   **Normal Elements:** `scrollIntoView({ block: 'center' })`. Centers element.
+        -   **Safe Zone:** `top > 50px`. Prevents elements hidden under sticky headers (`top: 0`) from being falsely flagged as "visible".
+    -   **Why:** Previously, `block: 'center'` on large elements pushed the top off-screen. Strict `isInViewport` checks caused "push down" layout shifts on already-visible elements.
+
+4.  **Mounting Point**:
+    -   **Logic:** `document.documentElement.appendChild(highlight)`.
+    -   **Why:** Mounting to `body` caused coordinate issues on sites with `body { transform: ... }` or specific overflow settings.
+
+### 2. Carousel Exception (Why it fails)
+Locate fails for "generic filename images in a carousel" because:
+-   **Visibility:** Carousel items are often strictly hidden (`display: none`, `opacity: 0`, or `visibility: hidden`) by the slider library when not active.
+-   **Overflow:** Even if "visible" in the DOM, they are clipped by an `overflow: hidden` parent.
+-   **Script Control:** `scrollIntoView` cannot "scroll" a carousel. The carousel's state is managed by JavaScript (setting `transform: translateX(...)`). The browser cannot natively scroll to a slide that is logically "next" in the framework's state machine.
+
+### 3. What Did NOT Work (The "11 Hours" of Failures)
+
+1.  **Strict Visibility Checks**:
+    -   *Attempt:* Checking `isInViewport` (fully contained).
+    -   *Result:* "Push Down" effect. Elements that were 50% visible triggered a scroll, shifting the page unnecessarily.
+
+2.  **Manual Scroll Math**:
+    -   *Attempt:* `window.scrollTo(0, rect.top + window.scrollY)`.
+    -   *Result:* Failed on **Nested Containers** (e.g., sidebars, modals). `window.scrollTo` only moves the main document, not the overflow container holding the element.
+
+3.  **Clean URL Cleanup**:
+    -   *Attempt:* Removing `?ssa-inspect-selector`.
+    -   *Result:* Triggered Site Router -> Re-render -> Highlight deleted. ("Flash and Gone").
+
+4.  **Auto-Removal Listeners**:
+    -   *Attempt:* `window.addEventListener('wheel', removeHighlight)`.
+    -   *Result:* **Inertial Scrolling**. If the user was still scrolling when the page loaded (very common), the "brake" event fired immediately, removing the highlight before it was even seen.
+
+5.  **Debug Toasts**:
+    -   *Attempt:* Showing a debug message.
+    -   *Result:* Race conditions. The `hideToast` timer from a previous alert would kill the new alert 300ms later.
+
+6.  **Immediate Execution**:
+    -   *Attempt:* `DOMContentLoaded` trigger.
+    -   *Result:* Hydration Wipe. The extension injected the element, and React/Vue/SQS subsequently deleted it during the first paint.
+
+### 4. Final Recommendation
+To maintain stability:
+-   **NEVER** re-enable URL cleanup. It conflicts with Single Page App routers.
+-   **NEVER** remove the startup delay. It is the only protection against Hydration.
+-   **NEVER** re-enable sensitive auto-removal listeners. Users prefer manually closing a box over having it disappear instantly.
 ```

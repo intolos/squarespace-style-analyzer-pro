@@ -1,4 +1,4 @@
-# Squarespace Style Analyzer Pro - Development Principles
+# ALL EXTENSIONS - Development Principles
 
 ## Priority Hierarchy
 

@@ -7,10 +7,13 @@
   "scripts": {
     "dev:sqs": "wxt --mode sqs",
     "dev:generic": "wxt --mode generic",
+    "dev:wp": "wxt --mode wp",
     "build:sqs": "wxt build --mode sqs",
     "build:generic": "wxt build --mode generic",
+    "build:wp": "wxt build --mode wp",
     "zip:sqs": "wxt zip --mode sqs",
     "zip:generic": "wxt zip --mode generic",
+    "zip:wp": "wxt zip --mode wp",
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",

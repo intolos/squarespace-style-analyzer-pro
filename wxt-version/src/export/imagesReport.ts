@@ -192,9 +192,7 @@ export function exportImagesReport(
                     img.selector
                       ? `
                   <div style="display: flex; justify-content: flex-end; align-items: center; height: 100%;">
-                    <a href="${img.url}${
-                      img.url.includes('?') ? '&' : '?'
-                    }ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                    <a href="${img.url}#ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
                        target="_blank" 
                        style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate
@@ -278,9 +276,7 @@ export function exportImagesReport(
                   img.selector
                     ? `
                 <div style="margin-left: auto; align-self: center;">
-                  <a href="${img.url}${
-                    img.url.includes('?') ? '&' : '?'
-                  }ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
+                  <a href="${img.url}#ssa-inspect-selector=${encodeURIComponent(img.selector)}" 
                      target="_blank" 
                      style="display: inline-flex; align-items: center; padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: bold;">
                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Locate

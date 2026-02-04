@@ -19,8 +19,9 @@ export function exportQualityCheckReport(
   domain: string,
   brand: string
 ): void {
+  const cleanDomain = domain.replace(/^www\./, '');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename = `${domain}-${platformStrings.filenameVariable}-quality-check-${checkType}-${timestamp}.html`;
+  const filename = `${cleanDomain}-${platformStrings.filenameVariable}-quality-check-${checkType}-${timestamp}.html`;
 
   let title = 'Quality Check Detail';
   let issueHtml = '';
@@ -138,7 +139,15 @@ function generateQualityScorecard(score: number, checks: QualityCheckResult['che
       <br />
       <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
         <div class="note-text note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
-          💡 NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization. We also want you to know that it is much easier to architect and create website code than to audit and analyze it afterwards. This is due to deciphering the wide variety of disparate coding styles, the inherent complexity of tracing deep nesting layers, navigating the intricate web of parent-child dependencies that evolve over time, and more. Our coding in this extension includes numerous situations to catch all possibilities for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.
+          💡 NOTE: The purpose of our Design Audit reports is to reveal the “issues” about your website so you can decide if they are valid by design or if they are oversights. At times, there may be reasons for visual content outside “typical” styling. And at other times, visual content may simply not be adhering to your own standards or multiple people may not be acting in synchronization.
+        </div>
+        <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
+      </div>
+      <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
+        <div class="note-text note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
+          💡 IMPORTANT NOTE: It is commonly known that it is much easier to architect and create website code than to audit and analyze it afterwards. This is due to deciphering the wide variety of disparate coding styles from the large variety of website building platforms, the inherent complexity of tracing deep nesting layers, navigating the intricate web of parent-child dependencies that evolve over time, and more. Our coding in this extension includes numerous situations to try to catch all possibilities and edge cases for the aspects being analyzed. Although it may not be absolutely perfect in all situations it will be extremely close and a huge guide for your understanding.
+          <br/><br/>
+          In particular, the "Locate" button that you find in the reports is a tremendous aid in pinpointing the exact location of issues. However, on the "Brand Style Guide Colors" and "Images Analysis" reports it may find situations that it cannot specifically locate. This is caused by a variety of complex coding structures, such as those previously mentioned plus, in the case of images, carousels and other techniques that hide images. In the Images Analysis report, we have also included direct links to the images so you can visually identify them to manually look for them.
         </div>
         <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
       </div>
@@ -246,7 +255,7 @@ export function exportAnalysisReport(data: ReportData): void {
       <body>
         ${generateReportHeader({
           title: 'Website Analysis',
-          domain: domain,
+          domain: cleanDomain,
           data: data,
           emoji: '🔬',
         })}

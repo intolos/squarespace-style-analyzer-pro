@@ -18,6 +18,12 @@ Before starting any code changes:
 
 - [ ] Keep a running log of your actions in a `documentation-md/walkthroughs/session-[date]-[topic].md` file OR primarily use the `walkthrough.md` artifact if in Agentic Mode.
 - [ ] **Crucial**: If you try a fix and it fails, document WHY it failed in your walkthrough/log.
+- [ ] **Critical: Debugging Methodology **: When debugging complex, persistent issues (especially DOM-related locate/highlight features), follow this strict process:
+  - **Analyze first, code second.** No guessing at fixes.
+  - **One small change at a time.** Every fix must be isolated and testable.
+  - **Test and verify** before proceeding to the next change.
+  - **Roll back immediately** if something breaks — do not pile on more changes.
+  - **Log every attempt** in the relevant handover document with PASS/FAIL/PARTIAL results.
 
 ## 3. Post-Work (Architecture Updates)
 

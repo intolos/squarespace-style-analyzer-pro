@@ -211,7 +211,10 @@ export function generateSelector(element: Element | null): string {
               return c.length > 0 && !c.includes(':') && !isDynamicId(c);
             });
           if (classes.length > 0) {
-            selector += '.' + CSS.escape(classes[0]);
+            // CSS.escape *should* handle this, but explicit replace ensures Tailwind classes (h-3.5) work
+            // even if CSS.escape behavior varies or encoding strips backslashes.
+            const escapedClass = CSS.escape(classes[0]).replace(/\./g, '\\.');
+            selector += '.' + escapedClass;
           }
         }
 

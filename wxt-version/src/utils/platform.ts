@@ -1,10 +1,27 @@
 export const isSqs = import.meta.env.VITE_IS_SQS_VERSION === 'true';
+export const isWp = import.meta.env.VITE_IS_WP_VERSION === 'true';
+
+// IMPORTANT: Three-way mode logic for platform-specific strings and configurations.
+// Priority: SQS takes precedence, then WP, then Generic (default).
+// This ensures only one mode is active at a time.
 
 export const platformStrings = {
-  productName: isSqs ? 'Squarespace Style Analyzer Pro' : 'Website Style Analyzer Pro',
-  productNameShort: isSqs ? 'Squarespace Style Analyzer' : 'Website Style Analyzer',
-  platformName: isSqs ? 'Squarespace' : 'Website',
-  auditTitle: isSqs ? 'Professional Squarespace Design Audit' : 'Professional Website Design Audit',
+  productName: isSqs
+    ? 'Squarespace Style Analyzer Pro'
+    : isWp
+      ? 'WordPress Style Analyzer Pro'
+      : 'Website Style Analyzer Pro',
+  productNameShort: isSqs
+    ? 'Squarespace Style Analyzer'
+    : isWp
+      ? 'WordPress Style Analyzer'
+      : 'Website Style Analyzer',
+  platformName: isSqs ? 'Squarespace' : isWp ? 'WordPress' : 'Website',
+  auditTitle: isSqs
+    ? 'Professional Squarespace Design Audit'
+    : isWp
+      ? 'Professional WordPress Design Audit'
+      : 'Professional Website Design Audit',
   notSqsTitle: isSqs ? '⚠️ Not a Squarespace Site' : '',
   notSqsDescription: isSqs
     ? 'This extension works on all websites. However, it has 40 Squarespace-specific factors.'
@@ -12,27 +29,47 @@ export const platformStrings = {
   showNotSqsWarning: isSqs,
   useCaseTitle: isSqs
     ? 'Why Would You Use Squarespace Style Analyzer Pro?'
-    : 'Why Would You Use Website Style Analyzer Pro?',
-  developerPlatform: isSqs ? 'Squarespace developer platform' : 'website CMS platform',
+    : isWp
+      ? 'Why Would You Use WordPress Style Analyzer Pro?'
+      : 'Why Would You Use Website Style Analyzer Pro?',
+  developerPlatform: isSqs
+    ? 'Squarespace developer platform'
+    : isWp
+      ? 'WordPress developer platform'
+      : 'website CMS platform',
   detectionTitle: isSqs ? 'Quick Squarespace Detection' : '',
   showQuickDetection: isSqs,
-  siteType: isSqs ? 'Squarespace site' : 'website',
-  toolsBrand: isSqs ? 'Squarespace Tools' : 'Website Tools',
+  siteType: isSqs ? 'Squarespace site' : isWp ? 'WordPress site' : 'website',
+  toolsBrand: isSqs ? 'Squarespace Tools' : isWp ? 'WordPress Tools' : 'Website Tools',
   benefitsUrl: isSqs
     ? 'https://intolos.github.io/squarespace-style-analyzer-pro/'
-    : 'https://intolos.github.io/website-style-analyzer-pro/',
+    : isWp
+      ? 'https://intolos.github.io/wordpress-style-analyzer-pro/'
+      : 'https://intolos.github.io/website-style-analyzer-pro/',
   shareUrl: isSqs
     ? 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi'
-    : 'https://chromewebstore.google.com/detail/website-style-analyzer/YOUR_GENERIC_ID_HERE',
-  questionsEmail: isSqs ? 'webbyinsights+squarespace@gmail.com' : 'webbyinsights+website@gmail.com',
+    : isWp
+      ? 'https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo' // Placeholder
+      : 'https://chromewebstore.google.com/detail/website-style-analyzer/bhbgppapclpojpeemgdpdkannonmohbo',
+  questionsEmail: isSqs
+    ? 'webbyinsights+squarespace@gmail.com'
+    : isWp
+      ? 'webbyinsights+wordpress@gmail.com'
+      : 'webbyinsights+website@gmail.com',
   developerBioTitle: isSqs
     ? 'Independent Developer of Squarespace Websites and This Browser Extension'
     : 'Independent Developer of Websites and This Browser Extension',
   developerBioBody: isSqs
     ? 'This browser extension, Squarespace Style Analyzer Pro, was created by Ed Mass, an independent developer of Squarespace websites and browser extensions, who has no employee or contractual affiliation with Squarespace. Ed Mass is a member of Squarespace Circle, a designation for Squarespace website developers.'
-    : 'This browser extension, Website Style Analyzer Pro, was created by Ed Mass, an independent developer of websites and browser extensions.',
-  filenameVariable: isSqs ? 'squarespace' : 'style-analyzer',
-  reportTitle: isSqs ? 'Squarespace Style Analysis Report' : 'Website Style Analysis Report',
+    : isWp
+      ? 'This browser extension, WordPress Style Analyzer Pro, was created by Ed Mass, an independent developer of websites and browser extensions.'
+      : 'This browser extension, Website Style Analyzer Pro, was created by Ed Mass, an independent developer of websites and browser extensions.',
+  filenameVariable: isSqs ? 'squarespace' : isWp ? 'wordpress' : 'style-analyzer',
+  reportTitle: isSqs
+    ? 'Squarespace Style Analysis Report'
+    : isWp
+      ? 'WordPress Style Analysis Report'
+      : 'Website Style Analysis Report',
   stripe: isSqs
     ? {
         apiBase: 'https://squarespace-style-analyzer-pro.eamass.workers.dev',
@@ -47,21 +84,36 @@ export const platformStrings = {
         cancelUrl:
           'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/cancel.html',
       }
-    : {
-        apiBase: 'https://squarespace-style-analyzer-pro.eamass.workers.dev',
-        productIdYearly: 'prod_TbGKBwiTIidhEo',
-        priceIdYearly: 'price_1Se3o8Aoq9jsK93OSBuD5Y0M',
-        productIdLifetime: 'prod_TbiWgdYfr2C63y',
-        priceIdLifetime: 'price_1SeV5CAoq9jsK93OBZEQvb2q',
-        successUrlYearly:
-          'https://intolos.github.io/website-style-analyzer-pro/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
-        successUrlLifetime:
-          'https://intolos.github.io/website-style-analyzer-pro/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
-        cancelUrl: 'https://intolos.github.io/website-style-analyzer-pro/cancel.html',
-      },
+    : isWp
+      ? {
+          apiBase: 'https://squarespace-style-analyzer-pro.eamass.workers.dev',
+          productIdYearly: 'prod_TuTaoNTEb2k7In',
+          priceIdYearly: 'price_1Swed3Aoq9jsK93OpEe9tvGf',
+          productIdLifetime: 'prod_TuTcR3mQDYs0qO',
+          priceIdLifetime: 'price_1SweetAoq9jsK93OIL0eoMzw',
+          successUrlYearly:
+            'https://intolos.github.io/wordpress-style-analyzer-pro/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
+          successUrlLifetime:
+            'https://intolos.github.io/wordpress-style-analyzer-pro/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
+          cancelUrl: 'https://intolos.github.io/wordpress-style-analyzer-pro/cancel.html',
+        }
+      : {
+          apiBase: 'https://squarespace-style-analyzer-pro.eamass.workers.dev',
+          productIdYearly: 'prod_TbGKBwiTIidhEo',
+          priceIdYearly: 'price_1Se3o8Aoq9jsK93OSBuD5Y0M',
+          productIdLifetime: 'prod_TbiWgdYfr2C63y',
+          priceIdLifetime: 'price_1SeV5CAoq9jsK93OBZEQvb2q',
+          successUrlYearly:
+            'https://intolos.github.io/website-style-analyzer-pro/success-yearly.html?session_id={CHECKOUT_SESSION_ID}',
+          successUrlLifetime:
+            'https://intolos.github.io/website-style-analyzer-pro/success-lifetime.html?session_id={CHECKOUT_SESSION_ID}',
+          cancelUrl: 'https://intolos.github.io/website-style-analyzer-pro/cancel.html',
+        },
   favicon: isSqs
     ? 'https://intolos.github.io/squarespace-style-analyzer-pro/benefits-sqs/icon32.png'
-    : 'https://intolos.github.io/website-style-analyzer-pro/icon32.png',
+    : isWp
+      ? 'https://intolos.github.io/wordpress-style-analyzer-pro/icon32.png'
+      : 'https://intolos.github.io/website-style-analyzer-pro/icon32.png',
   reviewUrl: (() => {
     // defaults to chrome if undefined
     const browser = import.meta.env.BROWSER || 'chrome';
@@ -72,6 +124,13 @@ export const platformStrings = {
         return 'https://microsoftedge.microsoft.com/addons/detail/squarespace-style-analyzer/'; // Placeholder
       // Default to Chrome
       return 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi/reviews';
+    } else if (isWp) {
+      if (browser === 'firefox')
+        return 'https://addons.mozilla.org/en-US/firefox/addon/wordpress-style-analyzer/'; // Placeholder
+      if (browser === 'edge')
+        return 'https://microsoftedge.microsoft.com/addons/detail/wordpress-style-analyzer/'; // Placeholder
+      // Default to Chrome - Placeholder until real URL is available
+      return 'https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo/reviews';
     } else {
       if (browser === 'firefox')
         return 'https://addons.mozilla.org/en-US/firefox/addon/website-style-analyzer/'; // Placeholder

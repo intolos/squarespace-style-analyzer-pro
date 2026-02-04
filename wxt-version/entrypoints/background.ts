@@ -2,9 +2,10 @@ import { defineBackground } from 'wxt/sandbox';
 import { DomainAnalyzer } from '../src/analyzers/domain';
 import { MobileLighthouseAnalyzer } from '../src/analyzers/mobileLighthouse';
 import { MobileResultsConverter } from '../src/analyzers/mobileConverter';
+import { platformStrings } from '../src/utils/platform';
 
 export default defineBackground(() => {
-  console.log('Squarespace Style Analyzer background service worker loaded');
+  console.log(`${platformStrings.productNameShort} background service worker loaded`);
 
   // State
   let domainAnalyzer: DomainAnalyzer | null = null;

@@ -6,17 +6,30 @@ export default defineConfig(((env: any) => {
   const modeIndex = args.indexOf('--mode');
   const mode = modeIndex !== -1 ? args[modeIndex + 1] : env?.mode || 'sqs';
   const isSqs = mode === 'sqs';
+  const isWp = mode === 'wp';
 
-  console.log(`\n>>> BUILDING VERSION: ${isSqs ? 'SQUARESPACE' : 'GENERIC'} (${mode})\n`);
+  // IMPORTANT: Three-way mode logic for build versioning
+  const versionLabel = isSqs ? 'SQUARESPACE' : isWp ? 'WORDPRESS' : 'GENERIC';
+  console.log(`\n>>> BUILDING VERSION: ${versionLabel} (${mode})\n`);
+
+  // Determine publicDir based on mode
+  const publicDir = isSqs ? 'public-sqs' : isWp ? 'public-wp' : 'public-generic';
+
+  // Determine manifest name based on mode
+  const manifestName = isSqs
+    ? 'Squarespace Style Analyzer Pro'
+    : isWp
+      ? 'WordPress Style Analyzer Pro'
+      : 'Website Style Analyzer Pro';
 
   return {
     runner: {
       disabled: true,
     },
     outDir: `.output/${mode}`,
-    publicDir: isSqs ? 'public-sqs' : 'public-generic',
+    publicDir: publicDir,
     manifest: {
-      name: isSqs ? 'Squarespace Style Analyzer Pro' : 'Website Style Analyzer Pro',
+      name: manifestName,
       description:
         'Professional Design Audit tool for websites. Quality Checks of over 80 Aspects of Design. Critical checks not shown in SEO audits.',
       permissions: ['activeTab', 'scripting', 'storage', 'tabs', 'debugger', 'unlimitedStorage'],
@@ -31,6 +44,7 @@ export default defineConfig(((env: any) => {
     vite: () => ({
       define: {
         'import.meta.env.VITE_IS_SQS_VERSION': JSON.stringify(isSqs ? 'true' : 'false'),
+        'import.meta.env.VITE_IS_WP_VERSION': JSON.stringify(isWp ? 'true' : 'false'),
       },
     }),
   };
