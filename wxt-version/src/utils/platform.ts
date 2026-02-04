@@ -49,7 +49,7 @@ export const platformStrings = {
   shareUrl: isSqs
     ? 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi'
     : isWp
-      ? 'https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo' // Placeholder
+      ? 'https://chromewebstore.google.com/detail/wordpress-style-analyze/bpkfpbedgconhigdobehbjceglekceab'
       : 'https://chromewebstore.google.com/detail/website-style-analyzer/bhbgppapclpojpeemgdpdkannonmohbo',
   questionsEmail: isSqs
     ? 'webbyinsights+squarespace@gmail.com'
@@ -130,7 +130,7 @@ export const platformStrings = {
       if (browser === 'edge')
         return 'https://microsoftedge.microsoft.com/addons/detail/wordpress-style-analyzer/'; // Placeholder
       // Default to Chrome - Placeholder until real URL is available
-      return 'https://chromewebstore.google.com/detail/website-style-analyze/bhbgppapclpojpeemgdpdkannonmohbo/reviews';
+      return 'https://chromewebstore.google.com/detail/wordpress-style-analyze/bpkfpbedgconhigdobehbjceglekceab/reviews';
     } else {
       if (browser === 'firefox')
         return 'https://addons.mozilla.org/en-US/firefox/addon/website-style-analyzer/'; // Placeholder
