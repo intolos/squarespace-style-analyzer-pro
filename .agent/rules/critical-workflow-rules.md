@@ -6,7 +6,7 @@ CRITICAL WORKFLOW RULES:
 
 1. **NO BANDAID FIXES**: Always refactor for quality. Never duplicate logic across files (e.g., duplicated filters in multiple entry points). If a quick fix is required, it must be immediately followed by a refactor plan (Handover Document) and clearly flagged as technical debt.
 2. **Total Scope Control & Explicit Approval**: Limit all execution to the explicit requirements of the USER. If you identify any additional improvements—whether they are logic refactors, design enhancements, architectural changes, or syncing fixes to related files—you must document these as "Proposed Suggestions" in the `implementation_plan.md`. You MUST not begin execution (writing code, syncing files, or running deployment commands) until the USER has reviewed the plan and given a clear "Proceed."
-3. Before writing code, you MUST read "documentation-md/DOCUMENTATION_PROCESSES.md" to understand where to look for architecture vs. history.
+3. Before writing code, you MUST read "documentation-md/DOCUMENTATION_PROCESSES.md" to understand where to look for architecture vs. history, then "documentation-md/DEVELOPMENT_PRINCIPLES_CRITICAL.md" for accuracy standards and the pre-implementation checklist.
 4. Check "documentation-md/KNOWN_ISSUES.md" before fixing bugs to avoid regression traps.
 5. If you fix a bug or add a feature, you MUST update the relevant file in "documentation-md/architecture/" to reflect the new working state.
 6. Always add "// IMPORTANT:" comments explaining "WHY" for tricky logic to prevent regressions.
@@ -18,3 +18,5 @@ CRITICAL WORKFLOW RULES:
    - **Test and verify** before proceeding to the next change.
    - **Roll back immediately** if something breaks — do not pile on more changes.
    - **Log every attempt** in the relevant handover document with PASS/FAIL/PARTIAL results.
+10. **Single Responsibility Principle (SRP)**: Each file MUST have ONE clear responsibility. If a file handles multiple concerns, split it. Files exceeding 500 lines require evaluation; files exceeding 700 lines MUST be refactored.
+11. **DRY (Don't Repeat Yourself)**: Never duplicate logic across files. Extract repeated patterns into shared utilities. If you find yourself copying code, STOP and refactor first.

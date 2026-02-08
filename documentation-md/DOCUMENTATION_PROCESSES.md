@@ -133,5 +133,6 @@ How data moves (Storage -> UI -> Export).
 All AI Agents working on this project MUST:
 
 1.  Read this file before generating a plan.
-2.  Follow the rules defined in `DEVELOPMENT_PRINCIPLES.md`.
-3.  Check `KNOWN_ISSUES.md` before fixing bugs.
+2.  Follow the accuracy standards in `DEVELOPMENT_PRINCIPLES_CRITICAL.md` before any feature or fix.
+3.  Reference `DEVELOPMENT_PRINCIPLES.md` for detailed coding standards.
+4.  Check `KNOWN_ISSUES.md` before fixing bugs.
