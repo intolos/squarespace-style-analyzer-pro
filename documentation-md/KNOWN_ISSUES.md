@@ -234,3 +234,17 @@ This file documents critical implementation details, regression traps, and "anti
 - **Correct Logic**:
   - **DO**: Ensure every record-returning endpoint (`/redeem-session`, `/check-email`) explicitly includes the `is_lifetime` and `is_yearly` boolean flags.
 - **Date Fixed**: 2026-01-23
+
+---
+
+## 18. WP Color Accuracy & DOM Layering
+
+- **Symptom**: In WordPress reports, outlier colors show white or container colors (e.g., `.lp-block`) instead of the visually rendered color (e.g., bright green).
+- **Root Cause**: Page builders (Elementor, Divi) use nested layers where the background color is on an inner element, but the analyzer was capturing the top-level container.
+- **Solution**: Implemented a hybrid strategy:
+  - **WordPress, Shopify, and Generic**: Uses **Canvas-based Visual Sampling** to bypass complex DOM layering.
+  - **Squarespace, Wix, and Webflow**: Continues using **DOM-computed Styles** for performance and proven accuracy on these architectures.
+- **Critical Reference**:
+  - **Architecture**: `documentation-md/architecture/color-analysis.md`
+  - **Detailed Analysis**: `documentation-md/walkthroughs/2026-02-09-color-accuracy-analysis-discussion.md`
+- **Date Fixed**: 2026-02-09

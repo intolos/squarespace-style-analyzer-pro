@@ -21,11 +21,54 @@ import { ScreenshotUtils } from '../src/utils/screenshot';
 import { detectPlatform } from '../src/platforms/index';
 import { PlatformSelectorManager } from '../src/platforms/selectorManager';
 import { platformStrings } from '../src/utils/platform';
+import {
+  activateTestMode,
+  deactivateTestMode,
+  exportTestResults,
+  getTestStats,
+  clearTestResults,
+} from '../src/analyzers/colorDetectionTestHarness';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
     console.log(`[SSA-${platformStrings.productNameShort}] content script loaded (WXT)`);
+
+    // Expose test harness functions globally for A/B testing
+    // Content scripts run in isolated context, so we inject a script file to expose to page context
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('test-harness-bridge.js');
+    script.onload = function() {
+      // Script loaded successfully
+      console.log('[SSA] Test harness bridge script loaded successfully');
+    };
+    script.onerror = function() {
+      console.error('[SSA] Failed to load test harness bridge script');
+    };
+    (document.head || document.documentElement).appendChild(script);
+
+    // Listen for messages from the injected script
+    window.addEventListener('message', (event) => {
+      if (event.data?.type === 'SSA_TEST_HARNESS') {
+        switch (event.data.action) {
+          case 'activate':
+            activateTestMode();
+            break;
+          case 'deactivate':
+            deactivateTestMode();
+            break;
+          case 'export':
+            exportTestResults();
+            break;
+          case 'stats':
+            console.log('Test Stats:', getTestStats());
+            break;
+          case 'clear':
+            clearTestResults();
+            break;
+        }
+      }
+    });
 
     // Initialize Live Inspector
     LiveInspector.initialize();

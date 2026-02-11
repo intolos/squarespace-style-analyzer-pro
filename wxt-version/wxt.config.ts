@@ -32,7 +32,7 @@ export default defineConfig(((env: any) => {
       name: manifestName,
       description:
         'Professional Design Audit tool for websites. Quality Checks of over 80 Aspects of Design. Critical checks not shown in SEO audits.',
-      permissions: ['activeTab', 'scripting', 'storage', 'tabs', 'debugger', 'unlimitedStorage'],
+      permissions: ['activeTab', 'scripting', 'storage', 'tabs', 'debugger', 'unlimitedStorage', 'downloads'],
       host_permissions: ['<all_urls>'],
       icons: {
         '16': 'icon/16.png',
@@ -40,6 +40,12 @@ export default defineConfig(((env: any) => {
         '48': 'icon/48.png',
         '128': 'icon/128.png',
       },
+      web_accessible_resources: [
+        {
+          resources: ['test-harness-bridge.js'],
+          matches: ['<all_urls>'],
+        },
+      ],
     },
     vite: () => ({
       define: {

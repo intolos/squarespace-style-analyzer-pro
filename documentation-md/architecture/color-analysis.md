@@ -26,12 +26,24 @@ This module handles all color-related logic. It is split into two parts:
 
 ### 2. Effective Background Strategy (`getEffectiveBackgroundColor`)
 
-The analyzer uses a "fall-through" priority system to determine background color:
+The analyzer uses a prioritized system to determine the background color. The primary strategy is determined by the platform to balance visual accuracy against processing speed.
 
-1.  **Direct Solid Color:** If element has `background-color`, use it (Fastest).
-2.  **Screenshot Sampling:** If element is a Button/Link (high risk of background images), check the screenshot.
-3.  **DOM Traversal:** Walk up the parent tree to find the nearest solid background.
-4.  **Fallback:** Default to White `rgb(255, 255, 255)`.
+| Platform        | Extraction Strategy | Rationale                                                     |
+| :-------------- | :------------------ | :------------------------------------------------------------ |
+| **WordPress**   | **Canvas Sampling** | Page builders (Elementor/Divi) create complex layering.       |
+| **Shopify**     | **Canvas Sampling** | Variable theme architectures and app-injected layers.         |
+| **Generic**     | **Canvas Sampling** | Safety for unknown/custom DOM structures.                     |
+| **Squarespace** | **DOM-Computed**    | Flat, predictable architecture with direct style application. |
+| **Wix**         | **DOM-Computed**    | Self-contained elements with reliable computed styles.        |
+| **Webflow**     | **DOM-Computed**    | High-quality semantic HTML/CSS output.                        |
+
+#### Fall-through Priority:
+
+1.  **Platform Strategy**: Use the strategy defined in the table above.
+2.  **Sampling Verification**: If Canvas Sampling is used, verify the pixel color against the DOM-computed color.
+3.  **Screenshot Sampling**: For Buttons/Links on DOM-computed platforms, check the screenshot if high risk (e.g., hover states or background images).
+4.  **DOM Traversal**: If no solid color is found, walk up the parent tree to the nearest solid background.
+5.  **Fallback**: Default to White `rgb(255, 255, 255)`.
 
 ### 3. Visibility Check (`isElementActuallyVisible`)
 

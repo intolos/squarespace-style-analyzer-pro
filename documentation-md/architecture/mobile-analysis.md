@@ -60,3 +60,13 @@ const formattedIssues = MobileConverter.convertToIssues(results);
 // 5. Detach
 await chrome.debugger.detach({ tabId });
 ```
+
+### 5. Screenshot Strategy (New in v4.3)
+
+To support "Zero-Intrusion" analysis (running in the background without stealing focus), we use a hybrid screenshot approach:
+
+- **Active Tab:** Uses `chrome.tabs.captureVisibleTab` (Standard, fast).
+- **Inactive/Background Tab:** Uses `chrome.debugger` to capture screenshots.
+  - **Mechanic:** `attach` -> `Page.captureScreenshot` -> `detach`.
+  - **Benefit:** Captures the full viewport of a background tab without needing to make it active or visible to the user.
+  - **Trade-off:** Shows a mandatory Chrome "Debugging started" global banner.

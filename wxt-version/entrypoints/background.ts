@@ -169,6 +169,34 @@ export default defineBackground(() => {
       sendResponse({ success: true });
       return true;
     }
+
+    // Test harness storage handlers
+    if (request.action === 'testHarnessLoad') {
+      chrome.storage.local.get('colorDetectionTestResults').then(result => {
+        sendResponse({ data: result.colorDetectionTestResults || [] });
+      }).catch(error => {
+        sendResponse({ error: error.message });
+      });
+      return true;
+    }
+
+    if (request.action === 'testHarnessSave') {
+      chrome.storage.local.set({ colorDetectionTestResults: request.data }).then(() => {
+        sendResponse({ success: true });
+      }).catch(error => {
+        sendResponse({ error: error.message });
+      });
+      return true;
+    }
+
+    if (request.action === 'testHarnessClear') {
+      chrome.storage.local.remove('colorDetectionTestResults').then(() => {
+        sendResponse({ success: true });
+      }).catch(error => {
+        sendResponse({ error: error.message });
+      });
+      return true;
+    }
   });
 
   // --- Handlers ---
