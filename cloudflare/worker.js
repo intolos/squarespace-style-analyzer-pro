@@ -9,10 +9,13 @@ export default {
 
     // simple health-check
     if (request.method === 'GET' && (pathname === '' || pathname === '/')) {
-      return new Response('Multi-Product License Worker Active', {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain' },
-      });
+      return new Response(
+        'Multi-Product License Worker Active - v4.4.6.3 (Flexible Billing Support)',
+        {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain' },
+        }
+      );
     }
 
     try {
@@ -44,7 +47,9 @@ export default {
 
 // Helper to build license key with product_id
 function getLicenseKey(productId, email) {
-  return `${productId}:email:${email}`;
+  // CRITICAL FIX 2026-02-11: Bumped to v3 to invalidate all stale/buggy cache records
+  // that may contain fabricated "Today + 1 Year" expiration dates or missing dates from v1/v2.
+  return `v3:${productId}:email:${email}`;
 }
 
 // Helpers ------------------------------------------------------------------
@@ -263,7 +268,7 @@ async function handleRedeemSession(request, env) {
     last_name: lastName,
     business_name: businessName,
     active: true,
-    created_at: now,
+    created_at: session.created,
     expires_at: expires,
     session_id,
     stripe_customer_id: customerId,
@@ -282,8 +287,18 @@ async function handleCheckEmail(request, env) {
   const url = new URL(request.url);
   const email = (url.searchParams.get('email') || '').toLowerCase();
   const productId = url.searchParams.get('product_id') || env.DEFAULT_PRODUCT_ID;
+  const purchaseType = (url.searchParams.get('purchase_type') || '').toLowerCase(); // 'lifetime' or 'yearly'
   const debugMode = url.searchParams.get('debug') === 'true';
-  console.log('handleCheckEmail called for:', email, 'product:', productId, 'debug:', debugMode);
+  console.log(
+    'handleCheckEmail called for:',
+    email,
+    'product:',
+    productId,
+    'purchase_type:',
+    purchaseType,
+    'debug:',
+    debugMode
+  );
 
   // Debug Logging Helper
   const debugLogs = [];
@@ -303,7 +318,7 @@ async function handleCheckEmail(request, env) {
 
   if (!email) return jsonResponse({ valid: false, error: 'No email provided' });
 
-  addLog(`Starting validation for ${email} (Product: ${productId})`);
+  addLog(`Starting validation for ${email} (Product: ${productId}, Type: ${purchaseType})`);
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -332,139 +347,220 @@ async function handleCheckEmail(request, env) {
 
         // Check is_lifetime FIRST
         if (customer.metadata && String(customer.metadata.is_lifetime).toLowerCase() === 'true') {
+          // STRICT TYPE CHECK: Only match if we are looking for lifetime
+          if (purchaseType === 'yearly') {
+            addLog(`Skipping Lifetime metadata match because purchase_type is 'yearly'`);
+            continue;
+          }
+
           console.log('Valid Lifetime Validation: Customer Metadata');
           addLog('SUCCESS: Found is_lifetime=true in customer metadata.');
-          const record = createRecord(email, productId, customer.id, 'lifetime_metadata', now);
+          const record = createRecord(
+            email,
+            productId,
+            customer.id,
+            'lifetime_metadata',
+            now,
+            null,
+            null,
+            null,
+            customer.created
+          );
           await cacheRecord(env, record);
           return jsonResponse({ valid: true, record });
         }
 
-        // Only check is_yearly if is_lifetime was false
-        if (customer.metadata && String(customer.metadata.is_yearly).toLowerCase() === 'true') {
-          console.log('Valid Yearly Validation: Customer Metadata');
-          addLog('SUCCESS: Found is_yearly=true in customer metadata.');
-          const record = createRecord(email, productId, customer.id, 'yearly_metadata', now);
-          await cacheRecord(env, record);
-          return jsonResponse({ valid: true, record });
-        }
+        // CRITICAL FIX 2026-02-11: Removed Yearly Metadata check here.
+        // We MUST NOT validate yearly subscriptions via metadata alone because metadata
+        // does not contain the expiration date. Relying on metadata causes the system
+        // to fabricate a "Now + 365 days" expiration, which is wrong for existing subscriptions.
+        // By removing this, we force the logic to fall through to Priority 4 (Stripe Subscriptions),
+        // which fetches the REAL current_period_end from the active subscription.
       }
 
       // PRIORITY 2: LIFETIME SESSIONS
       // Check ALL customers for valid lifetime sessions
-      addLog('PRIORITY 2: Checking Lifetime Sessions...');
-      for (const customer of customers) {
-        addLog(`Fetching sessions for customer ${customer.id}...`);
-        const sessionsResp = await fetch(
-          `https://api.stripe.com/v1/checkout/sessions?customer=${encodeURIComponent(customer.id)}&limit=100`,
-          { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
-        );
-        const sessions = (await sessionsResp.json()).data || [];
-        addLog(`Found ${sessions.length} sessions.`);
-
-        // Find any session that is 'complete' (works for $0) + (is_lifetime OR amount_total === 0)
-        const validSession = sessions.find(s => {
-          const isComplete = s.status === 'complete';
-          const isPaid = ['paid', 'no_payment_required'].includes(s.payment_status);
-          const isPaymentMode = s.mode === 'payment';
-          const isLifetimeMeta = s.metadata && s.metadata.is_lifetime === 'true';
-          const isZero = s.amount_total === 0;
-          const isAppGroup =
-            !s.metadata || !s.metadata.app_group || s.metadata.app_group === 'style_analyzer';
-
-          if (debugMode) {
-            addLog(
-              `- Session ${s.id}: status=${s.status}, payment_status=${s.payment_status}, mode=${s.mode}, amount=${s.amount_total}, is_lifetime=${isLifetimeMeta}, app_group=${s.metadata?.app_group}`
-            );
-          }
-
-          return isComplete && isPaid && isPaymentMode && (isLifetimeMeta || isZero) && isAppGroup;
-        });
-
-        if (validSession) {
-          console.log('Valid Lifetime Validation: Checkout Session');
-          addLog(`SUCCESS: Found valid lifetime session ${validSession.id}`);
-          const record = createRecord(
-            email,
-            productId,
-            customer.id,
-            'lifetime_session',
-            now,
-            validSession.id
+      // SKIP if purchaseType is 'yearly'
+      if (purchaseType !== 'yearly') {
+        addLog('PRIORITY 2: Checking Lifetime Sessions...');
+        for (const customer of customers) {
+          addLog(`Fetching sessions for customer ${customer.id}...`);
+          const sessionsResp = await fetch(
+            `https://api.stripe.com/v1/checkout/sessions?customer=${encodeURIComponent(
+              customer.id
+            )}&limit=100`,
+            { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
           );
-          await cacheRecord(env, record);
-          return jsonResponse({ valid: true, record });
+          const sessions = (await sessionsResp.json()).data || [];
+          addLog(`Found ${sessions.length} sessions.`);
+
+          // Find any session that is 'complete' (works for $0) + (is_lifetime OR amount_total === 0)
+          const validSession = sessions.find(s => {
+            const isComplete = s.status === 'complete';
+            const isPaid = ['paid', 'no_payment_required'].includes(s.payment_status);
+            const isPaymentMode = s.mode === 'payment';
+            const isLifetimeMeta = s.metadata && s.metadata.is_lifetime === 'true';
+            const isZero = s.amount_total === 0;
+            const isAppGroup =
+              !s.metadata || !s.metadata.app_group || s.metadata.app_group === 'style_analyzer';
+
+            if (debugMode) {
+              addLog(
+                `- Session ${s.id}: status=${s.status}, payment_status=${s.payment_status}, mode=${s.mode}, amount=${s.amount_total}, is_lifetime=${isLifetimeMeta}, app_group=${s.metadata?.app_group}`
+              );
+            }
+
+            return (
+              isComplete && isPaid && isPaymentMode && (isLifetimeMeta || isZero) && isAppGroup
+            );
+          });
+
+          if (validSession) {
+            console.log('Valid Lifetime Validation: Checkout Session');
+            addLog(`SUCCESS: Found valid lifetime session ${validSession.id}`);
+            const record = createRecord(
+              email,
+              productId,
+              customer.id,
+              'lifetime_session',
+              now,
+              validSession.id,
+              null,
+              null,
+              validSession.created
+            );
+            await cacheRecord(env, record);
+            return jsonResponse({ valid: true, record });
+          }
         }
+      } else {
+        addLog('PRIORITY 2: Skipping Lifetime Sessions (purchase_type=yearly)');
       }
 
       // PRIORITY 3: CHARGES (Lifetime Fallback)
-      addLog('PRIORITY 3: Checking Charges...');
-      for (const customer of customers) {
-        addLog(`Fetching charges for customer ${customer.id}...`);
-        const chargesResp = await fetch(
-          `https://api.stripe.com/v1/charges?customer=${encodeURIComponent(customer.id)}&limit=100`,
-          { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
-        );
-        const charges = (await chargesResp.json()).data || [];
-        addLog(`Found ${charges.length} charges.`);
+      // SKIP if purchaseType is 'yearly'
+      if (purchaseType !== 'yearly') {
+        addLog('PRIORITY 3: Checking Charges...');
+        for (const customer of customers) {
+          addLog(`Fetching charges for customer ${customer.id}...`);
+          const chargesResp = await fetch(
+            `https://api.stripe.com/v1/charges?customer=${encodeURIComponent(customer.id)}&limit=100`,
+            { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
+          );
+          const charges = (await chargesResp.json()).data || [];
+          addLog(`Found ${charges.length} charges.`);
 
-        const validCharge = charges.find(c => {
-          const isSucceeded = c.status === 'succeeded';
-          const isLifetime = c.metadata && c.metadata.is_lifetime === 'true';
-          const isAppGroup =
-            !c.metadata || !c.metadata.app_group || c.metadata.app_group === 'style_analyzer';
+          const validCharge = charges.find(c => {
+            const isSucceeded = c.status === 'succeeded';
+            const isLifetime = c.metadata && c.metadata.is_lifetime === 'true';
+            const isAppGroup =
+              !c.metadata || !c.metadata.app_group || c.metadata.app_group === 'style_analyzer';
 
-          if (debugMode && isLifetime) {
-            addLog(`- Charge ${c.id}: status=${c.status}, is_lifetime=${isLifetime}`);
+            if (debugMode && isLifetime) {
+              addLog(`- Charge ${c.id}: status=${c.status}, is_lifetime=${isLifetime}`);
+            }
+            return isSucceeded && isLifetime && isAppGroup;
+          });
+
+          if (validCharge) {
+            console.log('Valid Lifetime Validation: Charge');
+            addLog(`SUCCESS: Found valid lifetime charge ${validCharge.id}`);
+            const record = createRecord(
+              email,
+              productId,
+              customer.id,
+              'lifetime_charge',
+              now,
+              null,
+              null,
+              null,
+              validCharge.created
+            );
+            await cacheRecord(env, record);
+            return jsonResponse({ valid: true, record });
           }
-          return isSucceeded && isLifetime && isAppGroup;
-        });
-
-        if (validCharge) {
-          console.log('Valid Lifetime Validation: Charge');
-          addLog(`SUCCESS: Found valid lifetime charge ${validCharge.id}`);
-          const record = createRecord(email, productId, customer.id, 'lifetime_charge', now);
-          await cacheRecord(env, record);
-          return jsonResponse({ valid: true, record });
         }
+      } else {
+        addLog('PRIORITY 3: Skipping Lifetime Charges (purchase_type=yearly)');
       }
 
       // PRIORITY 4: YEARLY SUBSCRIPTIONS
-      // Only check this if no lifetime found
-      addLog('PRIORITY 4: Checking Subscriptions...');
-      for (const customer of customers) {
-        addLog(`Fetching subscriptions for customer ${customer.id}...`);
-        const subsResp = await fetch(
-          `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(customer.id)}&status=active`,
-          { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
-        );
-        const subs = (await subsResp.json()).data || [];
-        addLog(`Found ${subs.length} active subscriptions.`);
-
-        const validSub = subs.find(sub => {
-          const matches = !sub.metadata.app_group || sub.metadata.app_group === 'style_analyzer';
-          if (debugMode)
-            addLog(`- Sub ${sub.id}: status=${sub.status}, app_group=${sub.metadata.app_group}`);
-          return matches;
-        });
-
-        if (validSub) {
-          let expires = validSub.current_period_end;
-          // deep check for items if needed, but current_period_end is usually sufficient on sub object
-          console.log('Valid Yearly Validation: Active Subscription');
-          addLog(`SUCCESS: Found valid active subscription ${validSub.id}`);
-          const record = createRecord(
-            email,
-            productId,
-            customer.id,
-            'yearly_sub',
-            now,
-            null,
-            validSub.id,
-            expires
+      // Only check this if no lifetime found AND purchaseType is not explicitly 'lifetime'
+      if (purchaseType !== 'lifetime') {
+        addLog('PRIORITY 4: Checking Subscriptions...');
+        for (const customer of customers) {
+          addLog(`Fetching subscriptions for customer ${customer.id}...`);
+          const subsResp = await fetch(
+            `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(
+              customer.id
+            )}&status=active`,
+            { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
           );
-          await cacheRecord(env, record);
-          return jsonResponse({ valid: true, record });
+          const subs = (await subsResp.json()).data || [];
+          addLog(`Found ${subs.length} active subscriptions.`);
+
+          const validSub = subs.find(sub => {
+            const matches = !sub.metadata.app_group || sub.metadata.app_group === 'style_analyzer';
+            if (debugMode)
+              addLog(`- Sub ${sub.id}: status=${sub.status}, app_group=${sub.metadata.app_group}`);
+            return matches;
+          });
+
+          if (validSub) {
+            // CRITICAL FIX 2026-02-11: Robust date retrieval for Flexible Billing & Metadata-heavy subs
+            // We check these fields in order of reliability:
+            let expires = validSub.current_period_end || validSub.cancel_at || validSub.trial_end;
+
+            // If still missing, attempt a detail fetch (List API can be sparse)
+            if (!expires) {
+              addLog(`- Date missing from list. Performing detail fetch for ${validSub.id}...`);
+              const subDetailResp = await fetch(
+                `https://api.stripe.com/v1/subscriptions/${validSub.id}`,
+                { method: 'GET', headers: { Authorization: `Bearer ${env.STRIPE_SECRET}` } }
+              );
+              const subDetail = await subDetailResp.json();
+              if (subDetail && !subDetail.error) {
+                expires =
+                  subDetail.current_period_end || subDetail.cancel_at || subDetail.trial_end;
+                // Last ditch fallback: if it's usage-based/flexible and has no period end yet,
+                // use the billing anchor + 1 year as a placeholder (better than failing).
+                if (!expires && subDetail.billing_cycle_anchor) {
+                  addLog('- No period end found in detail. Falling back to anchor + 1yr.');
+                  expires = subDetail.billing_cycle_anchor + 365 * 24 * 60 * 60;
+                }
+              }
+            }
+
+            if (debugMode) {
+              addLog(`- Sub Detail: id=${validSub.id}, status=${validSub.status}`);
+              addLog(
+                `- Fields: period_end=${validSub.current_period_end}, cancel_at=${validSub.cancel_at}, trial_end=${validSub.trial_end}, anchor=${validSub.billing_cycle_anchor}`
+              );
+              addLog(`- effectively selected expires: ${expires}`);
+              if (!expires) {
+                addLog(`- FULL SUB JSON: ${JSON.stringify(validSub)}`);
+              }
+            }
+
+            console.log('Valid Yearly Validation: Active Subscription');
+            addLog(`SUCCESS: Found valid active subscription ${validSub.id}`);
+            const record = createRecord(
+              email,
+              productId,
+              customer.id,
+              'yearly_sub',
+              now,
+              null,
+              validSub.id,
+              expires,
+              validSub.created
+            );
+            await cacheRecord(env, record);
+            return jsonResponse({ valid: true, record });
+          }
         }
+      } else {
+        addLog('PRIORITY 4: Skipping Yearly Subscriptions (purchase_type=lifetime)');
       }
     } else {
       addLog('No customers found with this email.');
@@ -482,13 +578,22 @@ async function handleCheckEmail(request, env) {
     const record = JSON.parse(rec);
     addLog(`KV Record Found: ${JSON.stringify(record)}`);
     if (record.stripe_customer_id && record.last_checked) {
-      if ((now - record.last_checked) / 3600 < 24) {
+      // CRITICAL FIX 2026-02-11: Harden cache validation
+      // 1. Handle future last_checked timestamps (legacy bug remnants)
+      // 2. Ignore yearly records missing an expiration date
+      const timeDiffHours = Math.abs(now - record.last_checked) / 3600;
+      const isTimeValid = timeDiffHours < 24;
+      const isExpirationSafe = !record.is_yearly || (record.is_yearly && record.expires_at);
+
+      if (isTimeValid && isExpirationSafe) {
         const valid = record.active === true || (record.expires_at && record.expires_at > now);
         console.log('Using KV cache fallback, valid:', valid);
         addLog(`KV Fallback decision: Valid=${valid}`);
         return jsonResponse({ valid, record });
       } else {
-        addLog('KV Record Expired (older than 24h).');
+        addLog(
+          `KV Record rejected: isTimeValid=${isTimeValid} (diff: ${timeDiffHours}h), isExpirationSafe=${isExpirationSafe}`
+        );
       }
     }
   } else {
@@ -500,28 +605,46 @@ async function handleCheckEmail(request, env) {
 }
 
 // Helpers for cleaner code
-function createRecord(email, pid, cusId, type, now, sessId, subId, expires) {
+function createRecord(email, pid, cusId, type, now, sessId, subId, expires, originalCreatedAt) {
   // For lifetime types (metadata, session, charge), we want expires_at to be NULL/undefined
   // This ensures the frontend identifies it as "Lifetime" instead of "Yearly"
   const isLife = type.includes('lifetime');
 
   let exp = expires;
   if (!expires && !isLife) {
-    // Default fallback for non-lifetime if missing
-    exp = now + 365 * 24 * 3600;
+    // CRITICAL FIX 2026-02-11: REMOVED dangerous fallback that set now + 365 days.
+    // If we don't have an expiration date for a non-lifetime license, we MUST NOT
+    // fabricate one. Use undefined/null and let validation logic handle it (or fail).
+    console.error(
+      `CRITICAL: No expiration date found for ${type} (non-lifetime) - email: ${email}`
+    );
+    // Extra debug info for KV
+    const debugPid = pid;
+    console.log(`Debug Record PID: ${debugPid}, Email: ${email}`);
   }
   // If isLife is true, exp remains undefined/null (perfect for UI logic)
 
   // IMPORTANT: Add is_lifetime and is_yearly flags to the returned record.
   // The client checks these flags directly instead of comparing Product IDs.
   // Fixed 2026-01-23 to restore variable-based architecture.
+  // IMPORTANT: Use originalCreatedAt from Stripe data when available to preserve
+  // subscription start dates across product IDs (cross-product access).
+  // Fixed 2026-02-11 to ensure consistent dates across all Style Analyzer Pro extensions.
+  // CRITICAL: Do NOT fall back to 'now' if originalCreatedAt is missing - this would
+  // create fake subscription dates for expired subscriptions. Log error instead.
+  if (!originalCreatedAt) {
+    console.error(
+      `CRITICAL: Missing originalCreatedAt for ${type} - email: ${email}, cusId: ${cusId}`
+    );
+  }
+
   return {
     email,
     product_id: pid,
     is_lifetime: isLife,
     is_yearly: !isLife,
     active: true,
-    created_at: now,
+    created_at: originalCreatedAt,
     expires_at: exp,
     last_checked: now,
     stripe_customer_id: cusId,
@@ -681,7 +804,7 @@ async function handleWebhook(request, env) {
         last_name: lastName,
         business_name: businessName,
         active: true,
-        created_at: now,
+        created_at: session.created,
         expires_at: expires,
         session_id: session.id,
         stripe_customer_id: customerId,

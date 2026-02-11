@@ -815,15 +815,35 @@ class SquarespaceAnalyzer implements AnalyzerController {
       }
 
       const trimmedEmail = input.trim().toLowerCase();
+
+      // LOG: Show exactly what we are checking to verify strict matching
+      console.log(
+        `Checking Premium Status for ${trimmedEmail} (Product: ${isSqs ? 'SQS' : 'Generic'})`
+      );
+
       const result = await LicenseManager.checkLicense(trimmedEmail);
 
-      if (result && result.valid) {
+      // DEBUG: Log full result for troubleshooting missing dates
+      console.log('Premium Status Result:', result);
+
+      // CRITICAL FIX: Ensure Yearly subscriptions have an expiration date
+      // If checking a Yearly sub, it MUST have an expiration date to be considered valid.
+      // Lifetime subs do not need expiration date.
+      let isValid = result && result.valid;
+      if (isValid && result.record && result.record.is_yearly && !result.record.expires_at) {
+        // Found yearly record but usage is invalid due to missing date
+        console.warn('Yearly subscription found WITHOUT expires_at:', result.record);
+        isValid = false;
+        // Inject specific error for UI handling below
+        if (!result.error) result.error = 'Missing expiration date for yearly subscription.';
+      }
+
+      if (isValid) {
         // Success - Save data
         await StorageManager.saveUserData({
           ...data,
           isPremium: true,
           licenseEmail: trimmedEmail,
-          licenseData: result,
         });
 
         // IMPORTANT: Clear the expiration notification flag so they can be notified again
@@ -840,8 +860,6 @@ class SquarespaceAnalyzer implements AnalyzerController {
         // Determine text
         let statusText = '✅ Premium Activated';
         if (result.record) {
-          // IMPORTANT: Check is_lifetime FIRST. If true, STOP immediately.
-          // Fixed 2026-01-23 to restore variable-based architecture.
           const isLifetime = result.record.is_lifetime === true;
           const isYearly = result.record.is_yearly === true;
 
@@ -849,8 +867,6 @@ class SquarespaceAnalyzer implements AnalyzerController {
             statusText += ' - Lifetime';
           } else if (isYearly) {
             statusText += ' - Yearly';
-          } else {
-            // Unknown state - just show "Premium Activated"
           }
         }
 
@@ -862,23 +878,31 @@ class SquarespaceAnalyzer implements AnalyzerController {
         if (isLifetime) {
           btn.style.background = '#44337a'; // Deep Purple for Lifetime
         } else {
-          btn.style.background = '#14532d'; // Deep Emerald for Yearly
+          btn.style.background = '#14532d'; // Deep Emerald for Yearly/Active
         }
 
         // Show Legacy Success Alert
         let message = `✅ Premium Status: Active\n\n`;
         message += `📧 Email: ${trimmedEmail}\n`;
+
+        const isRecordLifetime = result.record && result.record.is_lifetime === true;
+        const isRecordYearly = result.record && result.record.is_yearly === true;
+
         if (result.record && result.record.expires_at) {
           const expiryDate = new Date(result.record.expires_at * 1000);
           const now = new Date();
           const daysRemaining = Math.ceil(
             (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
           );
-          message += `📅 Expires: ${expiryDate.toLocaleDateString()}\n`;
+          message += `📅 Expires: ${expiryDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}\n`;
           message += `⏰ Days Remaining: ${daysRemaining} days\n\n`;
-        } else {
+        } else if (isRecordLifetime) {
           message += `🎉 Lifetime License - Never Expires\n\n`;
+        } else {
+          // Should not happen given initial validation, but safe fallback
+          message += `Note: License details unavailable.\n\n`;
         }
+
         message += `Your premium status has been activated in the extension!`;
 
         await customAlert(message);
@@ -889,13 +913,20 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
         // Show Legacy Failure Alert
         let errorMsg = 'Premium Status: Not Active\n\n';
-        if (result && result.error) {
-          errorMsg += `Error: ${result.error}\n\n`;
+
+        // Custom error for strict date check
+        if (result && result.record && result.record.is_yearly && !result.record.expires_at) {
+          errorMsg += `⚠️ No expiration date found.\n`;
+          errorMsg += `Please contact support at: ${platformStrings.questionsEmail}\n\n`;
+        } else {
+          if (result && result.error) {
+            errorMsg += `Error: ${result.error}\n\n`;
+          }
+          errorMsg += `No active subscription found for email: ${trimmedEmail}\n\n`;
+          errorMsg += `The system checked both yearly subscriptions and lifetime licenses.\n\n`;
+          errorMsg += `If you recently purchased, please wait a few minutes and try again.\n\n`;
+          errorMsg += `If you believe this is an error, please contact support at: ${platformStrings.questionsEmail}`;
         }
-        errorMsg += `No active subscription found for email: ${trimmedEmail}\n\n`;
-        errorMsg += `The system checked both yearly subscriptions and lifetime licenses.\n\n`;
-        errorMsg += `If you recently purchased, please wait a few minutes and try again.\n\n`;
-        errorMsg += `If you believe this is an error, please contact support at: ${platformStrings.questionsEmail}`;
 
         customAlert(errorMsg);
 

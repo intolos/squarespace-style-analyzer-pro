@@ -1,5 +1,6 @@
 import { platformStrings } from '../utils/platform';
 import { generateReportHeader, generateImportantNote } from './reportComponents';
+import { REPORT_SCRIPTS } from './reportStyles';
 
 export function exportImagesReport(
   data: any,
@@ -108,6 +109,26 @@ export function exportImagesReport(
   <div class="container">
 
 
+    <div class="toc" id="images-toc">
+      <h2>📋 Table of Contents</h2>
+      <ul>
+        ${tocItems
+          .map(
+            item => `
+          <li>
+            <a href="#${item.id}">
+              ${item.label}
+            </a>
+            <span class="pattern-badge" style="background: ${
+              item.hasIssues ? '#fed7d7' : '#c6f6d5'
+            }; color: ${item.hasIssues ? '#9b2c2c' : '#22543d'}; margin-left: 10px;">
+              ${item.count}
+            </span>
+          </li>
+        `
+          )
+          .join('')}
+      </ul>
     </div>
 
     ${generateImportantNote()}
@@ -285,18 +306,7 @@ export function exportImagesReport(
       <a href="#images-toc" style="color: #667eea; text-decoration: none; font-size: 2rem;">⬆️</a>
     </div>
   </div>
-  <script>
-    // Accordion functionality
-    document.addEventListener('click', function(e) {
-      const header = e.target.closest('.accordion-header');
-      if (header) {
-        const container = header.closest('.accordion-container');
-        if (container) {
-          container.classList.toggle('open');
-        }
-      }
-    });
-  </script>
+  ${REPORT_SCRIPTS}
 </body>
 </html>`;
 

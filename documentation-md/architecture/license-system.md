@@ -24,9 +24,10 @@ The License System is a robust "Three-Legged" architecture connecting the Chrome
 - **File**: `cloudflare/worker.js`
 - **Responsibility**: Authenticates with Stripe, validates purchases, prevents abuse, and acts as the "Source of Truth."
 - **Endpoints**:
-  - `/check-email`: Validate a user.
+  - `/check-email`: Validate a user. Now requires `purchase_type` ('lifetime' or 'yearly') for strict validation.
   - `/create-checkout-session`: Start a purchase.
   - `/webhook`: Listen for Stripe events.
+- **Caching (KV)**: As of 2026-02-11, uses **Cache Version 3** to purge all legacy records with corrupted or future-dated timestamps.
 
 ### 3. Stripe (The Vault)
 
@@ -48,8 +49,8 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 
 - **Check (Lifetime FIRST)**: Look for `is_lifetime: 'true'` on the Stripe **Customer Object**.
   - **Rationale**: Lifetime is the "superior" status. If true, the system **STOPS** immediately and returns a Lifetime record.
-- **Check (Yearly Fallback)**: If `is_lifetime` is false, check for `is_yearly: 'true'` AND product-specific access flags.
-- **Why**: This is the fastest and most robust check. It survives session archiving and history limits.
+- **Yearly Note**: Yearly subscriptions are **NOT** validated here anymore (as of 2026-02-11). We must check the actual subscription object (Priority 4) to get accurate expiration dates. Metadata flags (`is_yearly`) are only used as hints/stamps.
+- **Why**: This ensures we get the real `current_period_end` date from Stripe instead of guessing "Now + 365 days".
 - **How it gets there**: The **Webhook** automatically "Stamps" these onto the customer immediately after purchase.
 
 ### 🥈 Priority 2: Lifetime Checkout Sessions
@@ -64,7 +65,9 @@ When `/check-email` is called, the Worker searches Stripe data in a specific pri
 ### 4️⃣ Priority 4: Yearly Subscriptions
 
 - **Check**: Look for `active` subscriptions.
-- **Result**: Returns a "Yearly" license (with an expiration date).
+- **Strict Matching**: As of 2026-02-11, the worker requires an explicit `purchase_type=yearly` parameter to return a result from this priority. This prevents yearly subscriptions from being incorrectly validated as Lifetime licenses (fixing the "nonsense Product ID" bug).
+- **Flexible Billing Support**: For subscriptions using usage-based or flexible billing (where `current_period_end` may be missing in list results), the worker performs a **deep ID lookup** to fetch the full object. If dates are still absent, it intelligently falls back to the `billing_cycle_anchor` + 365 days.
+- **Result**: Returns a "Yearly" license with a reliable expiration date.
 
 ---
 
@@ -172,3 +175,56 @@ The client sends `extension_type` and `purchase_type` directly in the checkout r
 3. **Webhook** (`checkout.session.completed`) → Reads from `session.metadata.extension_type` and stamps Customer
 
 This design keeps Product IDs defined in **one place only** (`platform.ts`) and eliminates the need for Product ID environment variables in Cloudflare.
+
+---
+
+## 📅 Cross-Product Date Preservation (Fixed 2026-02-11)
+
+When a user purchases a subscription under one extension (e.g., Squarespace Style Analyzer Pro) and checks their premium status in another extension (e.g., Website Style Analyzer Pro), the system now preserves the **original subscription creation date** instead of using the current timestamp.
+
+### How It Works
+
+The worker's `createRecord()` function now accepts an optional `originalCreatedAt` parameter:
+
+```javascript
+function createRecord(email, pid, cusId, type, now, sessId, subId, expires, originalCreatedAt) {
+  // CRITICAL: Do NOT fall back to 'now' if originalCreatedAt is missing - this would
+  // create fake subscription dates for expired subscriptions. Log error instead.
+  if (!originalCreatedAt) {
+    console.error(
+      `CRITICAL: Missing originalCreatedAt for ${type} - email: ${email}, cusId: ${cusId}`
+    );
+  }
+
+  return {
+    // ...
+    created_at: originalCreatedAt, // No fallback - fail gracefully if missing
+    // ...
+  };
+}
+```
+
+### Date Sources
+
+All four priority checks extract the original creation timestamp from Stripe data:
+
+1. **Priority 1 (Customer Metadata)**: Uses `customer.created`
+2. **Priority 2 (Lifetime Sessions)**: Uses `session.created`
+3. **Priority 3 (Charges)**: Uses `charge.created`
+4. **Priority 4 (Yearly Subscriptions)**: Uses `subscription.created`
+
+### Renewal Handling
+
+When a yearly subscription renews:
+
+- ✅ `subscription.created` remains the **original creation date** (Stripe does not create a new subscription object)
+- ✅ Only `current_period_end` (expiration date) gets updated
+- ✅ This ensures the subscription start date always reflects the original purchase
+
+### Benefits
+
+- ✅ Consistent subscription start dates across all Style Analyzer Pro extensions
+- ✅ Accurate subscription history for users who access multiple extensions
+- ✅ Proper expiration date tracking regardless of which extension is used
+- ✅ Maintains data integrity in KV cache across product IDs
+- ✅ No fake dates for expired subscriptions - fails gracefully instead

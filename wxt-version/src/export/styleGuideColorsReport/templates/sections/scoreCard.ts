@@ -31,16 +31,13 @@ export function buildScoreSection(analysis: ColorAnalysis): string {
       }
     </div>
 
-    <div class="accordion-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 30px;">
-      <div class="accordion-header" style="background: transparent; color: white;">
-        <h3 style="color: white; margin: 0; font-size: 1.5rem;">How the Score is Calculated</h3>
-        <span class="accordion-icon" style="color: white;">▶</span>
-      </div>
-      <div class="accordion-content" style="background: transparent; color: white; padding: 0 30px 30px 30px;">
-        <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 15px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; text-align: left; margin-bottom: 30px;">
+      <h3 style="color: white; margin: 0; font-size: 1.5rem;">How the Score is Calculated</h3>
+      <div class="note-text note-truncated" style="display: none; font-size: 1.05rem; line-height: 1.6; margin-top: 15px;">
+        <p style="margin: 0 0 15px 0;">
           The Color Consistency Score and Report provide a quick assessment for you to decide where you may be using too many colors.
         </p>
-        <p style="font-size: 1.05rem; margin-bottom: 10px;"><strong>The calculation starts at 10.0</strong> and deducts points based on:</p>
+        <p style="margin-bottom: 10px;"><strong>The calculation starts at 10.0</strong> and deducts points based on:</p>
         <ul style="font-size: 1rem; line-height: 1.8; margin: 0; padding-left: 25px; list-style-type: disc;">
           <li><strong>Total colors:</strong> -3.0 if &gt;50, -2.0 if &gt;35, -1.0 if &gt;25</li>
           <li><strong>Color variations:</strong> -1.5 per family with &gt;8 variations, -1.0 for &gt;5</li>
@@ -49,6 +46,7 @@ export function buildScoreSection(analysis: ColorAnalysis): string {
           <li><strong>WCAG contrast failures:</strong> -1.5 if &gt;5 failures, -0.5 if &gt;2</li>
         </ul>
       </div>
+      <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 15px; cursor: pointer; font-weight: 600;">Read More</button>
     </div>
 
     ${generateImportantNote()}

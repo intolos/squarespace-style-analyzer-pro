@@ -114,7 +114,7 @@ function analyzeCSSForBackgroundOriginal(element: Element): { color: string | nu
   const backgroundClasses = classList.filter(cls => 
     cls.includes('background') || 
     cls.includes('lp-background') ||
-    cls.startsWith('is-style-')
+    cls.includes('bg')
   );
   
   if (backgroundClasses.length > 0) {
@@ -752,10 +752,13 @@ function createTestOverlay(result: TestResult): HTMLElement {
     
     <div style="margin-bottom: 15px;">
       <label style="display: block; margin-bottom: 5px; font-weight: bold;">
-        Your Color Picker Result (click the BACKGROUND area with your color picker):
+        Your Color Picker Result (starts with #):
       </label>
-      <input type="text" id="manual-color-input" placeholder="e.g., #f6f7f7 or rgba(246, 247, 247)" 
-        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+      <div style="display: flex; align-items: center;">
+        <span style="padding: 8px; background: #f0f0f0; border: 1px solid #ddd; border-right: none; border-radius: 4px 0 0 4px; font-weight: bold; color: #666;">#</span>
+        <input type="text" id="manual-color-input" placeholder="f6f7f7" 
+          style="flex: 1; padding: 8px; border: 1px solid #ddd; border-left: none; border-radius: 0 4px 4px 0; font-size: 14px;">
+      </div>
     </div>
     
     <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -836,7 +839,12 @@ function showTestOverlay(result: TestResult): Promise<TestResult> {
     const input = document.getElementById('manual-color-input') as HTMLInputElement;
     
     submitBtn?.addEventListener('click', async () => {
-      result.manualVerification = input.value.trim() || null;
+      let value = input.value.trim();
+      // Auto-prepend # for hex codes if missing
+      if (value && !value.startsWith('#') && !value.toLowerCase().startsWith('rgba') && !value.toLowerCase().startsWith('rgb')) {
+        value = '#' + value;
+      }
+      result.manualVerification = value || null;
       testResults.push(result);
       await saveTestResults(); // Persist to storage
       overlay.remove();
@@ -1052,34 +1060,22 @@ export async function exportTestResults(): Promise<string> {
   
   const csv = [headers.join(','), ...rows].join('\n');
   
-  // Send CSV to background script for download
+  // Download CSV using client-side anchor (like main reports)
   const filename = `color-detection-test-results-${new Date().toISOString().split('T')[0]}.csv`;
   
-  try {
-    const response = await chrome.runtime.sendMessage({
-      action: 'testHarnessDownload',
-      filename: filename,
-      csvData: csv
-    });
-    
-    if (response?.success) {
-      console.log(`✅ Exported ${testResults.length} test results to CSV`);
-      console.log(`📁 Downloaded: ${filename}`);
-      console.log('📂 Check your Downloads folder');
-    } else {
-      console.error('❌ Export failed:', response?.error || 'Unknown error');
-      console.log('\n📋 CSV DATA (copy manually):');
-      console.log('-'.repeat(80));
-      console.log(csv);
-      console.log('-'.repeat(80));
-    }
-  } catch (error: any) {
-    console.error('❌ Export error:', error?.message || error);
-    console.log('\n📋 CSV DATA (copy manually):');
-    console.log('-'.repeat(80));
-    console.log(csv);
-    console.log('-'.repeat(80));
-  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  console.log(`✅ Exported ${testResults.length} test results to CSV`);
+  console.log(`📁 Downloaded: ${filename}`);
+  console.log('📂 Check your Downloads folder');
   
   return csv;
 }

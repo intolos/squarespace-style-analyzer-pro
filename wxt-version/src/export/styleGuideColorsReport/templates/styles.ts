@@ -1,4 +1,4 @@
-import { ACCORDION_STYLES, ACCORDION_SCRIPT } from '../../reportStyles';
+import { ACCORDION_STYLES, ACCORDION_SCRIPT, REPORT_SCRIPTS } from '../../reportStyles';
 
 export const COLOR_REPORT_STYLES = `
     body {
@@ -349,4 +349,4 @@ export const COLOR_REPORT_STYLES = `
     }
 `;
 
-export { ACCORDION_SCRIPT };
+export { ACCORDION_SCRIPT, REPORT_SCRIPTS };

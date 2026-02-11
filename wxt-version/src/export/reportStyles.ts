@@ -38,6 +38,37 @@ export const ACCORDION_SCRIPT = `
 `;
 
 /**
+ * Script for "Read More" functionality in Important Notes
+ */
+export const NOTE_TOGGLE_SCRIPT = `
+  <script>
+    // Note toggle functionality
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.classList.contains('note-toggle')) {
+        const button = e.target;
+        const wrapper = button.parentElement;
+        const text = wrapper.querySelector('.note-text');
+        
+        if (text) {
+          const isExpanded = text.classList.toggle('note-expanded');
+          button.textContent = isExpanded ? 'Read Less' : 'Read More';
+        }
+      }
+    });
+    
+    // Add CSS for note expansion if not already present
+    const style = document.createElement('style');
+    style.textContent = '.note-expanded { display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }';
+    document.head.appendChild(style);
+  </script>
+`;
+
+/**
+ * Combined scripts for reports
+ */
+export const REPORT_SCRIPTS = ACCORDION_SCRIPT + NOTE_TOGGLE_SCRIPT;
+
+/**
  * Shared section header styles
  * Blue background with white text for major sections
  */

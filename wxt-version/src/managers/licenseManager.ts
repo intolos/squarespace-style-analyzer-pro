@@ -45,7 +45,7 @@ export const LicenseManager = {
       let resp = await fetch(
         `${this.API_BASE}/check-email?email=${encodeURIComponent(
           email
-        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_LIFETIME)}`,
+        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_LIFETIME)}&purchase_type=lifetime`,
         { method: 'GET' }
       );
       if (resp.ok) {
@@ -59,7 +59,7 @@ export const LicenseManager = {
       resp = await fetch(
         `${this.API_BASE}/check-email?email=${encodeURIComponent(
           email
-        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_YEARLY)}`,
+        )}&product_id=${encodeURIComponent(this.PRODUCT_ID_YEARLY)}&purchase_type=yearly`,
         { method: 'GET' }
       );
       if (!resp.ok) {

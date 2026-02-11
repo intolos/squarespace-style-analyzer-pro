@@ -1,0 +1,8 @@
+Element,Selector,Fast_Path_Color,Fast_Path_Time,Fast_Path_Confidence,Smart_Hybrid_Color,Smart_Hybrid_Time,Smart_Hybrid_Confidence,Full_Hybrid_Color,Full_Hybrid_Time,Full_Hybrid_Confidence,Manual_Verification,Fast_Path_Accurate,Smart_Hybrid_Accurate,Full_Hybrid_Accurate,Fastest_Accurate_Method,1 digit diff by 1
+div,main.lp-root > div.lp-block.lp-section,#F6F7F7,0.3,high,#F6F7F7,149.1,high,#F6F7F7,165.7,high,#F6F7F7,YES,YES,YES,Fast_Path,
+div,div#wrapper > section.lp-module.lp-google-gsuite > div.background > div.shape,#148264,0.1,high,#138264,145,medium,#138264,158.2,high,#138264,NO,YES,YES,Smart_Hybrid,
+section,div#wrapper > section.lp-module.lp-google-gsuite,#179370,0.1,high,#189370,139.4,medium,#179370,158.8,medium,#169370,NO,NO,NO,NONE,
+p,div#wrapper > section.lp-module.lp-google-gdocs > div.container-inner > div.container-text > div.content > p.tagline,#0D47A1,0,high,#0E47A2,162.5,medium,#0D47A1,178.3,medium,#0E47A1,NO,NO,NO,NONE,
+div,"div#wrapper > section.lp-module.lp-google-gdocs > div.container-inner > div.container-image > div.
+		shape.shape--image > div.shape__background",#1565C0,0.1,high,#ECECEC,155.8,medium,#1565C0,170,medium,#1565C0,YES,NO,YES,Fast_Path,
+section,div#wrapper > section.lp-module.lp-google-gsuite,#179370,0.1,high,#189370,206.8,medium,#179370,217.1,medium,#169370,NO,NO,NO,NONE,

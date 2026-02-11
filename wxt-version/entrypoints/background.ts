@@ -197,6 +197,28 @@ export default defineBackground(() => {
       });
       return true;
     }
+
+    if (request.action === 'testHarnessDownload') {
+      try {
+        const blob = new Blob([request.csvData], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        
+        chrome.downloads.download({
+          url: url,
+          filename: request.filename,
+          saveAs: false
+        }).then(downloadId => {
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          sendResponse({ success: true, downloadId });
+        }).catch(error => {
+          URL.revokeObjectURL(url);
+          sendResponse({ success: false, error: error.message });
+        });
+      } catch (error: any) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return true;
+    }
   });
 
   // --- Handlers ---

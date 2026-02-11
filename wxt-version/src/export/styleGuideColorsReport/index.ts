@@ -3,7 +3,7 @@
 import { platformStrings } from '../../utils/platform';
 import type { ReportData } from './types';
 import { analyzeColorConsistency, ensureDevToolsSummary } from './analysis';
-import { COLOR_REPORT_STYLES, ACCORDION_SCRIPT } from './templates/styles';
+import { COLOR_REPORT_STYLES, REPORT_SCRIPTS } from './templates/styles';
 import {
   generateHeader,
   generateTableOfContents,
@@ -101,7 +101,7 @@ ${COLOR_REPORT_STYLES}
     ${sections}
   </div>
   ${getContrastCheckerScript()}
-  ${ACCORDION_SCRIPT}
+  ${REPORT_SCRIPTS}
 </body>
 </html>`;
 
