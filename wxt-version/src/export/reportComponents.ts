@@ -205,3 +205,18 @@ export function generateStyledElementSection(
   html += `</div>`;
   return html;
 }
+
+/**
+ * Generates the standardized "IMPORTANT NOTE" for quality reports.
+ * Used by: Website Analysis, Brand Style Guide Colors, and Images Analysis reports.
+ */
+export function generateImportantNote(): string {
+  return `
+    <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
+      <div class="note-text note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
+        <span style="color: #FFD700; font-weight: bold; margin-right: 5px;">➤</span> <strong>IMPORTANT NOTE:</strong> The "Locate" button that you find in the reports is a tremendous aid in pinpointing the exact location of issues. However, on the "Brand Style Guide Colors" and "Images Analysis" reports it may find situations that it cannot specifically locate. This is caused by a variety of complex coding structures, such as those previously mentioned plus, in the case of images, carousels and other techniques that hide images. In the Images Analysis report, we have also included direct links to the images so you can visually identify them to manually look for them.
+      </div>
+      <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
+    </div>
+  `;
+}

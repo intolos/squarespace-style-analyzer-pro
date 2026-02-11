@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai",
+  "instructions": [
+    ".agent/rules/*.md"
+  ],
+  "rules": {
+    "documentation-creation": {
+      "description": "File creation protocol for planning documents",
+      "trigger": "When creating implementation plans or task lists",
+      "actions": [
+        "Create actual files in appropriate folders",
+        "Use naming format: YYYY-MM-DD-[description].md",
+        "Place implementation plans in: documentation-md/implementation-plans/",
+        "Place task lists in: documentation-md/task-lists/",
+        "Do NOT display full text of these documents in chat",
+        "Reference them by filename only when discussing",
+        "Read them silently when necessary without displaying contents"
+      ]
+    }
+  }
+}

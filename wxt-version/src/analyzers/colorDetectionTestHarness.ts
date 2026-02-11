@@ -1,7 +1,7 @@
 /**
  * Color Detection Test Harness
  * A/B testing framework for comparing color detection accuracy
- * Tests three methods: Fast Path, Smart Hybrid, Full Hybrid
+ * Tests four methods: Fast Path Original, Fast Path, Smart Hybrid, Full Hybrid
  */
 
 import { rgbToHex, isTransparentColor } from '../utils/colorUtils';
@@ -12,6 +12,7 @@ interface TestResult {
   selector: string;
   timestamp: number;
   methods: {
+    fastPathOriginal: MethodResult;
     fastPath: MethodResult;
     smartHybrid: MethodResult;
     fullHybrid: MethodResult;
@@ -103,12 +104,12 @@ async function captureScreenshotWithRetry(maxRetries: number = 3): Promise<strin
 }
 
 /**
- * CSS analysis - checks for background-related classes and rules
+ * CSS analysis for Fast Path Original - checks computed style and pseudo-elements
  */
-function analyzeCSSForBackground(element: Element): { color: string | null; details: string } {
+function analyzeCSSForBackgroundOriginal(element: Element): { color: string | null; details: string } {
   const details: string[] = [];
   
-  // Check element classes for background patterns
+  // Check element classes for background patterns (logging only)
   const classList = Array.from(element.classList);
   const backgroundClasses = classList.filter(cls => 
     cls.includes('background') || 
@@ -148,14 +149,119 @@ function analyzeCSSForBackground(element: Element): { color: string | null; deta
 }
 
 /**
- * Fast Path Method
- * Checks CSS classes, computed styles, and pseudo-elements
+ * Get background color from CSS rules matching background classes
+ */
+function getBackgroundFromCSSRules(element: Element): string | null {
+  const classList = Array.from(element.classList);
+  const backgroundClassPatterns = ['background', 'bg', 'backdrop'];
+  
+  // Find matching background classes (excluding .is-style-*)
+  const matchingClasses = classList.filter(cls => {
+    if (cls.startsWith('is-style-')) return false;
+    return backgroundClassPatterns.some(pattern => 
+      cls.toLowerCase().includes(pattern.toLowerCase())
+    );
+  });
+  
+  if (matchingClasses.length === 0) return null;
+  
+  // Search through all stylesheets for matching rules
+  try {
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule instanceof CSSStyleRule) {
+            // Check if this rule applies to any of our matching classes
+            for (const className of matchingClasses) {
+              if (rule.selectorText.includes(className)) {
+                const bgColor = rule.style.backgroundColor;
+                if (bgColor && !isTransparentColor(bgColor)) {
+                  return rgbToHex(bgColor);
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Cross-origin stylesheets may throw errors, skip them
+        continue;
+      }
+    }
+  } catch (e) {
+    console.warn('[SSA] Error searching CSS rules:', e);
+  }
+  
+  return null;
+}
+
+/**
+ * CSS analysis for Fast Path New - checks pseudo-elements, CSS classes, then computed style
+ */
+function analyzeCSSForBackgroundNew(element: Element): { color: string | null; details: string } {
+  const details: string[] = [];
+  
+  // 1. Check ::before pseudo-element FIRST
+  const beforeStyle = window.getComputedStyle(element, '::before');
+  if (beforeStyle.backgroundColor && !isTransparentColor(beforeStyle.backgroundColor)) {
+    details.push(`::before background: ${beforeStyle.backgroundColor}`);
+    return { color: rgbToHex(beforeStyle.backgroundColor), details: details.join('; ') };
+  }
+  
+  // 2. Check ::after pseudo-element SECOND
+  const afterStyle = window.getComputedStyle(element, '::after');
+  if (afterStyle.backgroundColor && !isTransparentColor(afterStyle.backgroundColor)) {
+    details.push(`::after background: ${afterStyle.backgroundColor}`);
+    return { color: rgbToHex(afterStyle.backgroundColor), details: details.join('; ') };
+  }
+  
+  // 3. Check CSS class rules THIRD
+  const cssRuleColor = getBackgroundFromCSSRules(element);
+  if (cssRuleColor) {
+    details.push(`CSS rule background: ${cssRuleColor}`);
+    return { color: cssRuleColor, details: details.join('; ') };
+  }
+  
+  // 4. Check computed style on element FOURTH
+  const computedStyle = window.getComputedStyle(element);
+  const bgColor = computedStyle.backgroundColor;
+  if (bgColor && !isTransparentColor(bgColor)) {
+    details.push(`Computed background: ${bgColor}`);
+    return { color: rgbToHex(bgColor), details: details.join('; ') };
+  }
+  
+  details.push('No background found');
+  return { color: null, details: details.join('; ') };
+}
+
+/**
+ * Fast Path Original Method
+ * Original implementation: CSS classes, computed styles, then pseudo-elements
  * Expected time: ~5ms
  */
-async function fastPathMethod(element: Element): Promise<MethodResult> {
+async function fastPathOriginalMethod(element: Element): Promise<MethodResult> {
   const startTime = performance.now();
   
-  const { color, details } = analyzeCSSForBackground(element);
+  const { color, details } = analyzeCSSForBackgroundOriginal(element);
+  
+  const timeMs = performance.now() - startTime;
+  
+  return {
+    color,
+    timeMs: Math.round(timeMs * 100) / 100,
+    confidence: color ? 'high' : 'low',
+    details
+  };
+}
+
+/**
+ * Fast Path New Method
+ * Revised implementation: Pseudo-elements, CSS classes, then computed style
+ * Expected time: ~5ms
+ */
+async function fastPathNewMethod(element: Element): Promise<MethodResult> {
+  const startTime = performance.now();
+  
+  const { color, details } = analyzeCSSForBackgroundNew(element);
   
   const timeMs = performance.now() - startTime;
   
@@ -251,8 +357,8 @@ async function sampleCanvasColors(
 async function smartHybridMethod(element: Element, screenshot: string | null): Promise<MethodResult> {
   const startTime = performance.now();
   
-  // Step 1: Fast Path
-  const fastPath = analyzeCSSForBackground(element);
+  // Step 1: Fast Path (using NEW implementation)
+  const fastPath = analyzeCSSForBackgroundNew(element);
   
   // Step 2: Canvas sampling (16 points in 4x4 grid)
   const canvasResult = await sampleCanvasColors(element, screenshot, 4);
@@ -329,8 +435,8 @@ async function denseCanvasSampling(
 async function fullHybridMethod(element: Element, screenshot: string | null): Promise<MethodResult> {
   const startTime = performance.now();
   
-  // Step 1: Comprehensive CSS analysis (already done in fastPath)
-  const cssResult = analyzeCSSForBackground(element);
+  // Step 1: Comprehensive CSS analysis (using NEW implementation)
+  const cssResult = analyzeCSSForBackgroundNew(element);
   
   // Step 2: Dense canvas sampling (64 points)
   const canvasResult = await denseCanvasSampling(element, screenshot);
@@ -370,6 +476,77 @@ async function fullHybridMethod(element: Element, screenshot: string | null): Pr
 }
 
 /**
+ * Normalize color to 6-digit hex format
+ */
+function normalizeToHex(color: string | null): string | null {
+  if (!color) return null;
+  
+  // Already hex
+  if (color.startsWith('#')) {
+    // Convert #rgb to #rrggbb
+    if (color.length === 4) {
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+    }
+    return color.toLowerCase();
+  }
+  
+  // rgb() or rgba()
+  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+    const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+    const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`.toLowerCase();
+  }
+  
+  return color.toLowerCase();
+}
+
+/**
+ * Calculate "1 diff by 1" accuracy
+ * Returns: "exact", "yes", or "no"
+ */
+function calculateOneDiffOne(manual: string | null, technique: string | null): string {
+  if (!manual || !technique) return 'no';
+  
+  const manualHex = normalizeToHex(manual);
+  const techniqueHex = normalizeToHex(technique);
+  
+  if (!manualHex || !techniqueHex) return 'no';
+  
+  // Exact match
+  if (manualHex === techniqueHex) return 'exact';
+  
+  // Compare character by character
+  let diffCount = 0;
+  let diffValue = 0;
+  let diffPosition = -1;
+  
+  for (let i = 0; i < manualHex.length; i++) {
+    if (manualHex[i] !== techniqueHex[i]) {
+      diffCount++;
+      diffPosition = i;
+      
+      // Calculate numeric difference for this position
+      const manualVal = parseInt(manualHex[i], 16);
+      const techniqueVal = parseInt(techniqueHex[i], 16);
+      diffValue = Math.abs(manualVal - techniqueVal);
+      
+      // If more than 1 difference, return "no" immediately
+      if (diffCount > 1) return 'no';
+    }
+  }
+  
+  // Exactly 1 position differs by exactly 1
+  if (diffCount === 1 && diffValue === 1) return 'yes';
+  
+  // 1 position differs but by more than 1
+  if (diffCount === 1 && diffValue > 1) return 'no';
+  
+  return 'no';
+}
+
+/**
  * Walk up DOM tree to find element with actual background
  * Matches production behavior in getEffectiveBackgroundColor
  */
@@ -390,15 +567,16 @@ function findBackgroundContainer(startElement: Element): Element {
 }
 
 /**
- * Run all three methods on an element
+ * Run all four methods on an element
  */
 async function runTestOnElement(element: Element, screenshot: string | null): Promise<TestResult> {
   // Find the actual background container
   const backgroundContainer = findBackgroundContainer(element);
   
-  // Run all three methods
-  const [fastPath, smartHybrid, fullHybrid] = await Promise.all([
-    fastPathMethod(backgroundContainer),
+  // Run all four methods
+  const [fastPathOriginal, fastPath, smartHybrid, fullHybrid] = await Promise.all([
+    fastPathOriginalMethod(backgroundContainer),
+    fastPathNewMethod(backgroundContainer),
     smartHybridMethod(backgroundContainer, screenshot),
     fullHybridMethod(backgroundContainer, screenshot)
   ]);
@@ -410,6 +588,7 @@ async function runTestOnElement(element: Element, screenshot: string | null): Pr
     selector: generateSelector(backgroundContainer),
     timestamp: Date.now(),
     methods: {
+      fastPathOriginal,
       fastPath,
       smartHybrid,
       fullHybrid
@@ -472,7 +651,7 @@ function createTestOverlay(result: TestResult): HTMLElement {
     background: white;
     border: 2px solid #667eea;
     border-radius: 8px;
-    max-width: 600px;
+    max-width: 700px;
     max-height: 80vh;
     overflow-y: auto;
     z-index: 10000;
@@ -525,7 +704,18 @@ function createTestOverlay(result: TestResult): HTMLElement {
       </thead>
       <tbody>
         <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px;"><strong>Fast Path</strong></td>
+          <td style="padding: 8px;"><strong>Fast Path Original</strong></td>
+          <td style="padding: 8px;">
+            ${result.methods.fastPathOriginal.color ? `
+              <span style="display: inline-block; width: 20px; height: 20px; background: ${result.methods.fastPathOriginal.color}; border: 1px solid #ccc; vertical-align: middle; margin-right: 5px;"></span>
+              ${result.methods.fastPathOriginal.color}
+            ` : 'Not found'}
+          </td>
+          <td style="padding: 8px;">${result.methods.fastPathOriginal.timeMs}ms</td>
+          <td style="padding: 8px;">${result.methods.fastPathOriginal.confidence}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd; background: #f9f9f9;">
+          <td style="padding: 8px;"><strong>Fast Path (New)</strong></td>
           <td style="padding: 8px;">
             ${result.methods.fastPath.color ? `
               <span style="display: inline-block; width: 20px; height: 20px; background: ${result.methods.fastPath.color}; border: 1px solid #ccc; vertical-align: middle; margin-right: 5px;"></span>
@@ -535,7 +725,7 @@ function createTestOverlay(result: TestResult): HTMLElement {
           <td style="padding: 8px;">${result.methods.fastPath.timeMs}ms</td>
           <td style="padding: 8px;">${result.methods.fastPath.confidence}</td>
         </tr>
-        <tr style="border-bottom: 1px solid #ddd; background: #f9f9f9;">
+        <tr style="border-bottom: 1px solid #ddd;">
           <td style="padding: 8px;"><strong>Smart Hybrid</strong></td>
           <td style="padding: 8px;">
             ${result.methods.smartHybrid.color ? `
@@ -779,6 +969,9 @@ export async function exportTestResults(): Promise<string> {
   const headers = [
     'Element',
     'Selector',
+    'Fast_Path_Original_Color',
+    'Fast_Path_Original_Time',
+    'Fast_Path_Original_Confidence',
     'Fast_Path_Color',
     'Fast_Path_Time',
     'Fast_Path_Confidence',
@@ -789,22 +982,37 @@ export async function exportTestResults(): Promise<string> {
     'Full_Hybrid_Time',
     'Full_Hybrid_Confidence',
     'Manual_Verification',
+    'Fast_Path_Original_Accurate',
     'Fast_Path_Accurate',
     'Smart_Hybrid_Accurate',
     'Full_Hybrid_Accurate',
+    'Fast_Path_Original_1diff1',
+    'Fast_Path_1diff1',
+    'Smart_Hybrid_1diff1',
+    'Full_Hybrid_1diff1',
     'Fastest_Accurate_Method'
   ];
   
   // Create CSV rows
   const rows = testResults.map(result => {
     const manual = result.manualVerification?.toLowerCase() || '';
+    
+    // Calculate accuracy (exact match)
+    const fastOriginalAccurate = manual && result.methods.fastPathOriginal.color?.toLowerCase() === manual ? 'YES' : 'NO';
     const fastAccurate = manual && result.methods.fastPath.color?.toLowerCase() === manual ? 'YES' : 'NO';
     const smartAccurate = manual && result.methods.smartHybrid.color?.toLowerCase() === manual ? 'YES' : 'NO';
     const fullAccurate = manual && result.methods.fullHybrid.color?.toLowerCase() === manual ? 'YES' : 'NO';
     
+    // Calculate 1diff1 (1 difference by 1)
+    const fastOriginal1diff1 = calculateOneDiffOne(result.manualVerification, result.methods.fastPathOriginal.color);
+    const fast1diff1 = calculateOneDiffOne(result.manualVerification, result.methods.fastPath.color);
+    const smart1diff1 = calculateOneDiffOne(result.manualVerification, result.methods.smartHybrid.color);
+    const full1diff1 = calculateOneDiffOne(result.manualVerification, result.methods.fullHybrid.color);
+    
     // Find fastest accurate method
     let fastestAccurate = 'NONE';
     const accurateMethods = [];
+    if (fastOriginalAccurate === 'YES') accurateMethods.push({ name: 'Fast_Path_Original', time: result.methods.fastPathOriginal.timeMs });
     if (fastAccurate === 'YES') accurateMethods.push({ name: 'Fast_Path', time: result.methods.fastPath.timeMs });
     if (smartAccurate === 'YES') accurateMethods.push({ name: 'Smart_Hybrid', time: result.methods.smartHybrid.timeMs });
     if (fullAccurate === 'YES') accurateMethods.push({ name: 'Full_Hybrid', time: result.methods.fullHybrid.timeMs });
@@ -817,6 +1025,9 @@ export async function exportTestResults(): Promise<string> {
     return [
       result.element,
       result.selector,
+      result.methods.fastPathOriginal.color || 'N/A',
+      result.methods.fastPathOriginal.timeMs,
+      result.methods.fastPathOriginal.confidence,
       result.methods.fastPath.color || 'N/A',
       result.methods.fastPath.timeMs,
       result.methods.fastPath.confidence,
@@ -827,9 +1038,14 @@ export async function exportTestResults(): Promise<string> {
       result.methods.fullHybrid.timeMs,
       result.methods.fullHybrid.confidence,
       result.manualVerification || 'N/A',
+      fastOriginalAccurate,
       fastAccurate,
       smartAccurate,
       fullAccurate,
+      fastOriginal1diff1,
+      fast1diff1,
+      smart1diff1,
+      full1diff1,
       fastestAccurate
     ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
   });
@@ -879,6 +1095,11 @@ export function getTestStats(): object {
   
   const withManual = testResults.filter(r => r.manualVerification).length;
   
+  const fastOriginalAccurate = testResults.filter(r => {
+    const manual = r.manualVerification?.toLowerCase();
+    return manual && r.methods.fastPathOriginal.color?.toLowerCase() === manual;
+  }).length;
+  
   const fastAccurate = testResults.filter(r => {
     const manual = r.manualVerification?.toLowerCase();
     return manual && r.methods.fastPath.color?.toLowerCase() === manual;
@@ -894,6 +1115,7 @@ export function getTestStats(): object {
     return manual && r.methods.fullHybrid.color?.toLowerCase() === manual;
   }).length;
   
+  const avgTimeFastOriginal = testResults.reduce((sum, r) => sum + r.methods.fastPathOriginal.timeMs, 0) / total;
   const avgTimeFast = testResults.reduce((sum, r) => sum + r.methods.fastPath.timeMs, 0) / total;
   const avgTimeSmart = testResults.reduce((sum, r) => sum + r.methods.smartHybrid.timeMs, 0) / total;
   const avgTimeFull = testResults.reduce((sum, r) => sum + r.methods.fullHybrid.timeMs, 0) / total;
@@ -902,11 +1124,13 @@ export function getTestStats(): object {
     totalTests: total,
     withManualVerification: withManual,
     accuracy: {
+      fastPathOriginal: withManual > 0 ? Math.round((fastOriginalAccurate / withManual) * 100) : 0,
       fastPath: withManual > 0 ? Math.round((fastAccurate / withManual) * 100) : 0,
       smartHybrid: withManual > 0 ? Math.round((smartAccurate / withManual) * 100) : 0,
       fullHybrid: withManual > 0 ? Math.round((fullAccurate / withManual) * 100) : 0
     },
     averageTimeMs: {
+      fastPathOriginal: Math.round(avgTimeFastOriginal * 100) / 100,
       fastPath: Math.round(avgTimeFast * 100) / 100,
       smartHybrid: Math.round(avgTimeSmart * 100) / 100,
       fullHybrid: Math.round(avgTimeFull * 100) / 100

@@ -1,5 +1,5 @@
 import { platformStrings } from '../utils/platform';
-import { generateReportHeader } from './reportComponents';
+import { generateReportHeader, generateImportantNote } from './reportComponents';
 
 export function exportImagesReport(
   data: any,
@@ -107,28 +107,10 @@ export function exportImagesReport(
   })}
   <div class="container">
 
-    <!-- Table of Contents -->
-    <div id="images-toc" class="toc">
-      <h2>📋 Table of Contents</h2>
-      <ul>
-        ${tocItems
-          .map(
-            item => `
-          <li>
-            ${
-              item.hasIssues
-                ? `<a href="#${item.id}">🖼️ ${item.label}</a>
-                 <span class="toc-count">${item.count}</span>`
-                : `<span style="color: #718096;">🖼️ ${item.label}</span>
-                 <span style="color: #22c55e; font-weight: bold; margin-left: 8px;">✓ Pass, No Issues Found</span>`
-            }
-          </li>
-        `
-          )
-          .join('')}
-      </ul>
 
     </div>
+
+    ${generateImportantNote()}
 
     ${
       hasMissingAlt
