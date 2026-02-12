@@ -106,6 +106,54 @@ export const COLOR_REPORT_STYLES = `
       font-size: 0.75rem;
       color: #718096;
     }
+
+    .merged-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      color: #667eea;
+      background: #ebf4ff;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-top: 3px;
+      font-weight: 600;
+      cursor: help;
+    }
+
+    .swatch-audit-trail {
+      text-align: left;
+      margin-top: 8px;
+      font-size: 0.75rem;
+    }
+
+    .swatch-audit-trail summary {
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      font-size: 0.75rem;
+      outline: none;
+    }
+
+    .swatch-audit-trail summary:hover {
+      text-decoration: underline;
+    }
+
+    .audit-instance {
+      padding: 6px 0;
+      border-bottom: 1px solid #edf2f7;
+      color: #4a5568;
+      line-height: 1.4;
+    }
+
+    .audit-instance:last-child {
+      border-bottom: none;
+    }
+
+    .audit-original-hex {
+      font-family: monospace;
+      font-size: 0.7rem;
+      color: #a0aec0;
+      font-style: italic;
+    }
     
     .color-category-section {
       background: #f7fafc;

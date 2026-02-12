@@ -61,16 +61,21 @@ export interface DevToolsColorSummary {
 export interface ColorInstance {
   page: string;
   pageTitle: string;
+  element: string;
   section: string;
   block: string;
   context: string;
   selector?: string;
+  /** The exact hex code detected on this element before fuzzy merging */
+  originalHex?: string;
 }
 
 export interface ColorData {
   count: number;
   instances: ColorInstance[];
   usedAs?: string[];
+  /** Set of original hex codes that were visually similar and merged into this entry */
+  mergedColors?: Set<string> | string[];
 }
 
 export interface ReportData {

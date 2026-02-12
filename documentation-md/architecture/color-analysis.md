@@ -92,3 +92,55 @@ export const ColorScanner = {
   }
 };
 ```
+
+### 5. Redmean Fuzzy Color Matching
+
+**Problem:** Browser rendering artifacts (anti-aliasing, sub-pixel rounding, canvas averaging) can produce slightly different hex values for visually identical colors (e.g., `#2C3337` vs `#2C3338`).
+
+**Solution:** The `trackColor` function uses **Weighted Euclidean (Redmean)** perceptual distance to merge visually indistinguishable colors at scan time.
+
+#### Algorithm: Redmean
+
+- Weights R/G/B channels based on how much red is present.
+- More perceptually accurate than standard Euclidean distance.
+- Computationally inexpensive (no CIEDE2000/Delta E needed).
+- Implemented in `src/utils/colorUtils.ts` as `calculateRedmeanDistance()`.
+
+#### Merge Threshold: 2.3
+
+- Intentionally tight to avoid merging intentional design choices.
+- Only merges colors caused by rendering artifacts.
+
+#### Selection Logic (Majority Rule & Tie-Breakers)
+
+1.  **Majority Rule**: The color with the highest instance count becomes the "Master" key.
+2.  **Tie-Breaker**: If counts are equal, priority is determined by semantic importance:
+    - **Headings (H1-H6)** > **Buttons** > **Paragraphs** > **Links** > **Others**
+    - _Rationale_: A color used in a Heading is more likely to be the intended brand color than one used in a border or div.
+
+- All subsequent visually similar colors are merged into that master's entry.
+- Each instance preserves its `originalHex` for transparency.
+- A `mergedColors` set on each color entry tracks which hex codes were folded in.
+
+#### Report UI Interaction
+
+- **Visual "Master" Color**: The swatch displays the color with the highest usage count (the "winner" of the majority rule).
+- **`[+N similar]` Badge**:
+  - Appears only when fuzzy merging has occurred.
+  - **Hover**: Shows a tooltip listing the specific hex codes that were merged (e.g., "Visually similar colors merged: #2C3337, #2C3338").
+- **Audit Trail (Click to Expand)**:
+  - Each swatch has a clickable "View X instances" text (using `<details>`/`<summary>`).
+  - **Expanded View**: Lists up to 10 specific locations where this color (or its merged variants) was found.
+  - **Data Shown**:
+    - **Context**: Element type and content (e.g., "Button: 'Contact Us'").
+    - **Original Hex**: If the instance's color differed from the master, it shows `(detected as #XYZ)`.
+    - **Selector**: The full CSS selector for easy debugging.
+
+#### Key Files
+
+- `src/utils/colorUtils.ts`: `calculateRedmeanDistance()`, `isVisuallySimilar()`
+- `src/analyzers/colors.ts`: `trackColor()` (fuzzy matching logic)
+- `src/export/styleGuideColorsReport/templates/components.ts`: Report HTML template
+- `src/export/styleGuideColorsReport/templates/styles.ts`: CSS for badges/audit trail
+- `src/export/styleGuideColorsReport/types.ts`: `ColorInstance.originalHex`, `ColorData.mergedColors`
+- `src/export/styleGuideColorsReport/analysis.ts`: `groupSimilarColors()` uses Redmean

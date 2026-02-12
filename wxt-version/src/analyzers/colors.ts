@@ -3,6 +3,7 @@ import {
   calculateContrastRatio,
   getWCAGLevel,
   isTransparentColor,
+  isVisuallySimilar,
 } from '../utils/colorUtils';
 import { shouldFilterElement } from '../utils/issueFilters';
 import { generateSelector, getTextNodeFontSize } from '../utils/domHelpers';
@@ -46,6 +47,8 @@ export interface ColorInstance {
   context: string;
   pairedWith: string | null;
   selector: string;
+  /** The exact hex code detected on this element before fuzzy merging */
+  originalHex?: string;
 }
 
 export interface ColorData {
@@ -55,6 +58,8 @@ export interface ColorData {
       count: number;
       usedAs: string[];
       instances: ColorInstance[];
+      /** Set of original hex codes that were visually similar and merged into this entry */
+      mergedColors?: Set<string>;
     }
   >;
   contrastPairs: ContrastIssue[];
@@ -217,44 +222,82 @@ export function trackColor(
   const hex = rgbToHex(colorValue);
   if (!hex) return;
 
-  if (colorData.allColors) {
-    colorData.allColors.add(hex);
+  // IMPORTANT: Fuzzy matching using Redmean perceptual distance.
+  // Before creating a new color entry, check if a visually indistinguishable
+  // color already exists. This prevents browser rendering artifacts
+  // (anti-aliasing, sub-pixel rounding) from creating duplicate entries
+  // like #2C3337 and #2C3338.
+  let targetHex = hex;
+  let isMerged = false;
 
-    if (property === 'background-color' && colorData.backgroundColors) {
-      colorData.backgroundColors.add(hex);
-    } else if (property === 'color' && colorData.textColors) {
-      colorData.textColors.add(hex);
-    } else if ((property === 'fill' || property === 'stroke') && colorData.fillColors) {
-      colorData.fillColors.add(hex);
-    } else if (property === 'border-color' && colorData.borderColors) {
-      colorData.borderColors.add(hex);
+  // First check for exact match (fast path)
+  if (!colorData.colors[hex]) {
+    // No exact match — check for visually similar existing colors
+    const existingColors = Object.keys(colorData.colors);
+    for (let i = 0; i < existingColors.length; i++) {
+      if (isVisuallySimilar(hex, existingColors[i])) {
+        targetHex = existingColors[i];
+        isMerged = true;
+        break;
+      }
     }
   }
 
-  if (!colorData.colors[hex]) {
-    colorData.colors[hex] = {
+  if (colorData.allColors) {
+    // IMPORTANT: Add the targetHex (master) to the category sets, not the original.
+    // This keeps the Sets clean and prevents "phantom" colors in category counts.
+    colorData.allColors.add(targetHex);
+
+    if (property === 'background-color' && colorData.backgroundColors) {
+      colorData.backgroundColors.add(targetHex);
+    } else if (property === 'color' && colorData.textColors) {
+      colorData.textColors.add(targetHex);
+    } else if ((property === 'fill' || property === 'stroke') && colorData.fillColors) {
+      colorData.fillColors.add(targetHex);
+    } else if (property === 'border-color' && colorData.borderColors) {
+      colorData.borderColors.add(targetHex);
+    }
+  }
+
+  if (!colorData.colors[targetHex]) {
+    colorData.colors[targetHex] = {
       count: 0,
       usedAs: [],
       instances: [],
+      mergedColors: new Set(),
     };
   }
 
-  colorData.colors[hex].count++;
+  colorData.colors[targetHex].count++;
 
-  if (property === 'background-color' && !colorData.colors[hex].usedAs.includes('background')) {
-    colorData.colors[hex].usedAs.push('background');
-  } else if (property === 'color' && !colorData.colors[hex].usedAs.includes('text')) {
-    colorData.colors[hex].usedAs.push('text');
-  } else if (
-    (property === 'fill' || property === 'stroke') &&
-    !colorData.colors[hex].usedAs.includes('fill')
-  ) {
-    colorData.colors[hex].usedAs.push('fill');
-  } else if (property === 'border-color' && !colorData.colors[hex].usedAs.includes('border')) {
-    colorData.colors[hex].usedAs.push('border');
+  // Track merged original hex codes for the [+N similar] badge in the report
+  if (isMerged && hex !== targetHex) {
+    if (!colorData.colors[targetHex].mergedColors) {
+      colorData.colors[targetHex].mergedColors = new Set();
+    }
+    colorData.colors[targetHex].mergedColors!.add(hex);
   }
 
-  colorData.colors[hex].instances.push({
+  if (
+    property === 'background-color' &&
+    !colorData.colors[targetHex].usedAs.includes('background')
+  ) {
+    colorData.colors[targetHex].usedAs.push('background');
+  } else if (property === 'color' && !colorData.colors[targetHex].usedAs.includes('text')) {
+    colorData.colors[targetHex].usedAs.push('text');
+  } else if (
+    (property === 'fill' || property === 'stroke') &&
+    !colorData.colors[targetHex].usedAs.includes('fill')
+  ) {
+    colorData.colors[targetHex].usedAs.push('fill');
+  } else if (
+    property === 'border-color' &&
+    !colorData.colors[targetHex].usedAs.includes('border')
+  ) {
+    colorData.colors[targetHex].usedAs.push('border');
+  }
+
+  colorData.colors[targetHex].instances.push({
     page: window.location.href,
     pageTitle: document.title || 'Unknown',
     element: element.tagName,
@@ -264,6 +307,8 @@ export function trackColor(
     context: getElementContext(element),
     pairedWith: pairedColor ? rgbToHex(pairedColor) : null,
     selector: generateSelector(element),
+    // Preserve the original hex for audit trail transparency
+    originalHex: isMerged ? hex : undefined,
   });
 }
 

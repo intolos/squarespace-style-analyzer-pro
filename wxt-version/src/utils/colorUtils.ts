@@ -77,6 +77,39 @@ export function hexToRgb(hex: string | null): { r: number; g: number; b: number 
   };
 }
 
+/**
+ * Calculate Redmean perceptual distance between two hex colors.
+ * IMPORTANT: This uses the "Redmean" formula which weights R/G/B channels
+ * based on how much red is present, closely matching human color perception.
+ * It is significantly more accurate than standard Euclidean distance for
+ * detecting visually indistinguishable colors (e.g., #2C3337 vs #2C3338)
+ * without the heavy computation cost of CIEDE2000 (Delta E).
+ */
+export function calculateRedmeanDistance(hex1: string, hex2: string): number {
+  const rgb1 = hexToRgb(hex1);
+  const rgb2 = hexToRgb(hex2);
+
+  if (!rgb1 || !rgb2) return Infinity;
+
+  const rMean = (rgb1.r + rgb2.r) / 2;
+  const dr = rgb1.r - rgb2.r;
+  const dg = rgb1.g - rgb2.g;
+  const db = rgb1.b - rgb2.b;
+
+  return Math.sqrt((2 + rMean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rMean) / 256) * db * db);
+}
+
+/**
+ * Check if two hex colors are visually indistinguishable to the human eye.
+ * IMPORTANT: The default threshold of 2.3 is intentionally tight to avoid
+ * merging colors that a designer may have chosen deliberately. Only colors
+ * caused by browser rendering artifacts (anti-aliasing, sub-pixel rounding)
+ * will be merged at this threshold.
+ */
+export function isVisuallySimilar(hex1: string, hex2: string, threshold = 2.3): boolean {
+  return calculateRedmeanDistance(hex1, hex2) < threshold;
+}
+
 export function calculateLuminance(hexColor: string | null): number {
   if (!hexColor) return 0;
   const hex = hexColor.replace('#', '');

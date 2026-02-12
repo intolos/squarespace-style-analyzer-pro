@@ -33,7 +33,14 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
 - **Filename Convention**: `YYYY-MM-DD-[short-description].md` (e.g., `2026-01-19-license-persistence-fix.md`).
 - **Update Rule**: Save these continuously as you work. Archive them here when a task is done.
 
-### `documentation-md/task-lists/` (The Plan)
+### `documentation-md/implementation-plans/` (The Plan)
+
+- **Purpose**: Detailed technical design.
+- **Content**: The `implementation_plan.md` artifact from the reasoning phase.
+- **Filename Convention**: `YYYY-MM-DD-[feature-description].md`.
+- **Update Rule**: Archive the plan here after verification.
+
+### `documentation-md/task-lists/` (The Plan Checklists)
 
 - **Purpose**: Task tracking.
 - **Content**: Checklists of items for specific features or bugs.
@@ -96,7 +103,7 @@ When you fix a tricky bug (one that took >30 mins), you MUST add a comment expla
 
 ---
 
-## 3. Architecture Document Template
+## 4. Architecture Document Template
 
 When creating a new Architecture document (e.g. `architecture/new-feature.md`), use this structure:
 
@@ -128,7 +135,7 @@ How data moves (Storage -> UI -> Export).
 - **Dependencies**: [List external deps]
 ```
 
-## 4. Automation & Compliance
+## 5. Automation & Compliance
 
 All AI Agents working on this project MUST:
 

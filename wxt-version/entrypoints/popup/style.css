@@ -723,7 +723,7 @@ body {
   text-align: center;
 }
 
-/* Fix double scrollbar in custom confirmation modal while preserving page selection modal scrolling */
+/* Attempted fix for double scrollbar in custom confirmation modal - Reported UNSUCCESSFUL on 2026-02-11 */
 .custom-modal {
   max-height: none !important;
   overflow-y: visible !important;

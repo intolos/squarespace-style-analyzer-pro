@@ -94,7 +94,9 @@ export function generateTableOfContents(analysis: ColorAnalysis, totalColors: nu
 }
 
 /**
- * Generate color swatch table using DevTools CSS Overview format
+ * Generate color swatch table using DevTools CSS Overview format.
+ * Includes smart grouping badges for fuzzy-matched colors and
+ * an expandable audit trail showing where each color was found.
  */
 export function generateColorSwatchTable(
   colors: Record<string, ColorData>,
@@ -151,11 +153,65 @@ export function generateColorSwatchTable(
       const colorData = colors[color];
       if (!colorData) return;
 
+      // IMPORTANT: Check for merged colors to show the [+N similar] badge.
+      // mergedColors is a Set, but may have been serialized to an Array during
+      // storage/retrieval. Handle both cases.
+      let mergedCount = 0;
+      let mergedList: string[] = [];
+      if (colorData.mergedColors) {
+        if (colorData.mergedColors instanceof Set) {
+          mergedCount = colorData.mergedColors.size;
+          mergedList = Array.from(colorData.mergedColors);
+        } else if (Array.isArray(colorData.mergedColors)) {
+          mergedCount = colorData.mergedColors.length;
+          mergedList = colorData.mergedColors;
+        }
+      }
+
+      const mergedBadge =
+        mergedCount > 0
+          ? `<div class="merged-badge" title="Visually similar colors merged: ${mergedList.join(', ')}">+${mergedCount} similar</div>`
+          : '';
+
+      // Build the audit trail (expandable instances list)
+      let auditTrail = '';
+      if (colorData.instances && colorData.instances.length > 0) {
+        const maxInstances = 10;
+        const instancesHtml = colorData.instances
+          .slice(0, maxInstances)
+          .map(inst => {
+            const originalHexNote = inst.originalHex
+              ? ` <span class="audit-original-hex">(detected as ${inst.originalHex})</span>`
+              : '';
+            const context = inst.context || inst.element || 'Unknown';
+            const selector = inst.selector
+              ? `<br/><code style="font-size: 0.65rem; color: #a0aec0;">${inst.selector}</code>`
+              : '';
+            return `<div class="audit-instance">${context}${originalHexNote}${selector}</div>`;
+          })
+          .join('');
+
+        const moreNote =
+          colorData.instances.length > maxInstances
+            ? `<div style="color: #a0aec0; font-size: 0.7rem; padding-top: 4px;">...and ${colorData.instances.length - maxInstances} more</div>`
+            : '';
+
+        auditTrail = `
+          <details class="swatch-audit-trail">
+            <summary>View ${colorData.instances.length} instance${colorData.instances.length > 1 ? 's' : ''}</summary>
+            ${instancesHtml}
+            ${moreNote}
+          </details>
+        `;
+      }
+
       html += `
           <div class="color-swatch">
             <div class="swatch" style="background-color: ${color};" title="${color} - ${colorData.count} uses"></div>
             <div class="swatch-label">${color}</div>
             <div class="swatch-count">${colorData.count} use${colorData.count > 1 ? 's' : ''}</div>
+            ${mergedBadge}
+            ${auditTrail}
           </div>
         `;
     });

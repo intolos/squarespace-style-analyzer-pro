@@ -248,3 +248,12 @@ This file documents critical implementation details, regression traps, and "anti
   - **Architecture**: `documentation-md/architecture/color-analysis.md`
   - **Detailed Analysis**: `documentation-md/walkthroughs/2026-02-09-color-accuracy-analysis-discussion.md`
 - **Date Fixed**: 2026-02-09
+
+* +## 19. Double Scrollbars (Analyze Entire Domain Modal)
+* +- **Symptom**: After clicking "Analyze Entire Domain", the confirmation modal appears with its own scrollbar, while the extension popup background also has a scrollbar, creating a "double scrollbar" effect.
+  +- **Root Cause**: Likely due to `body` or `html` preserving its scrollbar while a large modal is overlaid with its own overflow settings.
+  +- **Attempted Fixes**:
+* - Setting `.custom-modal` to `overflow-y: visible` (Unsuccessful - 2026-02-11).
+* - Adjusting `min-height` on `body`/`html` (Unsuccessful - 2026-02-11).
+    +- **Current Status**: **UNRESOLVED**. Per USER on 2026-02-11, documentation claiming this is fixed is incorrect.
+* +---
