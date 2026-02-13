@@ -177,8 +177,8 @@ export function exportImagesReport(
                 </div>
                 <div>
                   <div class="item-label">Location</div>
-                  <div class="item-value">${img.section || 'N/A'}${
-                    img.block ? ' / ' + img.block : ''
+                  <div class="item-value">${img.section ? `Section: ${img.section}` : 'Section:'}${
+                    img.block ? ' / Block: ' + img.block : ''
                   }</div>
                 </div>
                 <div>
@@ -262,8 +262,8 @@ export function exportImagesReport(
                 </div>
                 <div>
                   <div class="item-label">Location</div>
-                  <div class="item-value">${img.section || 'N/A'}${
-                    img.block ? ' / ' + img.block : ''
+                  <div class="item-value">${img.section ? `Section: ${img.section}` : 'Section:'}${
+                    img.block ? ' / Block: ' + img.block : ''
                   }</div>
                 </div>
                 ${

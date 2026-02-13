@@ -368,7 +368,7 @@ export function exportMobileReport(
                       }
                       <div class="issue-location">
                         <strong>Section:</strong> ${escapeHtmlFn(
-                          issue.section
+                          issue.section || ''
                         )} | <strong>Block:</strong> ${escapeHtmlFn(issue.block)}
                       </div>
                       ${

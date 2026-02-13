@@ -4,13 +4,15 @@ import { ColorTracker } from '../utils/colorUtils';
 import { ColorData } from './colors';
 
 import { PlatformSelectors } from '../platforms/selectorManager';
+import type { Platform } from '../platforms';
 
 export async function analyzeLinks(
   results: any,
   navigationName: string,
   colorTracker: ColorTracker,
   colorData: ColorData,
-  selectors: PlatformSelectors
+  selectors: PlatformSelectors,
+  platform: Platform = 'generic'
 ): Promise<void> {
   // Use platform section selectors + generics
   const defaultSections = ['main', 'article', 'section', '[role="main"]'];
@@ -60,11 +62,13 @@ export async function analyzeLinks(
       if (processedLinkKeys.has(linkKey)) continue;
       processedLinkKeys.add(linkKey);
 
+      // Use platform-specific background detection for accurate color analysis
       const styleDefinition = await getStyleDefinition(
         link as HTMLElement,
         'text',
         colorTracker,
-        colorData
+        colorData,
+        platform
       );
       const href = link.getAttribute('href') || '';
 

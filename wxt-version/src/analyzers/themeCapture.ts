@@ -3,11 +3,13 @@
 
 import { getStyleDefinition } from './styleExtractor';
 import { type ColorData } from './colors';
+import type { Platform } from '../platforms';
 
 // Helper function to get most common style for a heading type
 async function getMostCommonHeadingStyle(
   headingElements: NodeListOf<HTMLHeadingElement> | Array<HTMLElement>,
-  getStyleDefFn: (el: HTMLElement, type: string) => Promise<string>
+  getStyleDefFn: (el: HTMLElement, type: string) => Promise<string>,
+  platform: Platform
 ): Promise<string | null> {
   if (!headingElements || headingElements.length === 0) return null;
 
@@ -42,7 +44,8 @@ async function getMostCommonHeadingStyle(
 // Main function to capture Squarespace theme styles
 export async function captureSquarespaceThemeStyles(
   colorTracker: any,
-  colorData: ColorData
+  colorData: ColorData,
+  platform: Platform = 'squarespace'
 ): Promise<any> {
   const themeStyles: any = {
     headingStyles: {},
@@ -50,9 +53,9 @@ export async function captureSquarespaceThemeStyles(
     miscFont: '',
   };
 
-  // Create a wrapper for getStyleDefinition that includes colorTracker and colorData
+  // Create a wrapper for getStyleDefinition that includes colorTracker, colorData, and platform
   const getStyleDefFn = (element: HTMLElement, elementType: string) => {
-    return getStyleDefinition(element, elementType, colorTracker, colorData);
+    return getStyleDefinition(element, elementType, colorTracker, colorData, platform);
   };
 
   // Capture each heading type using most common style
@@ -66,7 +69,8 @@ export async function captureSquarespaceThemeStyles(
   if (h1Elements.length > 0) {
     themeStyles.headingStyles['heading-1'] = await getMostCommonHeadingStyle(
       h1Elements,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
   } else {
     themeStyles.headingStyles['heading-1'] = 'Not used on the pages analyzed';
@@ -75,7 +79,8 @@ export async function captureSquarespaceThemeStyles(
   if (h2Elements.length > 0) {
     themeStyles.headingStyles['heading-2'] = await getMostCommonHeadingStyle(
       h2Elements,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
   } else {
     themeStyles.headingStyles['heading-2'] = 'Not used on the pages analyzed';
@@ -84,7 +89,8 @@ export async function captureSquarespaceThemeStyles(
   if (h3Elements.length > 0) {
     themeStyles.headingStyles['heading-3'] = await getMostCommonHeadingStyle(
       h3Elements,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
   } else {
     themeStyles.headingStyles['heading-3'] = 'Not used on the pages analyzed';
@@ -93,7 +99,8 @@ export async function captureSquarespaceThemeStyles(
   if (h4Elements.length > 0) {
     themeStyles.headingStyles['heading-4'] = await getMostCommonHeadingStyle(
       h4Elements,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
   } else {
     themeStyles.headingStyles['heading-4'] = 'Not used on the pages analyzed';
@@ -102,7 +109,8 @@ export async function captureSquarespaceThemeStyles(
   if (h5Elements.length > 0) {
     themeStyles.headingStyles['heading-5'] = await getMostCommonHeadingStyle(
       h5Elements,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
   } else {
     themeStyles.headingStyles['heading-5'] = 'Not used on the pages analyzed';
@@ -111,7 +119,8 @@ export async function captureSquarespaceThemeStyles(
   if (h6Elements.length > 0) {
     themeStyles.headingStyles['heading-6'] = await getMostCommonHeadingStyle(
       h6Elements,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
   } else {
     themeStyles.headingStyles['heading-6'] = 'Not used on the pages analyzed';
@@ -176,7 +185,8 @@ export async function captureSquarespaceThemeStyles(
   if (p1Candidates.length > 0) {
     themeStyles.paragraphStyles['paragraph-1'] = await getMostCommonHeadingStyle(
       p1Candidates,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
     const firstP1 = p1Candidates[0];
     paragraphSizes['paragraph-1'] = parseFloat(window.getComputedStyle(firstP1).fontSize);
@@ -187,7 +197,8 @@ export async function captureSquarespaceThemeStyles(
   if (p2Candidates.length > 0) {
     themeStyles.paragraphStyles['paragraph-2'] = await getMostCommonHeadingStyle(
       p2Candidates,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
     const firstP2 = p2Candidates[0];
     paragraphSizes['paragraph-2'] = parseFloat(window.getComputedStyle(firstP2).fontSize);
@@ -207,7 +218,8 @@ export async function captureSquarespaceThemeStyles(
   if (p3Candidates.length > 0) {
     themeStyles.paragraphStyles['paragraph-3'] = await getMostCommonHeadingStyle(
       p3Candidates,
-      getStyleDefFn
+      getStyleDefFn,
+      platform
     );
     const firstP3 = p3Candidates[0];
     paragraphSizes['paragraph-3'] = parseFloat(window.getComputedStyle(firstP3).fontSize);

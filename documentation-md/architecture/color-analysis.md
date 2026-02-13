@@ -1,5 +1,10 @@
 # Color Analysis Documentation (`src/analyzers/colors.ts`)
 
+**Related Documents**:
+- [Redmean Fuzzy Color Matching](./redmean-fuzzy-color-matching.md) - Complete Redmean algorithm documentation
+- [Platform Background Detection](./platform-background-detection.md) - Platform-specific background detection
+- [Color System Integration](./color-system-integration.md) - How systems integrate
+
 ## Overview
 
 This module handles all color-related logic. It is split into two parts:
@@ -26,16 +31,28 @@ This module handles all color-related logic. It is split into two parts:
 
 ### 2. Effective Background Strategy (`getEffectiveBackgroundColor`)
 
+> **See Also**: [Platform Background Detection](./platform-background-detection.md) for complete detector implementation details.
+
 The analyzer uses a prioritized system to determine the background color. The primary strategy is determined by the platform to balance visual accuracy against processing speed.
 
-| Platform        | Extraction Strategy | Rationale                                                     |
-| :-------------- | :------------------ | :------------------------------------------------------------ |
-| **WordPress**   | **Canvas Sampling** | Page builders (Elementor/Divi) create complex layering.       |
-| **Shopify**     | **Canvas Sampling** | Variable theme architectures and app-injected layers.         |
-| **Generic**     | **Canvas Sampling** | Safety for unknown/custom DOM structures.                     |
-| **Squarespace** | **DOM-Computed**    | Flat, predictable architecture with direct style application. |
-| **Wix**         | **DOM-Computed**    | Self-contained elements with reliable computed styles.        |
-| **Webflow**     | **DOM-Computed**    | High-quality semantic HTML/CSS output.                        |
+| Platform        | Element Type        | Extraction Strategy | Rationale                                                     |
+| :-------------- | :------------------ | :------------------ | :------------------------------------------------------------ |
+| **WordPress**   | **Non-text** (div, button) | **Pseudo-Element**  | LaunchPad renders backgrounds on ::before pseudo-elements.    |
+| **WordPress**   | **Text** (p, span, a)      | **DOM Walking**     | Find section/container background, skip decorative overlays.  |
+| **Shopify**     | All                 | **Canvas Sampling** | Variable theme architectures and app-injected layers.         |
+| **Generic**     | All                 | **Canvas Sampling** | Safety for unknown/custom DOM structures.                     |
+| **Squarespace** | All                 | **DOM-Computed**    | Flat, predictable architecture with direct style application. |
+| **Wix**         | All                 | **DOM-Computed**    | Self-contained elements with reliable computed styles.        |
+| **Webflow**     | All                 | **DOM-Computed**    | High-quality semantic HTML/CSS output.                        |
+
+#### Detection Method Priority by Platform:
+
+**WordPress Non-Text**: `::before` (validated) → `::after` (validated) → CSS classes → computed style → DOM walk → canvas → indeterminate  
+**WordPress Text**: CSS classes → DOM walk → computed style → canvas → indeterminate  
+**Squarespace**: computed style → DOM walk → `::before` → `::after` → canvas → white fallback  
+**Generic**: computed style → CSS classes → `::before` → `::after` → DOM walk → canvas → indeterminate
+
+> **Important**: WordPress text elements skip pseudo-element checks to avoid decorative overlays (e.g., #000000 `::before` on paragraphs) being mistaken for readable backgrounds. See [Platform Background Detection](./platform-background-detection.md) for implementation details.
 
 #### Fall-through Priority:
 
@@ -95,6 +112,8 @@ export const ColorScanner = {
 
 ### 5. Redmean Fuzzy Color Matching
 
+> **See Also**: [Redmean Fuzzy Color Matching](./redmean-fuzzy-color-matching.md) for complete algorithm documentation with formulas and implementation details.
+
 **Problem:** Browser rendering artifacts (anti-aliasing, sub-pixel rounding, canvas averaging) can produce slightly different hex values for visually identical colors (e.g., `#2C3337` vs `#2C3338`).
 
 **Solution:** The `trackColor` function uses **Weighted Euclidean (Redmean)** perceptual distance to merge visually indistinguishable colors at scan time.
@@ -144,3 +163,9 @@ export const ColorScanner = {
 - `src/export/styleGuideColorsReport/templates/styles.ts`: CSS for badges/audit trail
 - `src/export/styleGuideColorsReport/types.ts`: `ColorInstance.originalHex`, `ColorData.mergedColors`
 - `src/export/styleGuideColorsReport/analysis.ts`: `groupSimilarColors()` uses Redmean
+
+---
+
+**Document Version**: 1.1  
+**Last Updated**: 2026-02-13  
+**Changes**: Updated platform detection table to reflect WordPress text element handling (paragraphs skip pseudo-element checks)

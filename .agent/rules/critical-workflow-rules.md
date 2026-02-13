@@ -20,4 +20,4 @@ CRITICAL WORKFLOW RULES:
    - **Log every attempt** in the relevant handover document with PASS/FAIL/PARTIAL results.
 10. **Single Responsibility Principle (SRP)**: Each file MUST have ONE clear responsibility. If a file handles multiple concerns, split it. Files exceeding 500 lines require evaluation; files exceeding 700 lines MUST be refactored.
 11. **DRY (Don't Repeat Yourself)**: Never duplicate logic across files. Extract repeated patterns into shared utilities. If you find yourself copying code, STOP and refactor first.
-12. **Planning mode**: When in Planning, never take action to make any changes except to create plan documents such as Implementation Plan and Task Lists and Handovers and Walkthroughs and Architecture and related documentation.
+12. **Planning mode**: When in Planning, never take action to make any changes, except to create plan documents such as Implementation Plan and Task Lists and Handovers and Walkthroughs and Architecture and related documentation, until I specifically state "proceed". This is absolute.

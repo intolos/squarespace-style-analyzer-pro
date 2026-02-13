@@ -1,7 +1,7 @@
 // templates/components.ts - Reusable HTML components
 
 import { platformStrings } from '../../../utils/platform';
-import type { ColorAnalysis, ColorData, DevToolsColorSummary } from '../types';
+import type { ColorAnalysis, ColorData, ColorInstance, DevToolsColorSummary } from '../types';
 import { generateReportHeader } from '../../reportComponents';
 
 /**
@@ -94,9 +94,192 @@ export function generateTableOfContents(analysis: ColorAnalysis, totalColors: nu
 }
 
 /**
+ * Generate a single instance card with all 9 data fields.
+ * IMPORTANT: Locate button code is preserved exactly as-is from the original outliers section.
+ */
+export function generateInstanceCard(inst: ColorInstance, baseColor: string = ''): string {
+  const tag = inst.element || 'Unknown';
+  const prop = inst.property || '';
+  const section = inst.section || 'N/A';
+  const block = inst.block || 'N/A';
+  const context = inst.context || 'None';
+
+  // Always show Original and Paired, defaulting if necessary
+  // If originalHex is missing, it implies it matched the base color or was not merged
+  const original = inst.originalHex || baseColor || 'Same';
+  const paired = inst.pairedWith || 'None';
+
+  // Dynamic "Paired" labeling based on context
+  let pairedLabel = 'Paired Color';
+  if (prop === 'background-color') {
+    if (tag === 'BUTTON') {
+      pairedLabel = 'Paired: Button Text';
+    } else if (tag.startsWith('H') && tag.length <= 2) {
+      pairedLabel = 'Paired: Heading Text';
+    } else {
+      pairedLabel = 'Paired: Text';
+    }
+  } else if (prop === 'color') {
+    pairedLabel = 'Paired: Background';
+  }
+
+  // Selector popup link (only if selector exists)
+  const selectorBtn = inst.selector
+    ? `<button class="selector-link" data-selector="${inst.selector.replace(/"/g, '&quot;')}" onclick="showSelectorPopup(event, this)">📋 Selector</button>`
+    : `<button class="selector-link" disabled style="opacity: 0.5; cursor: default;">📋 Selector</button>`;
+
+  // Styles popup button
+  // IMPORTANT: Encode fontFamily to handle quotes in CSS font names
+  const fontFamily = inst.fontFamily ? inst.fontFamily.replace(/"/g, '&quot;') : 'N/A';
+  const stylesBtn = `<button class="selector-link" 
+    data-prop="${prop}" 
+    data-size="${inst.fontSize || 'N/A'}" 
+    data-weight="${inst.fontWeight || 'N/A'}" 
+    data-family="${fontFamily}" 
+    data-lh="${inst.lineHeight || 'N/A'}"
+    data-border-radius="${inst.borderRadius || 'N/A'}"
+    data-border-style="${inst.borderStyle || 'N/A'}"
+    data-border-width="${inst.borderWidth || 'N/A'}"
+    data-bg-image="${inst.backgroundImage || 'N/A'}"
+    onclick="showStylesPopup(event, this)">🔠 Styles</button>`;
+
+  // IMPORTANT: Locate button — DO NOT change this logic.
+  const locateBtn = inst.selector
+    ? `<a class="locate-btn" href="${inst.page}#ssa-inspect-selector=${encodeURIComponent(inst.selector)}" target="_blank">🔍 Locate</a>`
+    : `<span class="locate-btn" style="opacity: 0.5; cursor: default; background: #cbd5e0;">🔍 Locate</span>`;
+
+  // Determine the display label for the section (cleaned by domHelpers)
+  const sectionLabel = section ? `Section: ${section}` : 'Section:';
+
+  // Integrated Badge logic for Outlier cards and instance drawers
+  const mergedBadge =
+    inst.mergedColors && inst.mergedColors.length > 0 ? generateMergedBadge(inst, baseColor) : '';
+
+  return `
+    <div class="instance-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <span class="instance-card-tag">${tag}</span>
+        ${mergedBadge}
+      </div>
+      <div class="instance-card-location">${sectionLabel} / Block: ${block}</div>
+      <div class="instance-card-context">Context: "${context}"</div>
+
+      <div class="instance-card-meta">
+        <div>Original: ${original}</div>
+        <div>${pairedLabel}: ${paired}</div>
+      </div>
+      <div class="instance-card-actions">
+        ${stylesBtn}
+        ${selectorBtn}
+        ${locateBtn}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Generate the full instance drawer HTML, grouped by page, 5-column grid.
+ */
+export function generateInstanceDrawer(
+  instances: ColorInstance[],
+  drawerId: string,
+  baseColor: string
+): string {
+  if (!instances || instances.length === 0) return '';
+
+  // Group instances by page URL
+  const pageGroups = new Map<string, { title: string; instances: ColorInstance[] }>();
+  instances.forEach(inst => {
+    const key = inst.page || 'Unknown';
+    if (!pageGroups.has(key)) {
+      pageGroups.set(key, { title: inst.pageTitle || 'Unknown Page', instances: [] });
+    }
+    pageGroups.get(key)!.instances.push(inst);
+  });
+
+  let groupsHtml = '';
+  pageGroups.forEach((group, pageUrl) => {
+    const cardsHtml = group.instances.map(inst => generateInstanceCard(inst, baseColor)).join('');
+    groupsHtml += `
+      <div class="instance-page-group">
+        <div class="instance-page-header">
+          ${group.title}
+          <a href="${pageUrl}" target="_blank">${pageUrl}</a>
+        </div>
+        <div class="instance-grid">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  return `<div class="instance-drawer" id="${drawerId}">${groupsHtml}</div>`;
+}
+
+/**
  * Generate color swatch table using DevTools CSS Overview format.
  * Includes smart grouping badges for fuzzy-matched colors and
- * an expandable audit trail showing where each color was found.
+ * a clickable swatch that opens an instance drawer with all 9 data fields.
+ */
+/**
+ * Generate the merged color badge with popup breakdown.
+ * Handles Set, Array, and Object formats for mergedColors robustly.
+ */
+export function generateMergedBadge(colorData: any, colorHex: string): string {
+  let mergedCount = 0;
+  let mergedList: string[] = [];
+
+  try {
+    if (colorData.mergedColors) {
+      if (colorData.mergedColors instanceof Set) {
+        mergedList = Array.from(colorData.mergedColors as Set<string>);
+      } else if (Array.isArray(colorData.mergedColors)) {
+        mergedList = colorData.mergedColors;
+      } else if (typeof colorData.mergedColors === 'object' && colorData.mergedColors !== null) {
+        // Handle object with numeric keys or hex keys
+        mergedList = Object.keys(colorData.mergedColors);
+      }
+
+      // Filter out invalid items and the main color itself if it snuck in
+      mergedList = mergedList.filter(m => m && typeof m === 'string' && m !== colorHex);
+      mergedCount = mergedList.length;
+    }
+  } catch (e) {
+    console.warn('Error processing mergedColors for', colorHex, e);
+  }
+
+  if (mergedCount === 0) return '';
+
+  // Build popup content: main color count + each variation count
+  const instances = colorData.instances || [];
+  const targetColorLower = colorHex.toLowerCase();
+
+  const mainCount = instances.filter((i: any) => {
+    const orig = (i.originalHex || colorHex).toLowerCase();
+    return orig === targetColorLower;
+  }).length;
+
+  let popupLines = `<div><strong>Main Color (${colorHex}):</strong> ${mainCount} uses</div>`;
+  mergedList.forEach(mc => {
+    const mcLower = mc.toLowerCase();
+    const mcCount = instances.filter(
+      (i: any) => (i.originalHex || '').toLowerCase() === mcLower
+    ).length;
+    popupLines += `<div>${mc}: ${mcCount} use${mcCount !== 1 ? 's' : ''}</div>`;
+  });
+
+  return `
+    <div class="merged-badge">
+      +${mergedCount} similar
+      <div class="badge-popup">${popupLines}</div>
+    </div>
+  `;
+}
+
+/**
+ * Generate color swatch table using DevTools CSS Overview format.
+ * Includes smart grouping badges for fuzzy-matched colors and
+ * a clickable swatch that opens an instance drawer with all 9 data fields.
  */
 export function generateColorSwatchTable(
   colors: Record<string, ColorData>,
@@ -139,6 +322,8 @@ export function generateColorSwatchTable(
     },
   ];
 
+  let drawerCounter = 0;
+
   sections.forEach(section => {
     if (section.colors.length === 0) return;
 
@@ -153,66 +338,22 @@ export function generateColorSwatchTable(
       const colorData = colors[color];
       if (!colorData) return;
 
-      // IMPORTANT: Check for merged colors to show the [+N similar] badge.
-      // mergedColors is a Set, but may have been serialized to an Array during
-      // storage/retrieval. Handle both cases.
-      let mergedCount = 0;
-      let mergedList: string[] = [];
-      if (colorData.mergedColors) {
-        if (colorData.mergedColors instanceof Set) {
-          mergedCount = colorData.mergedColors.size;
-          mergedList = Array.from(colorData.mergedColors);
-        } else if (Array.isArray(colorData.mergedColors)) {
-          mergedCount = colorData.mergedColors.length;
-          mergedList = colorData.mergedColors;
-        }
-      }
+      const drawerId = `drawer-${section.id}-${drawerCounter++}`;
 
-      const mergedBadge =
-        mergedCount > 0
-          ? `<div class="merged-badge" title="Visually similar colors merged: ${mergedList.join(', ')}">+${mergedCount} similar</div>`
-          : '';
+      // Use shared helper for merged badge
+      const mergedBadge = generateMergedBadge(colorData, color);
 
-      // Build the audit trail (expandable instances list)
-      let auditTrail = '';
-      if (colorData.instances && colorData.instances.length > 0) {
-        const maxInstances = 10;
-        const instancesHtml = colorData.instances
-          .slice(0, maxInstances)
-          .map(inst => {
-            const originalHexNote = inst.originalHex
-              ? ` <span class="audit-original-hex">(detected as ${inst.originalHex})</span>`
-              : '';
-            const context = inst.context || inst.element || 'Unknown';
-            const selector = inst.selector
-              ? `<br/><code style="font-size: 0.65rem; color: #a0aec0;">${inst.selector}</code>`
-              : '';
-            return `<div class="audit-instance">${context}${originalHexNote}${selector}</div>`;
-          })
-          .join('');
-
-        const moreNote =
-          colorData.instances.length > maxInstances
-            ? `<div style="color: #a0aec0; font-size: 0.7rem; padding-top: 4px;">...and ${colorData.instances.length - maxInstances} more</div>`
-            : '';
-
-        auditTrail = `
-          <details class="swatch-audit-trail">
-            <summary>View ${colorData.instances.length} instance${colorData.instances.length > 1 ? 's' : ''}</summary>
-            ${instancesHtml}
-            ${moreNote}
-          </details>
-        `;
-      }
+      // Instance drawer (hidden by default, shown on swatch click)
+      const drawerHtml = generateInstanceDrawer(colorData.instances, drawerId, color);
 
       html += `
-          <div class="color-swatch">
-            <div class="swatch" style="background-color: ${color};" title="${color} - ${colorData.count} uses"></div>
+          <div class="color-swatch" data-drawer-id="${drawerId}" onclick="toggleInstanceDrawer(this, '${drawerId}')">
+            <div class="swatch" style="background-color: ${color};"></div>
             <div class="swatch-label">${color}</div>
             <div class="swatch-count">${colorData.count} use${colorData.count > 1 ? 's' : ''}</div>
             ${mergedBadge}
-            ${auditTrail}
           </div>
+          ${drawerHtml}
         `;
     });
 

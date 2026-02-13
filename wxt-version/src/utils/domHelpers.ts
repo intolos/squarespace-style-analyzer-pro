@@ -265,7 +265,7 @@ export function getSectionInfo(element: Element | null): string {
 
     // Squarespace Specific
     const sqsSection = parent.getAttribute('data-section-id');
-    if (sqsSection) return 'Section (' + sqsSection + ')';
+    if (sqsSection) return sqsSection;
 
     // WordPress Specific
     if (
@@ -273,7 +273,7 @@ export function getSectionInfo(element: Element | null): string {
       className.includes('wp-block-cover') ||
       className.includes('wp-block-columns')
     ) {
-      if (ariaLabel) return 'Group: ' + ariaLabel;
+      if (ariaLabel) return ariaLabel;
       if (className.includes('cover')) return 'Cover Block';
       if (className.includes('columns')) return 'Columns Block';
       return 'Content Group';
@@ -281,22 +281,22 @@ export function getSectionInfo(element: Element | null): string {
 
     // Generic Section Detection
     if (tagName === 'section' || id.includes('section') || className.includes('section')) {
-      if (ariaLabel) return 'Section: ' + ariaLabel;
-      if (id && !id.startsWith('yui_') && !isDynamicId(id)) return 'Section #' + id;
+      if (ariaLabel) return ariaLabel;
+      if (id && !id.startsWith('yui_') && !isDynamicId(id)) return id;
 
       // Try to find a heading inside the section to name it
       const firstHeading = parent.querySelector('h1, h2, h3, h4, h5, h6');
       if (firstHeading && firstHeading.textContent) {
-        return 'Section: ' + firstHeading.textContent.substring(0, 30).trim() + '...';
+        return firstHeading.textContent.substring(0, 30).trim() + '...';
       }
       // Fallback: Use class name if available
       if (className) {
         const meaningfulClass = className
           .split(' ')
           .find(c => c !== 'section' && !c.includes('wp-block-') && !isDynamicId(c));
-        if (meaningfulClass) return 'Section (' + meaningfulClass + ')';
+        if (meaningfulClass) return meaningfulClass;
       }
-      return 'Section';
+      return '';
     }
 
     parent = parent.parentElement;

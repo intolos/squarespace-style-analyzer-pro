@@ -8,7 +8,12 @@ import {
   getSectionInfo,
   getBlockInfo,
 } from '../src/utils/domHelpers';
-import { initializeColorData, trackColor, ColorData } from '../src/analyzers/colors'; // ColorAnalyzer methods
+import {
+  initializeColorData,
+  trackColor,
+  finalizeColorData,
+  ColorData,
+} from '../src/analyzers/colors'; // ColorAnalyzer methods
 import { captureSquarespaceThemeStyles } from '../src/analyzers/themeCapture';
 import { analyzeButtons } from '../src/analyzers/buttons';
 import { analyzeHeadings, analyzeParagraphs } from '../src/analyzers/typography';
@@ -38,17 +43,17 @@ export default defineContentScript({
     // Content scripts run in isolated context, so we inject a script file to expose to page context
     const script = document.createElement('script');
     script.src = chrome.runtime.getURL('test-harness-bridge.js');
-    script.onload = function() {
+    script.onload = function () {
       // Script loaded successfully
       console.log('[SSA] Test harness bridge script loaded successfully');
     };
-    script.onerror = function() {
+    script.onerror = function () {
       console.error('[SSA] Failed to load test harness bridge script');
     };
     (document.head || document.documentElement).appendChild(script);
 
     // Listen for messages from the injected script
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', event => {
       if (event.data?.type === 'SSA_TEST_HARNESS') {
         switch (event.data.action) {
           case 'activate':
@@ -393,17 +398,9 @@ export default defineContentScript({
       // Add processed elements set to prevent duplicate color tracking
       (results.colorData as any)._processedElements = new Set<Element>();
 
-      // 5. Capture Theme Styles
-      const squarespaceThemeStyles = await captureSquarespaceThemeStyles(
-        colorTracker,
-        results.colorData
-      );
-      results.squarespaceThemeStyles = squarespaceThemeStyles;
-
-      // 6. Get Navigation Name
-      const navigationName = getNavigationName();
-
-      // 6a. Detect Platform and Load Selectors
+      // 5. Detect Platform and Load Selectors
+      // IMPORTANT: Platform detection must happen BEFORE theme capture and analyzers
+      // so they can use platform-specific color detection strategies
       const platformInfo = detectPlatform();
       console.log('Detected platform:', platformInfo.platform);
       const selectors = PlatformSelectorManager.getSelectors(platformInfo.platform);
@@ -414,24 +411,39 @@ export default defineContentScript({
         results.detectedPlatform = platformInfo;
       }
 
+      // 6. Capture Theme Styles
+      // Pass detected platform for platform-specific color detection
+      const squarespaceThemeStyles = await captureSquarespaceThemeStyles(
+        colorTracker,
+        results.colorData,
+        platformInfo.platform
+      );
+      results.squarespaceThemeStyles = squarespaceThemeStyles;
+
+      // 7. Get Navigation Name
+      const navigationName = getNavigationName();
+
       // 7. Store Contrast Issues - DEFERRED to after custom analyzers
       // We want custom analyzers (which have better section/block info) to take precedence.
       // (results.colorData as any).contrastPairs will be populated by analyzers below.
 
       // 8. Run Analyzers
+      // Pass detected platform for platform-specific color detection
       await analyzeButtons(
         results,
         navigationName,
         colorTracker,
         results.colorData,
-        selectors.buttons
+        selectors.buttons,
+        platformInfo.platform
       );
       await analyzeHeadings(
         results,
         navigationName,
         colorTracker,
         results.colorData,
-        selectors.headings
+        selectors.headings,
+        platformInfo.platform
       );
       await analyzeParagraphs(
         results,
@@ -439,13 +451,14 @@ export default defineContentScript({
         squarespaceThemeStyles,
         colorTracker,
         results.colorData,
-        selectors.paragraphs
+        selectors.paragraphs,
+        platformInfo.platform
       );
-      await analyzeLinks(results, navigationName, colorTracker, results.colorData, selectors);
+      await analyzeLinks(results, navigationName, colorTracker, results.colorData, selectors, platformInfo.platform);
       await analyzeImages(results, navigationName, selectors.images);
 
       // 9. Scan remaining page colors
-      scanAllPageColors(results.colorData);
+      await scanAllPageColors(results.colorData);
 
       // 10. Add Axe Core Contrast Issues (as fallback/supplement)
       // We add these LAST so that if there are duplicates, the custom analysis (with better metadata)
@@ -458,6 +471,7 @@ export default defineContentScript({
 
       // 10. Finalize
       results.colorPalette = finalizeColorPalette(colorTracker);
+      results.colorData = finalizeColorData(results.colorData);
 
       console.log('Analysis completed');
       return results;

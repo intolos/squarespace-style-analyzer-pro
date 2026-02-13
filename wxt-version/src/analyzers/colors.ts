@@ -7,6 +7,7 @@ import {
 } from '../utils/colorUtils';
 import { shouldFilterElement } from '../utils/issueFilters';
 import { generateSelector, getTextNodeFontSize } from '../utils/domHelpers';
+import type { Platform } from '../platforms';
 
 export interface ContrastIssue {
   textColor: string;
@@ -49,6 +50,19 @@ export interface ColorInstance {
   selector: string;
   /** The exact hex code detected on this element before fuzzy merging */
   originalHex?: string;
+  /** Added for Styles popup */
+  fontSize?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+  lineHeight?: string;
+  elementText?: string;
+  /** Variations merged into this entry (for report badges) */
+  mergedColors?: string[];
+  /** Border and background styles for popup */
+  borderRadius?: string;
+  borderStyle?: string;
+  borderWidth?: string;
+  backgroundImage?: string;
 }
 
 export interface ColorData {
@@ -59,7 +73,7 @@ export interface ColorData {
       usedAs: string[];
       instances: ColorInstance[];
       /** Set of original hex codes that were visually similar and merged into this entry */
-      mergedColors?: Set<string>;
+      mergedColors?: Set<string> | string[];
     }
   >;
   contrastPairs: ContrastIssue[];
@@ -203,24 +217,62 @@ export function getElementContext(element: Element): string {
     const displayUrl = linkUrl.length > 50 ? linkUrl.substring(0, 50) + '...' : linkUrl;
     return 'Link: "' + displayText + '" → ' + displayUrl;
   }
+  if (element.tagName === 'DIV') {
+    const text = (element.textContent || '').trim();
+    if (text.length > 0) {
+      const display = text.length > 60 ? text.substring(0, 60) + '...' : text;
+      const className =
+        element.className && typeof element.className === 'string'
+          ? '.' + element.className.split(' ')[0]
+          : '';
+      const id = element.id ? '#' + element.id : '';
+      return `DIV${id}${className}: "${display}"`;
+    }
+  }
   return element.tagName + (element.className ? '.' + element.className.split(' ')[0] : '');
 }
 
-export function trackColor(
+export async function trackColor(
   colorValue: string | null,
   element: Element,
   property: string,
   pairedColor: string | null,
   colorData: ColorData,
   getSectionInfo: (el: Element) => string,
-  getBlockInfo: (el: Element) => string
-): void {
+  getBlockInfo: (el: Element) => string,
+  screenshot: string | null = null,
+  platform: Platform = 'generic'
+): Promise<void> {
   if (!colorValue || isTransparentColor(colorValue)) return;
 
   if (isGhostButtonForColorAnalysis(element)) return;
 
-  const hex = rgbToHex(colorValue);
-  if (!hex) return;
+  // Track unique instances per element + color + property
+  const elementId = generateSelector(element);
+  const uniqueKey = `${elementId}-${property}-${colorValue}`;
+
+  if (!colorData._processedElements) {
+    colorData._processedElements = new Set();
+  }
+
+  if (colorData._processedElements.has(elementId as any)) {
+    // Already processed this element? Check if we should skip
+    // We allow tracking different PROPERTIES for the same element, but not duplicates of the same property
+    const propKey = `${elementId}-${property}`;
+    if ((colorData as any)._processedElementProps?.has(propKey)) {
+      return;
+    }
+    if (!(colorData as any)._processedElementProps) {
+      (colorData as any)._processedElementProps = new Set();
+    }
+    (colorData as any)._processedElementProps.add(propKey);
+  } else {
+    colorData._processedElements.add(elementId as any);
+  }
+
+  const hexValue = rgbToHex(colorValue);
+  if (!hexValue) return;
+  const hex = hexValue.toLowerCase();
 
   // IMPORTANT: Fuzzy matching using Redmean perceptual distance.
   // Before creating a new color entry, check if a visually indistinguishable
@@ -264,18 +316,25 @@ export function trackColor(
       count: 0,
       usedAs: [],
       instances: [],
-      mergedColors: new Set(),
+      mergedColors: new Set<string>(),
     };
+  }
+
+  // Ensure mergedColors is a Set (defensive against serialization artifacts)
+  if (!(colorData.colors[targetHex].mergedColors instanceof Set)) {
+    const existing = colorData.colors[targetHex].mergedColors;
+    if (Array.isArray(existing)) {
+      colorData.colors[targetHex].mergedColors = new Set(existing);
+    } else {
+      colorData.colors[targetHex].mergedColors = new Set();
+    }
   }
 
   colorData.colors[targetHex].count++;
 
   // Track merged original hex codes for the [+N similar] badge in the report
   if (isMerged && hex !== targetHex) {
-    if (!colorData.colors[targetHex].mergedColors) {
-      colorData.colors[targetHex].mergedColors = new Set();
-    }
-    colorData.colors[targetHex].mergedColors!.add(hex);
+    (colorData.colors[targetHex].mergedColors as Set<string>).add(hex);
   }
 
   if (
@@ -297,18 +356,74 @@ export function trackColor(
     colorData.colors[targetHex].usedAs.push('border');
   }
 
+  // Determine effective paired color (climb tree for background if needed)
+  let effectivePaired = pairedColor;
+  if (property === 'color') {
+    // TRUTH CHECK: If this is a DIV, ensure it actually contains text before tracking color.
+    // If it's a structural DIV with no text, tracking 'color' just creates inherited noise.
+    const hasText = element.textContent && element.textContent.trim().length > 0;
+    const hasSemanticChild = element.querySelector('h1, h2, h3, h4, h5, h6, p, button, a');
+
+    if (element.tagName === 'DIV' && !hasText && !hasSemanticChild) {
+      // It's a structural box, likely a background. Tracking text-color here is misleading.
+      return;
+    }
+
+    // If we are tracking text color, the paired color is the background.
+    // Use platform-specific detection for accurate background color
+    effectivePaired = await getEffectiveBackgroundColor(element, pairedColor, screenshot, platform);
+  }
+
+  const computed = window.getComputedStyle(element);
+  const { fontSizeString } = getTextNodeFontSize(element);
+
+  // Capture current set of merged colors as a clean array for this instance
+  const masterMergedColors = colorData.colors[targetHex].mergedColors;
+  const mergedList =
+    masterMergedColors instanceof Set
+      ? Array.from(masterMergedColors as Set<string>)
+      : Array.isArray(masterMergedColors)
+        ? masterMergedColors
+        : [];
+
+  // Determine descriptive label instead of just "DIV"
+  let displayTag = element.tagName;
+  if (displayTag === 'DIV') {
+    // If it's a DIV, check if it contains a child that better describes it
+    const semanticChild = element.querySelector('h1, h2, h3, h4, h5, h6, p, button, a');
+    if (semanticChild) {
+      displayTag = `DIV (${semanticChild.tagName})`;
+    } else if (element.textContent && element.textContent.trim().length > 0) {
+      displayTag = 'DIV (Text Container)';
+    }
+  }
+
   colorData.colors[targetHex].instances.push({
     page: window.location.href,
     pageTitle: document.title || 'Unknown',
-    element: element.tagName,
+    element: displayTag,
     property: property,
     section: getSectionInfo(element),
     block: getBlockInfo(element),
     context: getElementContext(element),
-    pairedWith: pairedColor ? rgbToHex(pairedColor) : null,
+    pairedWith: effectivePaired ? (rgbToHex(effectivePaired) || '').toLowerCase() : null,
     selector: generateSelector(element),
     // Preserve the original hex for audit trail transparency
-    originalHex: isMerged ? hex : undefined,
+    // IMPORTANT: Always track originalHex to enable accurate counting in merged badges
+    originalHex: hex.toLowerCase(),
+    // Style metadata for popup
+    fontSize: fontSizeString,
+    fontWeight: computed.fontWeight,
+    fontFamily: computed.fontFamily,
+    lineHeight: computed.lineHeight,
+    elementText: (element.textContent || '').trim().substring(0, 300),
+    // Propagate variations to this specific instance for the report cards
+    mergedColors: mergedList.map(c => c.toLowerCase()),
+    // Border and background metadata for Styles popup
+    borderRadius: computed.borderRadius,
+    borderStyle: computed.borderStyle,
+    borderWidth: computed.borderWidth,
+    backgroundImage: computed.backgroundImage !== 'none' ? computed.backgroundImage : undefined,
   });
 }
 
@@ -384,54 +499,36 @@ export async function getBackgroundColorFromCanvas(
   }
 }
 
+import { detectBackground } from './backgroundDetectors';
+
+/**
+ * Get effective background color using platform-specific detection
+ * 
+ * IMPORTANT: This function now uses platform-specific detection strategies to handle
+ * different CMS platforms' rendering approaches. WordPress often renders backgrounds
+ * on pseudo-elements, while Squarespace uses standard CSS.
+ * 
+ * @param element - Element to check
+ * @param initialBackgroundColor - Initial background color from computed style
+ * @param screenshot - Screenshot for canvas verification
+ * @param platform - Platform type (wordpress, squarespace, wix, webflow, shopify, generic)
+ * @returns RGB/RGBA color string, or null if detection fails
+ */
 export async function getEffectiveBackgroundColor(
   element: Element,
   initialBackgroundColor: string | null,
-  screenshot: string | null
+  screenshot: string | null,
+  platform: Platform = 'generic'
 ): Promise<string | null> {
-  if (initialBackgroundColor && !isTransparentColor(initialBackgroundColor)) {
-    return initialBackgroundColor;
-  }
+  // Use platform-specific background detector
+  const result = await detectBackground(
+    platform,
+    element,
+    initialBackgroundColor,
+    screenshot
+  );
 
-  let domBackground: string | null = null;
-  let el: Element | null = element;
-  while (el) {
-    const style = window.getComputedStyle(el);
-    const bg = style && style.backgroundColor;
-    if (bg && !isTransparentColor(bg)) {
-      domBackground = bg;
-      break;
-    }
-    el = el.parentElement;
-  }
-
-  if (!domBackground) {
-    domBackground = 'rgb(255, 255, 255)';
-  }
-
-  const tagName = element.tagName.toLowerCase();
-  const isButton = tagName === 'button' || tagName === 'a' || tagName === 'input';
-  const hasButtonRole = element.getAttribute('role') === 'button';
-  const hasButtonClass = (element.className || '').toLowerCase().includes('button');
-  const isButtonLike = isButton || hasButtonRole || hasButtonClass;
-
-  if (isButtonLike && screenshot) {
-    try {
-      const screenshotBg = await getBackgroundColorFromCanvas(element, screenshot);
-      if (screenshotBg && !isTransparentColor(screenshotBg)) {
-        const domHex = rgbToHex(domBackground);
-        const screenshotHex = rgbToHex(screenshotBg);
-
-        if (domHex !== screenshotHex) {
-          return screenshotBg;
-        }
-      }
-    } catch (e) {
-      // Ignore
-    }
-  }
-
-  return domBackground;
+  return result.color;
 }
 
 export async function trackContrastPair(
@@ -441,7 +538,8 @@ export async function trackContrastPair(
   colorData: ColorData,
   getSectionInfo: (el: Element) => string,
   getBlockInfo: (el: Element) => string,
-  screenshot: string | null
+  screenshot: string | null,
+  platform: Platform = 'generic'
 ): Promise<ContrastIssue | undefined> {
   if (!element || !colorData || !textColor) return;
 
@@ -476,7 +574,8 @@ export async function trackContrastPair(
   const textHex = rgbToHex(textColor);
   if (!textHex) return;
 
-  const effectiveBg = await getEffectiveBackgroundColor(element, backgroundColor, screenshot);
+  // Use platform-specific background detection for accurate contrast calculation
+  const effectiveBg = await getEffectiveBackgroundColor(element, backgroundColor, screenshot, platform);
   const bgHex = rgbToHex(effectiveBg);
 
   if (!bgHex) return;
@@ -566,4 +665,74 @@ export function initializeColorData(): ColorData {
     allColors: new Set(),
     _processedElements: new Set(),
   };
+}
+
+/**
+ * Finalizes color data by converting all Sets to Arrays.
+ * This ensures the data is JSON-compatible for storage or export.
+ */
+/**
+ * DRY Helper: Determines if a border color should be tracked based on width, style, and visual noise rules.
+ */
+export function shouldTrackBorder(
+  color: string,
+  width: number,
+  style: string,
+  bgColor: string | null
+): boolean {
+  if (!color || isTransparentColor(color)) return false;
+
+  // 1. Noise Filter: Ignore sub-pixel borders (common in CSS resets/normalization)
+  if (width < 1) return false;
+
+  // 2. Visibility Filter: Ignore hidden or none styles
+  if (!style || style === 'none' || style === 'hidden') return false;
+
+  // 3. Visual Noise: If border matches background and is thin, it's effectively invisible/background noise
+  if (bgColor && color === bgColor && width < 3) return false;
+
+  return true;
+}
+
+export function finalizeColorData(colorData: ColorData): any {
+  if (!colorData) return colorData;
+
+  const result: any = {
+    ...colorData,
+    backgroundColors: colorData.backgroundColors ? Array.from(colorData.backgroundColors) : [],
+    textColors: colorData.textColors ? Array.from(colorData.textColors) : [],
+    fillColors: colorData.fillColors ? Array.from(colorData.fillColors) : [],
+    borderColors: colorData.borderColors ? Array.from(colorData.borderColors) : [],
+    allColors: colorData.allColors ? Array.from(colorData.allColors) : [],
+    _processedContrastElements: (colorData as any)._processedContrastElements
+      ? Array.from((colorData as any)._processedContrastElements)
+      : [],
+    // Don't serialize the elements set
+    _processedElements: [],
+  };
+
+  // Convert mergedColors Set to Array for each color AND ensure all instances carry it
+  if (colorData.colors) {
+    Object.keys(colorData.colors).forEach(hex => {
+      const entry = colorData.colors[hex];
+      let mergedList: string[] = [];
+
+      if (entry.mergedColors instanceof Set) {
+        mergedList = Array.from(entry.mergedColors as Set<string>);
+      } else if (Array.isArray(entry.mergedColors)) {
+        mergedList = entry.mergedColors;
+      }
+
+      (entry as any).mergedColors = mergedList;
+
+      // CRITICAL: Propagate final merged list to all instances for report rendering
+      if (entry.instances) {
+        entry.instances.forEach(inst => {
+          inst.mergedColors = mergedList;
+        });
+      }
+    });
+  }
+
+  return result;
 }

@@ -1,9 +1,10 @@
 // analyzers/styleExtractor.ts
 // Extracts style definitions and tracks colors for elements
 
-import { type ColorData, trackColor, trackContrastPair } from './colors';
+import { type ColorData, trackColor, trackContrastPair, shouldTrackBorder } from './colors';
 import { isTransparentColor } from '../utils/colorUtils';
 import { isIconOrSocialElement, getSectionInfo, getBlockInfo } from '../utils/domHelpers';
+import type { Platform } from '../platforms';
 
 /**
  * Gets the style definition string for an element and tracks its colors
@@ -12,7 +13,8 @@ export async function getStyleDefinition(
   element: HTMLElement,
   elementType: string,
   colorTracker: any, // Legacy tracker, kept for compat if needed, or we can type it if simple
-  colorData: ColorData
+  colorData: ColorData,
+  platform: Platform = 'generic'
 ): Promise<string> {
   try {
     const computed = window.getComputedStyle(element);
@@ -45,37 +47,41 @@ export async function getStyleDefinition(
         textColor,
         colorData,
         getSectionInfo,
-        getBlockInfo
+        getBlockInfo,
+        null,
+        platform
       );
 
-      trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo);
+      trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo, null, platform);
 
       // Track border colors (check all four sides)
       const borderSides = [
         {
           color: computed.borderTopColor,
           width: parseFloat(computed.borderTopWidth) || 0,
+          style: computed.borderTopStyle,
         },
         {
           color: computed.borderRightColor,
           width: parseFloat(computed.borderRightWidth) || 0,
+          style: computed.borderRightStyle,
         },
         {
           color: computed.borderBottomColor,
           width: parseFloat(computed.borderBottomWidth) || 0,
+          style: computed.borderBottomStyle,
         },
         {
           color: computed.borderLeftColor,
           width: parseFloat(computed.borderLeftWidth) || 0,
+          style: computed.borderLeftStyle,
         },
       ];
 
       const trackedBorderColors = new Set<string>();
-      borderSides.forEach(side => {
+      for (const side of borderSides) {
         if (
-          side.color &&
-          !isTransparentColor(side.color) &&
-          side.width > 0 &&
+          shouldTrackBorder(side.color, side.width, side.style, bgColor) &&
           !trackedBorderColors.has(side.color)
         ) {
           trackedBorderColors.add(side.color);
@@ -86,10 +92,12 @@ export async function getStyleDefinition(
             null,
             colorData,
             getSectionInfo,
-            getBlockInfo
+            getBlockInfo,
+            null,
+            platform
           );
         }
-      });
+      }
 
       // Track contrast for text elements
       if (
@@ -108,7 +116,8 @@ export async function getStyleDefinition(
           colorData,
           getSectionInfo,
           getBlockInfo,
-          null
+          null,
+          platform
         );
       }
 

@@ -1,16 +1,11 @@
 {
   "$schema": "https://opencode.ai",
-  "agent_config": {
-    "instruction_sources": [
-      ".agent/rules/*.md",
-      "AGENTS.md"
-    ],
-    "auto_inject_rules": true,
-    "sync_with_antigravity": true
+  "agent": {
+    "build": {
+      "instructions": [".agent/rules/*.md", "AGENTS.md"],
+      "capabilities": ["antigravity_integration"]
+    }
   },
-  "behavior": {
-    "enforce_strict_mode": true,
-    "rules_precedence": "workspace_over_global"
-  }
+  "instructions": [".agent/rules/*.md", "AGENTS.md"],
+  "default_agent": "build"
 }
-

@@ -1,6 +1,13 @@
 // analysis.ts - Color analysis logic
 
-import type { ColorAnalysis, ColorGroup, RGB, ReportData, ColorData } from './types';
+import type {
+  ColorAnalysis,
+  ColorGroup,
+  RGB,
+  ReportData,
+  ColorData,
+  DevToolsColorSummary,
+} from './types';
 import { calculateRedmeanDistance } from '../../utils/colorUtils';
 
 /**
@@ -255,8 +262,56 @@ export function identifyGrays(colors: string[]): string[] {
 /**
  * Reconstruct devToolsColorSummary if missing
  */
+/**
+ * Reconstruct devToolsColorSummary from colorData.
+ * This ensures the summary matches the keys in colorData.colors, especially
+ * after refineColorKeys has modified them (fuzzy matching consolidation).
+ */
 export function ensureDevToolsSummary(data: ReportData): void {
-  // ... existing implementation ...
+  const colors = data.colorData.colors;
+  const allColors = Object.keys(colors);
+
+  // Initialize empty summary
+  const summary: DevToolsColorSummary = {
+    summary: { count: 0, colors: [] },
+    background: { count: 0, colors: [] },
+    text: { count: 0, colors: [] },
+    fill: { count: 0, colors: [] },
+    border: { count: 0, colors: [] },
+  };
+
+  allColors.forEach(hex => {
+    const colorData = colors[hex];
+
+    // Add to 'summary' (all colors)
+    summary.summary.colors.push(hex);
+
+    // Add to specific categories based on 'usedAs'
+    if (colorData.usedAs) {
+      if (colorData.usedAs.includes('background')) {
+        summary.background.colors.push(hex);
+      }
+      if (colorData.usedAs.includes('text')) {
+        summary.text.colors.push(hex);
+      }
+      if (colorData.usedAs.includes('fill') || colorData.usedAs.includes('stroke')) {
+        summary.fill.colors.push(hex);
+      }
+      if (colorData.usedAs.includes('border')) {
+        summary.border.colors.push(hex);
+      }
+    }
+  });
+
+  // Update counts
+  summary.summary.count = summary.summary.colors.length;
+  summary.background.count = summary.background.colors.length;
+  summary.text.count = summary.text.colors.length;
+  summary.fill.count = summary.fill.colors.length;
+  summary.border.count = summary.border.colors.length;
+
+  // Overwrite existing summary
+  data.devToolsColorSummary = summary;
 }
 
 /**
@@ -319,18 +374,21 @@ function refineColorKeys(data: ReportData): void {
 
       // Update mergedColors set
       if (!colors[bestHex].mergedColors) {
-        colors[bestHex].mergedColors = new Set();
+        colors[bestHex].mergedColors = [];
       }
-      // Add the old key to merged set
+
+      // Add the old key to merged set/array
       if (colors[bestHex].mergedColors instanceof Set) {
         (colors[bestHex].mergedColors as Set<string>).add(currentKey);
         (colors[bestHex].mergedColors as Set<string>).delete(bestHex);
       } else if (Array.isArray(colors[bestHex].mergedColors)) {
-        // Handle array case if it came from storage
         const set = new Set(colors[bestHex].mergedColors as string[]);
         set.add(currentKey);
         set.delete(bestHex);
-        colors[bestHex].mergedColors = set;
+        colors[bestHex].mergedColors = Array.from(set);
+      } else {
+        // Was likely serialized as an empty object {}
+        colors[bestHex].mergedColors = [currentKey];
       }
 
       // Delete old entry

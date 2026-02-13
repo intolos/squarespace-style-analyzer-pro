@@ -3,13 +3,15 @@ import { getStyleDefinition } from './styleExtractor';
 import { ColorTracker } from '../utils/colorUtils';
 import { ColorData } from './colors';
 import { UNIVERSAL_TEXT_EXCLUSIONS } from '../utils/issueFilters';
+import type { Platform } from '../platforms';
 
 export async function analyzeButtons(
   results: any,
   navigationName: string,
   colorTracker: ColorTracker,
   colorData: ColorData,
-  buttonSelectors: string[]
+  buttonSelectors: string[],
+  platform: Platform = 'generic'
 ): Promise<void> {
   if (!buttonSelectors || buttonSelectors.length === 0) {
     // Fallback if empty (should not happen if wired correctly)
@@ -119,11 +121,13 @@ export async function analyzeButtons(
     if (!hasHref && !isButton && !hasButtonRole && !hasButtonClass) continue;
 
     // ALWAYS check contrast for all buttons (including nav/header/footer)
+    // Use platform-specific background detection for accurate color analysis
     const styleDefinition = await getStyleDefinition(
       btn as HTMLElement,
       'button',
       colorTracker,
-      colorData
+      colorData,
+      platform
     );
 
     // Only add to button inventory if NOT in nav/header/footer

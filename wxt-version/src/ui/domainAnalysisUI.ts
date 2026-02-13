@@ -392,11 +392,16 @@ export const DomainAnalysisUI = {
     }
     if (text) text.textContent = `Page ${progress.current} of ${progress.total}`;
     if (urlEl) {
-      let content = progress.currentUrl || 'Analyzing...';
+      urlEl.textContent = progress.currentUrl || 'Analyzing...';
+    }
+
+    const estimateEl = document.getElementById('domainProgressEstimate');
+    if (estimateEl) {
       if (!isPremium) {
-        content += ' (estimated 3-4 minutes)';
+        estimateEl.textContent = '(total estimated 3-4 minutes)';
+      } else {
+        estimateEl.textContent = '';
       }
-      urlEl.textContent = content;
     }
 
     this.lastProgressUpdate = Date.now();

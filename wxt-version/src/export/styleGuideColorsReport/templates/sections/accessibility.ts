@@ -218,7 +218,8 @@ export function buildAccessibilitySection(
             }<br>
             <strong>Location:</strong> ${failure.location}<br>
             <strong>Page:</strong> <a href="${failure.page}" target="_blank" style="color: #667eea; text-decoration: underline;">${failure.page}</a><br>
-            <strong>Section:</strong> ${failure.section}<br>
+            <strong>Section:</strong> ${failure.section ? failure.section : ''}<br>
+
             <strong>Block:</strong> ${failure.block}
           </div>
         </div>

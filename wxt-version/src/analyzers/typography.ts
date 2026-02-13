@@ -9,13 +9,15 @@ import {
 } from '../utils/domHelpers';
 import { getStyleDefinition } from './styleExtractor';
 import { type ColorData } from './colors';
+import type { Platform } from '../platforms';
 
 export async function analyzeHeadings(
   results: any,
   navigationName: string,
   colorTracker: any, // Legacy
   colorData: ColorData,
-  headingSelectors: string[]
+  headingSelectors: string[],
+  platform: Platform = 'generic'
 ): Promise<void> {
   // Use expanded selectors or fallback to standard tags
   const selectorString =
@@ -61,7 +63,8 @@ export async function analyzeHeadings(
     const text = (heading.textContent || '').trim();
     const section = getSectionInfo(heading);
     const block = getBlockInfo(heading);
-    const styleDefinition = await getStyleDefinition(heading, 'heading', colorTracker, colorData);
+    // Use platform-specific background detection for accurate color analysis
+    const styleDefinition = await getStyleDefinition(heading, 'heading', colorTracker, colorData, platform);
     const computed = window.getComputedStyle(heading);
     const fontSize = computed.fontSize;
 
@@ -329,7 +332,8 @@ export async function analyzeParagraphs(
   squarespaceThemeStyles: any,
   colorTracker: any,
   colorData: ColorData,
-  paragraphSelectors: string[]
+  paragraphSelectors: string[],
+  platform: Platform = 'generic'
 ): Promise<void> {
   const selectorString =
     paragraphSelectors && paragraphSelectors.length > 0 ? paragraphSelectors.join(', ') : 'p';
@@ -434,7 +438,8 @@ export async function analyzeParagraphs(
 
       const section = getSectionInfo(p);
       const block = getBlockInfo(p);
-      const styleDefinition = await getStyleDefinition(p, 'paragraph', colorTracker, colorData);
+      // Use platform-specific background detection for accurate color analysis
+      const styleDefinition = await getStyleDefinition(p as HTMLElement, 'paragraph', colorTracker, colorData, platform);
 
       if (!results.paragraphs[paragraphType]) {
         results.paragraphs[paragraphType] = { locations: [] };

@@ -1,7 +1,7 @@
 // analyzers/colorScanner.ts
 // Comprehensive color scanner for the entire page
 
-import { type ColorData, trackColor } from './colors';
+import { type ColorData, trackColor, shouldTrackBorder } from './colors';
 import { isTransparentColor } from '../utils/colorUtils';
 import { isIconOrSocialElement, getSectionInfo, getBlockInfo } from '../utils/domHelpers';
 
@@ -9,7 +9,7 @@ import { isIconOrSocialElement, getSectionInfo, getBlockInfo } from '../utils/do
  * Scans ALL visible elements on the page to capture colors that might be missed
  * by element-specific analyzers (buttons, headings, paragraphs, links).
  */
-export function scanAllPageColors(colorData: ColorData): void {
+export async function scanAllPageColors(colorData: ColorData): Promise<void> {
   if (!colorData) return;
 
   // Get ALL elements on the page
@@ -111,7 +111,7 @@ export function scanAllPageColors(colorData: ColorData): void {
           hasSignificantSize ||
           element.style.backgroundColor
         ) {
-          trackColor(
+          await trackColor(
             bgColor,
             element,
             'background-color',
@@ -135,7 +135,15 @@ export function scanAllPageColors(colorData: ColorData): void {
       }
 
       if (hasDirectTextNode && textColor && !isTransparentColor(textColor)) {
-        trackColor(textColor, element, 'color', bgColor, colorData, getSectionInfo, getBlockInfo);
+        await trackColor(
+          textColor,
+          element,
+          'color',
+          bgColor,
+          colorData,
+          getSectionInfo,
+          getBlockInfo
+        );
       }
 
       // Track border colors
@@ -143,27 +151,31 @@ export function scanAllPageColors(colorData: ColorData): void {
         {
           color: computed.borderTopColor,
           width: parseFloat(computed.borderTopWidth) || 0,
+          style: computed.borderTopStyle,
         },
         {
           color: computed.borderRightColor,
           width: parseFloat(computed.borderRightWidth) || 0,
+          style: computed.borderRightStyle,
         },
         {
           color: computed.borderBottomColor,
           width: parseFloat(computed.borderBottomWidth) || 0,
+          style: computed.borderBottomStyle,
         },
         {
           color: computed.borderLeftColor,
           width: parseFloat(computed.borderLeftWidth) || 0,
+          style: computed.borderLeftStyle,
         },
       ];
 
       const trackedBorderColors = new Set<string>();
-      borderSides.forEach(side => {
+      const currentBgColor = computed.backgroundColor;
+
+      for (const side of borderSides) {
         if (
-          side.color &&
-          !isTransparentColor(side.color) &&
-          side.width > 0 &&
+          shouldTrackBorder(side.color, side.width, side.style, currentBgColor) &&
           !trackedBorderColors.has(side.color)
         ) {
           trackedBorderColors.add(side.color);
@@ -177,7 +189,7 @@ export function scanAllPageColors(colorData: ColorData): void {
             getBlockInfo
           );
         }
-      });
+      }
 
       // Track SVG fill and stroke colors
       if (

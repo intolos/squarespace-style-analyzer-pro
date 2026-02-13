@@ -62,12 +62,29 @@ export interface ColorInstance {
   page: string;
   pageTitle: string;
   element: string;
+  /** The CSS property that used this color (e.g., background-color, color, fill, border-color) */
+  property: string;
   section: string;
   block: string;
   context: string;
-  selector?: string;
+  selector: string;
   /** The exact hex code detected on this element before fuzzy merging */
   originalHex?: string;
+  /** The paired foreground/background color for contrast checks (e.g., bg color if this is text) */
+  pairedWith: string | null;
+  /** Visual styles for popup */
+  fontSize?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+  lineHeight?: string;
+  elementText?: string;
+  /** Border and background styles for popup */
+  borderRadius?: string;
+  borderStyle?: string;
+  borderWidth?: string;
+  backgroundImage?: string;
+  /** Variations/similar colors merged into the master color this instance belongs to */
+  mergedColors?: string[];
 }
 
 export interface ColorData {
