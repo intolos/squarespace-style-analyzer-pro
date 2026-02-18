@@ -123,6 +123,24 @@ export function generateInstanceCard(inst: ColorInstance, baseColor: string = ''
     pairedLabel = 'Paired: Background';
   }
 
+  // Color purpose label - clearly identifies what this color is used for
+  const colorPurpose = (() => {
+    switch (prop) {
+      case 'color':
+        return 'Text Color';
+      case 'background-color':
+        return 'Background Color';
+      case 'fill':
+        return 'SVG Fill';
+      case 'stroke':
+        return 'SVG Stroke';
+      case 'border-color':
+        return 'Border Color';
+      default:
+        return 'Purpose Unknown';
+    }
+  })();
+
   // Selector popup link (only if selector exists)
   const selectorBtn = inst.selector
     ? `<button class="selector-link" data-selector="${inst.selector.replace(/"/g, '&quot;')}" onclick="showSelectorPopup(event, this)">📋 Selector</button>`
@@ -161,14 +179,17 @@ export function generateInstanceCard(inst: ColorInstance, baseColor: string = ''
         <span class="instance-card-tag">${tag}</span>
         ${mergedBadge}
       </div>
-      <div class="instance-card-location">${sectionLabel} / Block: ${block}</div>
-      <div class="instance-card-context">Context: "${context}"</div>
-
-      <div class="instance-card-meta">
+      
+      <div class="instance-card-meta" style="border-top: none; padding-top: 0; margin-top: 2px;">
+        <div style="font-weight: 600; color: #667eea;">${colorPurpose}</div>
         <div>Original: ${original}</div>
         <div>${pairedLabel}: ${paired}</div>
       </div>
-      <div class="instance-card-actions">
+      
+      <div class="instance-card-context" style="margin-top: 4px;">Context: "${context}"</div>
+      <div class="instance-card-location" style="margin-top: 4px; margin-bottom: 0;">${sectionLabel} / Block: ${block}</div>
+      
+      <div class="instance-card-actions" style="margin-top: 8px;">
         ${stylesBtn}
         ${selectorBtn}
         ${locateBtn}

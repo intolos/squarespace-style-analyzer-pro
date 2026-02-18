@@ -247,7 +247,7 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
   protected getIndeterminateResult(): DetectionResult {
     return {
       color: null,
-      details: 'Indeterminate: Complex background layers. Verify manually with color check tool.',
+      details: 'Indeterminate: Complex background layers. <a href="javascript:void(0)" onclick="showContrastChecker(); return false;">Open Color Checker Tool</a> to verify manually.',
       method: 'indeterminate',
     };
   }

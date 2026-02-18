@@ -7,6 +7,7 @@ export interface DetectionContext {
   element: Element;
   screenshot: string | null;
   initialBackgroundColor: string | null;
+  clickCoordinates?: { x: number; y: number } | null;
 }
 
 export interface DetectionResult {
@@ -27,7 +28,11 @@ export type DetectionMethod =
   | 'computed-style'
   | 'dom-walk'
   | 'canvas'
-  | 'indeterminate';
+  | 'indeterminate'
+  | 'clicked-element'
+  | 'dom-walk-parent'
+  | 'section-css-var'
+  | 'css-class-rules';
 
 export interface DetectionStep {
   method: DetectionMethod;

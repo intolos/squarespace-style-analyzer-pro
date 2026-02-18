@@ -55,14 +55,51 @@ export function rgbToHex(rgb: string | null): string | null {
   if (!rgb) return null;
   if (rgb.startsWith('#')) return rgb.toUpperCase();
 
-  const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/);
-  if (!match) return null;
+  // Handle RGB/RGBA
+  const rgbMatch = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10);
+    const g = parseInt(rgbMatch[2], 10);
+    const b = parseInt(rgbMatch[3], 10);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+  }
 
-  const r = parseInt(match[1], 10);
-  const g = parseInt(match[2], 10);
-  const b = parseInt(match[3], 10);
+  // Handle HSL/HSLA
+  const hslMatch = rgb.match(/^hsla?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%(?:,\s*[\d.]+)?\)$/);
+  if (hslMatch) {
+    const h = parseFloat(hslMatch[1]) / 360;
+    const s = parseFloat(hslMatch[2]) / 100;
+    const l = parseFloat(hslMatch[3]) / 100;
+    
+    let r: number, g: number, b: number;
+    
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    
+    const rInt = Math.round(r * 255);
+    const gInt = Math.round(g * 255);
+    const bInt = Math.round(b * 255);
+    
+    return '#' + ((1 << 24) + (rInt << 16) + (gInt << 8) + bInt).toString(16).slice(1).toUpperCase();
+  }
 
-  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+  return null;
 }
 
 export function hexToRgb(hex: string | null): { r: number; g: number; b: number } | null {

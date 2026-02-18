@@ -7,6 +7,8 @@
 - [Redmean Fuzzy Color Matching](./redmean-fuzzy-color-matching.md) - Color merging system
 - [Color System Integration](./color-system-integration.md) - How systems work together
 - [Multi-Platform Architecture](./multi-platform-architecture.md) - Platform detection overview
+- [Squarespace-Specific Background Detection](./platform-background-detection-squarespace-specific.md) - CSS variable detection for Squarespace 7.1
+- [Squarespace Troubleshooting Walkthrough](../walkthroughs/platform-background-detection-squarespace-specific-details.md) - Detailed problem-solving history
 
 ---
 
@@ -623,7 +625,7 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
   private getIndeterminateResult(): DetectionResult {
     return {
       color: null,
-      details: 'Indeterminate: Complex background layers. Verify manually.',
+      details: 'Indeterminate: Complex background layers. <a href="javascript:void(0)" onclick="showContrastChecker(); return false;">Open Color Checker Tool</a> to verify manually.',
       method: 'indeterminate',
     };
   }
@@ -667,13 +669,23 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
 
 **File**: `wxt-version/src/analyzers/backgroundDetectors/squarespaceDetector.ts`
 
-**Detection Order**:
-1. Computed style ← **PRIORITY**
-2. DOM tree walking
-3. `::before` pseudo-element
-4. `::after` pseudo-element
-5. Canvas verification (buttons only)
-6. White fallback
+**Related Documents**:
+- [Squarespace-Specific Background Detection](./platform-background-detection-squarespace-specific.md) - Complete guide to CSS variable detection
+- [Detailed Troubleshooting Walkthrough](../walkthroughs/platform-background-detection-squarespace-specific-details.md) - 15 failed approaches before success
+
+**Detection Order** (Updated 2026-02-15):
+1. Clicked element (skip if body has white)
+2. DOM walk from parent (excludes body)
+3. **Section CSS variable** (`--siteBackgroundColor`) ← KEY: Works for both manual and automated detection
+4. CSS class rules
+5. `::before` pseudo-element
+6. `::after` pseudo-element
+7. DOM walk fallback
+8. Indeterminate (link to Color Checker Tool)
+
+**IMPORTANT (2026-02-15)**: The Squarespace detector has been enhanced to handle dynamic theme colors via CSS variables. The `--siteBackgroundColor` CSS variable is now detected for both:
+- Manual click detection (uses click coordinates + elementFromPoint)
+- Automated scanning (uses element position to find containing section)
 
 ```typescript
 /**
@@ -759,12 +771,8 @@ export class SquarespaceBackgroundDetector extends BaseBackgroundDetector {
       }
     }
 
-    // 6. Squarespace-specific: fallback to white
-    return {
-      color: 'rgb(255, 255, 255)',
-      details: 'No background found, using white fallback',
-      method: 'computed-style',
-    };
+    // 6. Squarespace-specific: fallback to indeterminate (don't make up a color)
+    return this.getIndeterminateResult();
   }
 
   private async getDomBackground(element: Element): Promise<string | null> {
@@ -863,12 +871,8 @@ export class GenericBackgroundDetector extends BaseBackgroundDetector {
       if (canvasResult) return canvasResult;
     }
 
-    // Conservative: don't assume white for unknown platforms
-    return {
-      color: null,
-      details: 'Indeterminate: Complex background layers. Verify manually.',
-      method: 'indeterminate',
-    };
+    // Conservative: don't assume white for unknown platforms - use indeterminate
+    return this.getIndeterminateResult();
   }
 }
 ```

@@ -17,7 +17,7 @@ Implemented platform-specific background color detection strategies to address I
 
 **Detection Order by Platform:**
 - **WordPress**: ::before → ::after → CSS classes → computed style → canvas → indeterminate
-- **Squarespace**: computed style → DOM walk → ::before → ::after → canvas → white fallback
+- **Squarespace**: clicked-element → dom-walk-parent → **section-css-var** → css-class-rules → pseudo → dom-walk → indeterminate
 - **Generic/Wix/Webflow/Shopify**: computed → CSS → ::before → ::after → DOM → canvas → indeterminate
 
 ### 2. Updated Core Functions
@@ -81,10 +81,19 @@ Implemented platform-specific background color detection strategies to address I
 ## Benefits
 
 1. **WordPress Sites**: More accurate background detection, especially for LaunchPad themes
-2. **Squarespace Sites**: No changes, maintains existing accuracy
+2. **Squarespace Sites**: Enhanced with CSS variable detection for dynamic themes
 3. **Future Extensibility**: Easy to add platform-specific detection for Wix, Webflow, Shopify
 4. **Code Quality**: SRP and DRY principles reduce maintenance burden
 5. **Testability**: Each detector can be tested independently
+
+## Updates (2026-02-15)
+
+### Squarespace Detection Enhanced
+- Added section CSS variable detection (`--siteBackgroundColor`)
+- Works for both manual clicks AND automated scanning
+- Uses element position to find containing section when click coordinates unavailable
+- Skips white body backgrounds to find actual section colors
+- Fixed indeterminate message: "Color Checker" not "Contrast Checker"
 
 ## Files Modified
 
