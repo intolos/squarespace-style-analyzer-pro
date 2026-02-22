@@ -28,7 +28,7 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
 ### `documentation-md/walkthroughs/` (The Journey)
 
 - **Purpose**: Preserves session history and context.
-- **Content**: Step-by-step logs of what was done, what was tried, and what failed.
+- **Content**: Step-by-step logs of EVERY attempt that was tried and why it failed. And WHY the final solution worked.
 - **Format**: Session logs, chat dumps (summarized), debug journals.
 - **Filename Convention**: `YYYY-MM-DD-[short-description].md` (e.g., `2026-01-19-license-persistence-fix.md`).
 - **Update Rule**: Save these continuously as you work. Archive them here when a task is done.
@@ -61,13 +61,13 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
     - Read `KNOWN_ISSUES.md` to avoid repeating past mistakes.
 
 2.  **During Execution**:
-    - Maintain a `walkthrough` or `task-list` to track your attempts.
+    - Maintain a `walkthrough` to track EVERY attempt.
     - If you find a "dead end" or a failed approach, document it in your _local_ walkthrough, but **DO NOT** put it in the architecture doc.
 
 3.  **After Verification**:
     - **Update Architecture**: If you changed how the feature works, update the corresponding file in `architecture/`. Remove old/incorrect info.
     - **Record Traps**: If you found a subtle bug, add it to `KNOWN_ISSUES.md`.
-    - **Add "Why" Comments**: If the fix was tricky (>30 mins), add `// IMPORTANT:` comments in the code explaining the rationale.
+    - **Add "Why" Comments**: If the fix was tricky (>2 attempts), add `// IMPORTANT:` comments in the code explaining the rationale.
     - **Archive Session**: Move your daily task list/walkthrough to the appropriate folder using the `YYYY-MM-DD-description.md` format.
     - **Final Verification**: Confirm all documentation changes are committed and pushed from the project root.
 
@@ -91,7 +91,7 @@ The goal of our documentation strategy is **Regression Prevention** and **speed 
 
 ### "Why" Comments (The Anti-Regression Shield)
 
-When you fix a tricky bug (one that took >30 mins), you MUST add a comment explaining **WHY** the code is written that way.
+When you fix a tricky bug (one that took >2 attempts), you MUST add a comment explaining **WHY** the code is written that way.
 
 - **Format**: `// IMPORTANT: [Explanation of the trap]. See fix on [Date].`
 - **Example**:

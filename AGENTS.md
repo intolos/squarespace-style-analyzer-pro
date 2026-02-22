@@ -50,12 +50,14 @@ cd wxt-version && npm run test:e2e
 ## Code Style Guidelines
 
 ### TypeScript
+
 - Strict mode enabled
 - ESNext module system
 - Use type imports: `import type { Foo } from './types'`
 - Always define return types for exported functions
 
 ### Naming Conventions
+
 - **Files**: kebab-case (e.g., `color-analyzer.ts`)
 - **Functions**: verbNoun (e.g., `getBackgroundColor`, `calculateContrastRatio`)
 - **Variables**: Descriptive nouns (e.g., `effectiveBackground`, `contrastRatio`)
@@ -65,6 +67,7 @@ cd wxt-version && npm run test:e2e
 - No abbreviations (use `background` not `bg`, `element` not `el`)
 
 ### Imports
+
 ```typescript
 // External dependencies first
 import { defineConfig } from 'wxt';
@@ -80,6 +83,7 @@ import type { AnalysisResult } from '../types';
 ```
 
 ### Error Handling
+
 - Never fail silently - always log errors or warnings
 - Use try-catch for operations that can fail (canvas, DOM access)
 - Provide fallbacks with warnings when primary method fails
@@ -98,6 +102,7 @@ function getBackground(element: Element): string | null {
 ```
 
 ### Comments
+
 - Comments explain WHY, not WHAT
 - Use `// IMPORTANT:` comments for tricky logic that took >30 mins to fix
 - Include test validation notes for accuracy-critical code
@@ -116,18 +121,19 @@ function getBackground(element: Element): string | null {
 ```
 
 ### File Organization (SRP)
+
 - Each file has ONE clear responsibility
 - If a file exceeds 500 lines, evaluate splitting
 - If a file exceeds 700 lines, MUST refactor into smaller modules
 - Name files descriptively by their single purpose
 
 ### No Magic Numbers
+
 ```typescript
 // BAD
 if (fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700))
-
-// GOOD
-const LARGE_TEXT_SIZE = 18;
+  // GOOD
+  const LARGE_TEXT_SIZE = 18;
 const LARGE_TEXT_BOLD_SIZE = 14;
 const BOLD_WEIGHT_THRESHOLD = 700;
 ```
@@ -135,24 +141,26 @@ const BOLD_WEIGHT_THRESHOLD = 700;
 ## Critical Rules
 
 ### Variable-Based Worker Architecture
+
 - Cloudflare Worker (`cloudflare/worker.js`) MUST use ONLY variables for Product IDs and Price IDs
 - NEVER hardcode Product/Price ID strings in the worker
 - ONLY file allowed to have hardcoded IDs: `wxt-version/src/utils/platform.ts`
 - Worker receives IDs from client request and returns metadata flags
 
 ### Legacy Extension Preservation
+
 - NEVER modify files in `legacy-extension/` directory
 - This directory is strictly for historical reference
 - All changes must be applied to `wxt-version/` directory
 
 ### Documentation Requirements
-Before implementing ANY feature or fix:
-1. Read `documentation-md/DOCUMENTATION_PROCESSES.md`
-2. Read `documentation-md/DEVELOPMENT_PRINCIPLES_CRITICAL.md`
-3. Check `documentation-md/KNOWN_ISSUES.md`
-4. Update architecture docs in `documentation-md/architecture/` after completion
+
+Before implementing ANY feature or fix or code change or any analysis to troubleshoot a problem or error or anything that is not working correctly:
+
+1. Always, this means always, read `.agent/rules/critical-workflow-rules.md`
 
 ### Accuracy Standards
+
 - Accuracy is NON-NEGOTIABLE - priority over performance and convenience
 - Use the most accurate method available (canvas rendering, pixel sampling)
 - Validate against industry tools (WAVE, Lighthouse, Chrome DevTools)
@@ -160,6 +168,7 @@ Before implementing ANY feature or fix:
 - Document test results with actual vs expected values
 
 ### Testing Standards
+
 - Compare against industry tools (WAVE, Lighthouse, Chrome DevTools)
 - Test on real websites, not toy examples
 - Test edge cases (transparent backgrounds, overlapping elements, etc.)
@@ -189,6 +198,7 @@ wxt-version/
 ## Mode-Specific Builds
 
 Three build modes with different configurations:
+
 - **Squarespace (sqs)**: Squarespace-specific checks and branding
 - **WordPress (wp)**: WordPress-specific checks and branding
 - **Generic (generic)**: Universal website checks
@@ -209,19 +219,19 @@ git tag post-feature-name-YYYY-MM-DD
 git add documentation-md/  # From wxt-version/, use ../documentation-md
 git add wxt-version/src/   # Code changes
 ```
+
 "rules": {
-    "documentation-creation": {
-      "description": "File creation protocol for planning documents",
-      "trigger": "When creating implementation plans or task lists",
-      "actions": [
-        "Create actual files in appropriate folders",
-        "Use naming format: YYYY-MM-DD-[description].md",
-        "Place implementation plans in: documentation-md/implementation-plans/",
-        "Place task lists in: documentation-md/task-lists/",
-        "Do NOT display full text of these documents in chat",
-        "Reference them by filename only when discussing",
-        "Read them silently when necessary without displaying contents"
-      ]
-    }
-  }
-  
+"documentation-creation": {
+"description": "File creation protocol for planning documents",
+"trigger": "When creating implementation plans or task lists",
+"actions": [
+"Create actual files in appropriate folders",
+"Use naming format: YYYY-MM-DD-[description].md",
+"Place implementation plans in: documentation-md/implementation-plans/",
+"Place task lists in: documentation-md/task-lists/",
+"Do NOT display full text of these documents in chat",
+"Reference them by filename only when discussing",
+"Read them silently when necessary without displaying contents"
+]
+}
+}

@@ -10,9 +10,13 @@ CRITICAL WORKFLOW RULES:
    - You will report your state to the user at the start of each new chat and if in Planning mode, you will state "Current Mode: PLANNING (Status: Tools Locked)" and stay in that mode until the user changes to a specific execution mode.
 2. **NO BANDAID FIXES**: Always refactor for quality. Never duplicate logic across files (e.g., duplicated filters in multiple entry points). If a quick fix is required, it must be immediately followed by a refactor plan (Handover Document) and clearly flagged as technical debt.
 3. **Total Scope Control & Explicit Approval**: Limit all execution to the explicit requirements of the USER. If you identify any additional improvements—whether they are logic refactors, design enhancements, architectural changes, or syncing fixes to related files—you must document these as "Proposed Suggestions" in the `implementation_plan.md`. You MUST not begin execution (writing code, syncing files, or running deployment commands) until the USER has reviewed the plan and given a clear "Proceed."
-4. Before writing code, you MUST read "documentation-md/DOCUMENTATION_PROCESSES.md" to understand where to look for architecture vs. history, then "documentation-md/DEVELOPMENT_PRINCIPLES_CRITICAL.md" for accuracy standards and the pre-implementation checklist.
+
+4. Before implementing ANY feature or fix or code change or any analysis to troubleshoot a problem or error or anything that is not working correctly: you MUST read "documentation-md/DOCUMENTATION_PROCESSES.md" to understand where to look for architecture vs. history, then "documentation-md/DEVELOPMENT_PRINCIPLES_CRITICAL.md" for accuracy standards and the pre-implementation checklist.
+
 5. Check "documentation-md/KNOWN_ISSUES.md" before fixing bugs to avoid regression traps.
-6. If you fix a bug or add a feature, you MUST update the relevant file in "documentation-md/architecture/" to reflect the new working state.
+
+6. After completing ANY feature or fix or code change, you MUST update the relevant file(s) in "documentation-md/architecture/" to reflect the new working state and create a new file, or update an existing file if appropriate, in "documentation-md/walkthroughs/" to document ALL the processes that were tried and failed and WHY the final solution worked.
+
 7. Always add "// IMPORTANT:" comments explaining "WHY" for tricky logic to prevent regressions.
 8. **Variable-Based Worker Architecture**: The Cloudflare Worker (`cloudflare/worker.js`) MUST use ONLY variables for Product IDs and Price IDs. It must NEVER contain hardcoded Product/Price ID strings. The ONLY file allowed to have hardcoded IDs is `wxt-version/src/utils/platform.ts`. The worker receives IDs from the client request and returns metadata flags (`is_lifetime`, `is_yearly`) for the client to use for UI decisions.
 9. **Legacy Extension Preservation**: NEVER modify any files within the `legacy-extension/` directory. This directory is strictly for historical reference and must remain untouched by AI agents. All changes must be applied to the `wxt-version/` directory or other modern components.
