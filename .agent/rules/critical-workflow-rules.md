@@ -11,11 +11,11 @@ CRITICAL WORKFLOW RULES:
 2. **NO BANDAID FIXES**: Always refactor for quality. Never duplicate logic across files (e.g., duplicated filters in multiple entry points). If a quick fix is required, it must be immediately followed by a refactor plan (Handover Document) and clearly flagged as technical debt.
 3. **Total Scope Control & Explicit Approval**: Limit all execution to the explicit requirements of the USER. If you identify any additional improvements—whether they are logic refactors, design enhancements, architectural changes, or syncing fixes to related files—you must document these as "Proposed Suggestions" in the `implementation_plan.md`. You MUST not begin execution (writing code, syncing files, or running deployment commands) until the USER has reviewed the plan and given a clear "Proceed."
 
-4. Before implementing ANY feature or fix or code change or any analysis to troubleshoot a problem or error or anything that is not working correctly: you MUST read "documentation-md/DOCUMENTATION_PROCESSES.md" to understand where to look for architecture vs. history, then "documentation-md/DEVELOPMENT_PRINCIPLES_CRITICAL.md" for accuracy standards and the pre-implementation checklist.
+4. Before implementing ANY feature or fix or code change or any analysis to troubleshoot a problem or error, you MUST invoke the skill located at `.agent/skills/pre-implementation-validator/SKILL.md` to run the mandatory pre-flight checks and evaluate `documentation-md/KNOWN_ISSUES.md`.
 
-5. Check "documentation-md/KNOWN_ISSUES.md" before fixing bugs to avoid regression traps.
+5. Check `documentation-md/KNOWN_ISSUES.md` before fixing bugs to avoid regression traps.
 
-6. After completing ANY feature or fix or code change, you MUST update the relevant file(s) in "documentation-md/architecture/" to reflect the new working state and create a new file, or update an existing file if appropriate, in "documentation-md/walkthroughs/" to document ALL the processes that were tried and failed and WHY the final solution worked.
+6. After completing ANY feature or fix or code change, you MUST invoke the skill located at `.agent/skills/documentation-manager/SKILL.md` to automatically generate the walkthrough document in `documentation-md/walkthroughs/` and update the relevant architecture files in `documentation-md/architecture/`.
 
 7. Always add "// IMPORTANT:" comments explaining "WHY" for tricky logic to prevent regressions.
 8. **Variable-Based Worker Architecture**: The Cloudflare Worker (`cloudflare/worker.js`) MUST use ONLY variables for Product IDs and Price IDs. It must NEVER contain hardcoded Product/Price ID strings. The ONLY file allowed to have hardcoded IDs is `wxt-version/src/utils/platform.ts`. The worker receives IDs from the client request and returns metadata flags (`is_lifetime`, `is_yearly`) for the client to use for UI decisions.
@@ -30,3 +30,4 @@ CRITICAL WORKFLOW RULES:
 
 11. **Single Responsibility Principle (SRP)**: Each file MUST have ONE clear responsibility. If a file handles multiple concerns, split it. Files exceeding 500 lines require evaluation; files exceeding 700 lines MUST be refactored.
 12. **DRY (Don't Repeat Yourself)**: Never duplicate logic across files. Extract repeated patterns into shared utilities. If you find yourself copying code, STOP and refactor first.
+13. **State Management**: Before beginning any complex file modifications or bug fixes, you MUST invoke the skill located at `.agent/skills/state-manager/SKILL.md` to properly checkpoint your work utilizing `git` tags.

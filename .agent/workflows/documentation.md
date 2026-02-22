@@ -37,7 +37,7 @@ After your code is verified working:
   - **YES**: Add it to `documentation-md/KNOWN_ISSUES.md`.
   - **NO**: Skip.
 
-- [ ] **Archive**: Ensure your session log/walkthrough is saved in `documentation-md/walkthroughs/` or `documentation-md/task-lists/` as appropriate.
+- [ ] **Archive**: Ensure your session log/walkthrough is saved in `documentation-md/walkthroughs/`.
 
 ## Summary of Folders
 
