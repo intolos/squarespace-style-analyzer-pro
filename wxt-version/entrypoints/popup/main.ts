@@ -106,14 +106,6 @@ class SquarespaceAnalyzer implements AnalyzerController {
     // Check license in background (non-blocking)
     LicenseManager.verifyStoredLicenseInBackground();
 
-    // TEST MODE: Show review modal immediately on open (Remove for production)
-    const TEST_MODE_REVIEW_ON_OPEN = true;
-    if (TEST_MODE_REVIEW_ON_OPEN) {
-      setTimeout(() => {
-        this.checkAndShowReviewModal('page', true);
-      }, 500);
-    }
-
     // Listen for background updates
     chrome.runtime.onMessage.addListener(message => {
       if (message.action === 'analysisProgress' && message.status) {

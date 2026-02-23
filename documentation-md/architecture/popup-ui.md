@@ -76,7 +76,7 @@ This section at the bottom of the popup remains visible to encourage user engage
 
 A specialized "Review Suggestion" modal designed to convert successful users into social proof.
 
-- **Trigger**: Called via `showReviewModal()` in `uiHelpers.ts`. It typically triggers 1 second after a successful domain analysis completion or immediately on startup in **Test Mode** (`TEST_MODE_REVIEW_ON_OPEN` in `main.ts`).
+- **Trigger**: Called via `showReviewModal()` in `uiHelpers.ts`. It typically triggers 1 second after a successful domain analysis completion.
 - **Dynamic Content**:
   - **Review URL**: `${platformStrings.reviewUrl}` (Store-specific).
   - **Social Proof**: `${platformStrings.benefitsUrl}/#testimonials`. The anchor targets the testimonial section of our landing pages directly for higher conversion.
