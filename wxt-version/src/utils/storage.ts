@@ -8,6 +8,10 @@ export interface UserData {
   analyzedDomains: string[];
   licenseEmail?: string;
   licenseData?: any;
+  premiumPageAnalyses?: number;
+  premiumDomainAnalyses?: number;
+  premiumModalShown?: boolean;
+  reviewModalDismissed?: boolean;
 }
 
 export const StorageManager = {
@@ -20,6 +24,10 @@ export const StorageManager = {
       'analyzedDomains',
       'licenseEmail',
       'licenseData',
+      'premiumPageAnalyses',
+      'premiumDomainAnalyses',
+      'premiumModalShown',
+      'reviewModalDismissed',
     ]);
 
     return {
@@ -29,6 +37,10 @@ export const StorageManager = {
       analyzedDomains: (data.analyzedDomains as string[]) || [],
       licenseEmail: data.licenseEmail as string | undefined,
       licenseData: data.licenseData,
+      premiumPageAnalyses: (data.premiumPageAnalyses as number) || 0,
+      premiumDomainAnalyses: (data.premiumDomainAnalyses as number) || 0,
+      premiumModalShown: (data.premiumModalShown as boolean) || false,
+      reviewModalDismissed: (data.reviewModalDismissed as boolean) || false,
     };
   },
 
@@ -42,6 +54,10 @@ export const StorageManager = {
       analyzedDomains: userData.analyzedDomains,
       licenseEmail: userData.licenseEmail,
       licenseData: userData.licenseData,
+      premiumPageAnalyses: userData.premiumPageAnalyses,
+      premiumDomainAnalyses: userData.premiumDomainAnalyses,
+      premiumModalShown: userData.premiumModalShown,
+      reviewModalDismissed: userData.reviewModalDismissed,
     });
     console.log('✅ User data saved successfully');
   },

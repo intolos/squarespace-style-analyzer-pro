@@ -279,6 +279,7 @@ export const SinglePageAnalysisUI = {
       );
 
       analyzer.trackUsage('analysis_completed');
+      await analyzer.checkAndShowReviewModal('page');
 
       chrome.storage.local.remove([
         'singlePageAnalysisStatus',

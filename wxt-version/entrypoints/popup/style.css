@@ -702,14 +702,16 @@ body {
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  padding: 20px 20px 40px 20px;
+  padding: 12px 18px 24px 18px;
+  border: 2px solid #657de9 !important;
   box-sizing: border-box;
   /* No max-height or overflow by default - let modals expand naturally */
 }
 
 .page-selection-modal {
   margin: 15px 0;
-  border: 2px solid #667eea;
+  margin: 15px 0;
+  border: 2px solid #657de9 !important;
   display: none;
 }
 
@@ -733,6 +735,7 @@ body {
 .custom-modal {
   max-height: none !important;
   overflow-y: visible !important;
+  border: 2px solid #657de9 !important;
 }
 
 /* Hide status section when premium is active (redundant protective rule) */
@@ -929,7 +932,7 @@ body.premium-active #statusSection {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: #657de9;
   display: none;
   align-items: flex-start; /* Changed from center to allow scrolling of tall content */
   justify-content: center;
@@ -948,8 +951,16 @@ body.premium-active #statusSection {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 22px 0 15px 0; /* Reduced from 45px per user request to decrease top margin */
+  padding: 5px 0 0px 0; /* Minimal padding to squash space below title */
   width: 100%;
+}
+
+.confirm-modal-header {
+  padding-bottom: 12px !important;
+}
+
+.confirm-buttons-gap-free {
+  margin-top: 12px !important;
 }
 
 /* Target the specific custom modal title used for alerts/prompts */
@@ -963,11 +974,13 @@ body.premium-active #statusSection {
   text-align: center;
 }
 
-.custom-modal p {
-  margin: 0 0 20px 0;
+.custom-modal p,
+.custom-modal-alert {
+  margin: 0 0 12px 0;
   font-size: 1.05rem;
   color: #4a5568;
-  line-height: 1.5;
+  line-height: 1.3;
+  white-space: pre-line; /* Respect newlines in license messages */
 }
 
 .custom-modal input {
@@ -988,6 +1001,10 @@ body.premium-active #statusSection {
 .custom-modal-buttons {
   display: flex;
   gap: 10px;
+}
+
+.custom-modal-buttons-wrap {
+  flex-wrap: wrap !important;
 }
 
 .custom-modal-btn {
@@ -1088,4 +1105,53 @@ body.premium-active #statusSection {
   font-weight: 600;
   text-align: center;
   border: 1px solid #8eb9ff; /* Adjusted border to match new background */
+}
+/* Target the Review Modal specifically to fix vertical spacing */
+.modal-container:has(#reviewModalCheckbox) {
+  padding-top: 15px !important;
+  padding-bottom: 25px !important;
+}
+
+/* Gap below title - set to 12px for 'normal' spacing */
+.modal-container:has(#reviewModalCheckbox) .custom-modal-header {
+  margin-bottom: 12px !important;
+  padding: 5px 0 0 0 !important;
+}
+
+/* Fix: Disable pre-line to stop newlines in the JS template from creating extra gaps */
+.modal-container:has(#reviewModalCheckbox) .custom-modal-alert {
+  white-space: normal !important;
+  margin-bottom: 15px !important;
+}
+
+/* Spacing between paragraphs inside the message */
+.modal-container:has(#reviewModalCheckbox) .custom-modal-alert p {
+  margin: 0 0 12px 0 !important; /* NORMAL SPACE BETWEEN PARAGRAPHS */
+  line-height: 1.5;
+}
+
+.modal-container:has(#reviewModalCheckbox) .custom-modal-alert p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Standard spacing for the checkbox row */
+#reviewCheckboxRow {
+  margin-bottom: 15px !important; /* Normal space above the button */
+}
+
+/* Ensure centering and alignment for the review-specific checkbox row */
+#reviewModalCheckbox + label {
+  vertical-align: middle;
+}
+
+/* IMPORTANT: License Failure Modal Spacing - 12px Padding below email */
+.license-failure-modal #customModalMessage {
+  margin-bottom: 12px !important; /* Baseline margin */
+  padding-bottom: 12px !important; /* Added 12px padding as requested */
+  /* Maintain pre-line for \n support in this specific modal */
+  white-space: pre-line !important;
+}
+
+.license-failure-modal #customModalButtons {
+  margin-top: 0 !important;
 }

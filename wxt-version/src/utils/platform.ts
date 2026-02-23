@@ -42,10 +42,10 @@ export const platformStrings = {
   siteType: isSqs ? 'Squarespace site' : isWp ? 'WordPress site' : 'website',
   toolsBrand: isSqs ? 'Squarespace Tools' : isWp ? 'WordPress Tools' : 'Website Tools',
   benefitsUrl: isSqs
-    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/'
+    ? 'https://intolos.github.io/squarespace-style-analyzer-pro/#testimonials'
     : isWp
-      ? 'https://intolos.github.io/wordpress-style-analyzer-pro/'
-      : 'https://intolos.github.io/website-style-analyzer-pro/',
+      ? 'https://intolos.github.io/wordpress-style-analyzer-pro/#testimonials'
+      : 'https://intolos.github.io/website-style-analyzer-pro/#testimonials',
   shareUrl: isSqs
     ? 'https://chromewebstore.google.com/detail/squarespace-style-analyze/gmbkgehkgbgbdbiojcjgeipmcadbeopi'
     : isWp

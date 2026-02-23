@@ -22,6 +22,7 @@ export interface AnalyzerController {
   totalPagesForAnalysis?: number;
   showDomainConfirmation: boolean;
   setHideDomainConfirmation: (hide: boolean) => Promise<void>;
+  checkAndShowReviewModal: (type: 'page' | 'domain') => Promise<void>;
 }
 
 export const DomainAnalysisUI = {
@@ -594,6 +595,7 @@ export const DomainAnalysisUI = {
 
       analyzer.updateUI();
       analyzer.trackUsage('domain_analysis_completed');
+      await analyzer.checkAndShowReviewModal('domain');
     }
 
     chrome.storage.local.remove([

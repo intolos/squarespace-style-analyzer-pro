@@ -4,7 +4,7 @@ import { ResultsManager } from '../../src/managers/resultsManager';
 import { ExportManager } from '../../src/export/index';
 import { DomainAnalysisUI, AnalyzerController } from '../../src/ui/domainAnalysisUI';
 import { SinglePageAnalysisUI } from '../../src/ui/singlePageAnalysisUI';
-import { UIHelpers, customAlert, customPrompt } from '../../src/utils/uiHelpers';
+import { UIHelpers, customAlert, customPrompt, showReviewModal } from '../../src/utils/uiHelpers';
 import { platformStrings, isSqs } from '../../src/utils/platform';
 import { UserData } from '../../src/utils/storage';
 import { detectPlatform } from '../../src/platforms/index';
@@ -22,6 +22,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
   licenseData: any = null;
   showDomainConfirmation: boolean = true;
   detectedPlatform: any = null; // Stores platform info for reports
+  premiumPageAnalyses: number = 0;
+  premiumDomainAnalyses: number = 0;
+  premiumModalShown: boolean = false;
+  reviewModalDismissed: boolean = false;
 
   // File naming constant
   FILENAME_BRAND: string = platformStrings.filenameVariable;
@@ -32,6 +36,52 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
   constructor() {
     this.init();
+  }
+
+  async checkAndShowReviewModal(type: 'page' | 'domain', force: boolean = false): Promise<void> {
+    if (!force && this.reviewModalDismissed) return;
+
+    let shouldShow = force;
+
+    if (!force) {
+      if (!this.isPremium) {
+        if (this.usageCount === 3) {
+          shouldShow = true;
+        }
+      } else {
+        if (type === 'page') {
+          this.premiumPageAnalyses++;
+        } else if (type === 'domain') {
+          this.premiumDomainAnalyses++;
+        }
+
+        const domainThreshold = this.premiumModalShown ? 4 : 3;
+        const pageThreshold = 10;
+
+        if (
+          this.premiumDomainAnalyses >= domainThreshold ||
+          this.premiumPageAnalyses >= pageThreshold
+        ) {
+          shouldShow = true;
+        }
+        await this.saveUserData();
+      }
+    }
+
+    if (shouldShow) {
+      setTimeout(async () => {
+        const result = await showReviewModal();
+        if (result.dismissed) {
+          this.reviewModalDismissed = true;
+        } else if (this.isPremium) {
+          // Reset counters to start the next schedule
+          this.premiumModalShown = true;
+          this.premiumDomainAnalyses = 0;
+          this.premiumPageAnalyses = 0;
+        }
+        await this.saveUserData();
+      }, 500);
+    }
   }
 
   async init() {
@@ -55,6 +105,14 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
     // Check license in background (non-blocking)
     LicenseManager.verifyStoredLicenseInBackground();
+
+    // TEST MODE: Show review modal immediately on open (Remove for production)
+    const TEST_MODE_REVIEW_ON_OPEN = true;
+    if (TEST_MODE_REVIEW_ON_OPEN) {
+      setTimeout(() => {
+        this.checkAndShowReviewModal('page', true);
+      }, 500);
+    }
 
     // Listen for background updates
     chrome.runtime.onMessage.addListener(message => {
@@ -86,6 +144,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
     this.userId = data.userId;
     this.analyzedDomains = data.analyzedDomains || [];
     this.licenseData = data.licenseData || null;
+    this.premiumPageAnalyses = data.premiumPageAnalyses || 0;
+    this.premiumDomainAnalyses = data.premiumDomainAnalyses || 0;
+    this.premiumModalShown = data.premiumModalShown || false;
+    this.reviewModalDismissed = data.reviewModalDismissed || false;
 
     // Ensure userId exists
     await StorageManager.ensureUserId(this.userId);
@@ -121,6 +183,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
       analyzedDomains: this.analyzedDomains,
       licenseEmail: this.licenseData?.email || this.licenseData?.record?.email,
       licenseData: this.licenseData,
+      premiumPageAnalyses: this.premiumPageAnalyses,
+      premiumDomainAnalyses: this.premiumDomainAnalyses,
+      premiumModalShown: this.premiumModalShown,
+      reviewModalDismissed: this.reviewModalDismissed,
     });
   }
 
@@ -883,7 +949,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
         // Show Legacy Success Alert
         let message = `✅ Premium Status: Active\n\n`;
-        message += `📧 Email: ${trimmedEmail}\n`;
+        message += `📧 Email: ${trimmedEmail}\n\n`;
 
         const isRecordLifetime = result.record && result.record.is_lifetime === true;
         const isRecordYearly = result.record && result.record.is_yearly === true;
@@ -894,7 +960,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
           const daysRemaining = Math.ceil(
             (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
           );
-          message += `📅 Expires: ${expiryDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}\n`;
+          message += `📅 Expires: ${expiryDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}\n\n`;
           message += `⏰ Days Remaining: ${daysRemaining} days\n\n`;
         } else if (isRecordLifetime) {
           message += `🎉 Lifetime License - Never Expires\n\n`;
@@ -917,7 +983,7 @@ class SquarespaceAnalyzer implements AnalyzerController {
         // Custom error for strict date check
         if (result && result.record && result.record.is_yearly && !result.record.expires_at) {
           errorMsg += `⚠️ No expiration date found.\n`;
-          errorMsg += `Please contact support at: ${platformStrings.questionsEmail}\n\n`;
+          errorMsg += `Please contact support at: ${platformStrings.questionsEmail}`;
         } else {
           if (result && result.error) {
             errorMsg += `Error: ${result.error}\n\n`;
@@ -928,7 +994,12 @@ class SquarespaceAnalyzer implements AnalyzerController {
           errorMsg += `If you believe this is an error, please contact support at: ${platformStrings.questionsEmail}`;
         }
 
-        customAlert(errorMsg);
+        const overlay = document.getElementById('customModalOverlay');
+        if (overlay) overlay.classList.add('license-failure-modal');
+
+        await customAlert(errorMsg);
+
+        if (overlay) overlay.classList.remove('license-failure-modal');
 
         // Reset button after delay
         setTimeout(() => {

@@ -257,3 +257,31 @@ This file documents critical implementation details, regression traps, and "anti
 * - Adjusting `min-height` on `body`/`html` (Unsuccessful - 2026-02-11).
     +- **Current Status**: **UNRESOLVED**. Per USER on 2026-02-11, documentation claiming this is fixed is incorrect.
 * +---
+
+## 20. Review Modal Rendering & Spacing Gotchas
+
+- **Symptom 1 (Border Visibility)**: The custom "Review Prompt" modal appears with a border that looks "almost black" or is missing on the extreme top/bottom edges, even when branded blue (`#657DE9`) is explicitly set.
+- **Symptom 2 (Excessive/Random Spacing)**: Spacing between paragraphs or below the title appears broken, and applying `margin: 0` to elements fails to close the gaps.
+- **Root Cause Analysis**:
+  1.  **Overlay Alpha-Blending**: The default semi-transparent black overlay (`rgba(0, 0, 0, 0.6)`) muddies light-blue borders, making them appear significantly darker due to color mixing.
+  2.  **Container Clipping**: Interaction between high-shadow modal containers and transparent overlays can cause 1-2px border clipping on viewport extremes.
+  3.  **The "Invisible Gap" Trap**: Global CSS for alerts uses `white-space: pre-line`. Because these modals are built using **multi-line template literals** in JavaScript, the browser renders the actual source code indentation and newlines as literal visual spaces.
+- **Correct Logic & Checkpoints**:
+  - **DO**: Use a solid Brand Blue (`#657de9`) background for the `.custom-modal-overlay` to provide high-contrast and crisp border rendering.
+  - **DO**: Use `!important` on the border color for `.modal-container` to ensure it isn't overridden by legacy style rules.
+  - **DO**: Ensure the `.custom-modal-overlay` uses `align-items: flex-start` with `padding-top` to prevent clipping or cutoff issues on smaller viewports.
+  - **DO**: Set `white-space: normal !important` in CSS for any modal that uses HTML structure/paragraphs inside the message area to strip code-formatting gaps.
+  - **DO**: Use standard `<p>` tags and control the vertical flow strictly via CSS margins (e.g., 12px baseline).
+  - **DO NOT**: Rely on semi-transparent overlays if brand-accurate border colors are required.
+- **Date Fixed**: 2026-02-23
+
+---
+
+## 22. The "No Change" Spacing Illusion
+
+- **Symptom**: The developer attempts to add "12px of padding" to a modal, but after applying the change and building, the UI looks identical.
+- **Root Cause**: The global CSS often has a baseline margin (e.g., `12px`). If the developer sets `margin-bottom: 12px`, they are simply replacing the existing 12px with 12px, resulting in zero visual change.
+- **Correct Logic**:
+  - **DO**: Identify the baseline margin before applying the fix.
+  - **DO**: To achieve a visual change, set a value that is the **Baseline + Requested Padding** (e.g., 24px total) OR use `padding-bottom` in addition to the margin.
+- **Date Fixed**: 2026-02-23

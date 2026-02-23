@@ -72,6 +72,19 @@ This section at the bottom of the popup remains visible to encourage user engage
   - **Review Link**: The "Add Your “Success Story” Review" link (`#uiReviewLink`) is dynamically assigned a URL based on the browser (Chrome Store vs Firefox Add-ons) and product version via `platformStrings.reviewUrl`.
 - **Styling**: Uses specific font-size (`0.8rem` for footer, `0.9rem` for body) and `display: block` structure to ensure clean rendering.
 
+### 3. Review Request Modal
+
+A specialized "Review Suggestion" modal designed to convert successful users into social proof.
+
+- **Trigger**: Called via `showReviewModal()` in `uiHelpers.ts`. It typically triggers 1 second after a successful domain analysis completion or immediately on startup in **Test Mode** (`TEST_MODE_REVIEW_ON_OPEN` in `main.ts`).
+- **Dynamic Content**:
+  - **Review URL**: `${platformStrings.reviewUrl}` (Store-specific).
+  - **Social Proof**: `${platformStrings.benefitsUrl}/#testimonials`. The anchor targets the testimonial section of our landing pages directly for higher conversion.
+- **Visual Design**:
+  - **Condensed UI**: Uses `line-height: 1.2` and `div` wrappers (instead of `p`) to eliminate default browser spacing and maximize above-the-fold content.
+  - **High-Contrast Branding**: The `.custom-modal-overlay` uses a solid background (`#657DE9`) matching the brand blue border. This ensures thin 2px borders are crisp and avoids the "muddy" look created by semi-transparent black overlays (documented in KNOWN_ISSUES.md).
+- **State Management**: Includes a "Do not show this popup again" checkbox stored in user data.
+
 ## Report Consistency
 
 - See [shared-report-components.md](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/documentation-md/architecture/shared-report-components.md) for details on how we unified the UI across all exports.
