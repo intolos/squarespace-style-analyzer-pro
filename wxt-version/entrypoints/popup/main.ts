@@ -213,6 +213,10 @@ class SquarespaceAnalyzer implements AnalyzerController {
       // Just ensure container has correct positioning class if needed
       if (premiumButtonsGroup) premiumButtonsGroup.classList.add('premium-position');
 
+      // IMPORTANT: Reorder informational sections to surface the most relevant
+      // content (Questions, Share) at the top for premium users on every popup open.
+      this.reorderSectionsForPremium();
+
       // Update the "Check Status" button to reflect active state and type
       const checkStatusBtn = document.getElementById('checkStatusButton');
       if (checkStatusBtn) {
@@ -323,6 +327,61 @@ class SquarespaceAnalyzer implements AnalyzerController {
 
   repositionMobileSectionForUser() {
     // Redundant now that order is static
+  }
+
+  /**
+   * IMPORTANT: Reorders the informational sections below the premium buttons
+   * for premium users only. Free users retain the default HTML source order.
+   * Called once per popup open from inside the if (this.isPremium) block in updateUI().
+   */
+  reorderSectionsForPremium(): void {
+    const mainInterface = document.getElementById('mainInterface');
+    if (!mainInterface) return;
+
+    // Locate the anchor point — insert our reordered blocks AFTER #premiumButtonsGroup
+    const premiumButtonsGroup = document.getElementById('premiumButtonsGroup');
+    if (!premiumButtonsGroup) return;
+
+    // Identify all target sections by their unique selectors
+    // We use :scope > to ensure we only look at direct children of mainInterface
+    const allPremiumFeatureDivs = Array.from(
+      mainInterface.querySelectorAll(':scope > .premium-features')
+    );
+
+    // allPremiumFeatureDivs[0] = Premium Benefits (🌟 Premium Benefits)
+    // allPremiumFeatureDivs[1] = Share this Extension (❤️ Share this Extension)
+    // allPremiumFeatureDivs[2] = Questions, Suggestions, Reviews (Questions, Suggestions, Reviews)
+
+    const questionsDiv = allPremiumFeatureDivs[2] as HTMLElement;
+    const shareDiv = allPremiumFeatureDivs[1] as HTMLElement;
+    const useCasesDiv = mainInterface.querySelector(':scope > .use-cases-section') as HTMLElement;
+    const benefitsLink = document.getElementById('uiBenefitsLink');
+    const premiumBenefitsDiv = allPremiumFeatureDivs[0] as HTMLElement;
+    const developerDiv = mainInterface.querySelector(':scope > .developer-section') as HTMLElement;
+
+    if (
+      !questionsDiv ||
+      !shareDiv ||
+      !useCasesDiv ||
+      !benefitsLink ||
+      !premiumBenefitsDiv ||
+      !developerDiv
+    ) {
+      console.warn('reorderSectionsForPremium: one or more target sections not found');
+      return;
+    }
+
+    // Re-insert in the desired premium order immediately after #premiumButtonsGroup
+    // insertBefore(node, referenceNode) inserts *before* referenceNode.
+    // We use developerDiv as the fixed last anchor and insert everything before it.
+    const insertBefore = (node: Node) => mainInterface.insertBefore(node, developerDiv);
+
+    insertBefore(questionsDiv);
+    insertBefore(shareDiv);
+    insertBefore(useCasesDiv);
+    insertBefore(benefitsLink);
+    insertBefore(premiumBenefitsDiv);
+    // developerDiv stays in place as the last child
   }
 
   resetUpgradeButtons() {

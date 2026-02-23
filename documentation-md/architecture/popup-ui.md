@@ -85,6 +85,20 @@ A specialized "Review Suggestion" modal designed to convert successful users int
   - **High-Contrast Branding**: The `.custom-modal-overlay` uses a solid background (`#657DE9`) matching the brand blue border. This ensures thin 2px borders are crisp and avoids the "muddy" look created by semi-transparent black overlays (documented in KNOWN_ISSUES.md).
 - **State Management**: Includes a "Do not show this popup again" checkbox stored in user data.
 
+### 4. Premium Section Reordering
+
+To optimize the experience for converted users, the informational sections below the premium buttons are dynamically reordered via `reorderSectionsForPremium()` in `main.ts`.
+
+- **Trigger**: Called within the `if (this.isPremium)` block of `updateUI()`.
+- **Logic**: Uses `mainInterface.insertBefore()` to move existing DOM nodes.
+- **Priority Order**:
+  1. Questions, Suggestions, Reviews (Surfaced for support/social proof)
+  2. Share this Extension (Surfaced for referral)
+  3. Why Would You Use...? (Use cases)
+  4. Click to See (Benefits button)
+  5. 🌟 Premium Benefits (Feature list - moved lower as user is already premium)
+- **Sustainability**: This approach avoids HTML duplication (DRY) and preserves the original "sales-focused" order for free users.
+
 ## Report Consistency
 
 - See [shared-report-components.md](file:///Users/edmass/Downloads/Squarespace%20Style%20Analyzer%20Pro/browser-extensions/squarespace-extension/documentation-md/architecture/shared-report-components.md) for details on how we unified the UI across all exports.
