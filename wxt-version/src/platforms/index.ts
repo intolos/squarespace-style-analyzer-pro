@@ -116,3 +116,31 @@ export function detectPlatform(): PlatformInfo {
     message: '',
   };
 }
+
+/**
+ * Checks if the current tab is a Squarespace website by injecting a short detection script.
+ */
+export async function checkIfSquarespace(tabId: number): Promise<boolean> {
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        const indicators = [
+          document.querySelector('meta[name="generator"][content*="Squarespace"]'),
+          document.querySelector('script[src*="squarespace"]'),
+          document.querySelector('link[href*="squarespace"]'),
+          document.querySelector('[data-squarespace-module]'),
+          document.body &&
+            document.body.classList &&
+            document.body.classList.contains('squarespace'),
+          document.querySelector('.sqs-block'),
+          document.querySelector('[class*="sqs-"]'),
+        ];
+        return indicators.some(i => !!i);
+      },
+    });
+    return (results[0] && results[0].result) || false;
+  } catch (e) {
+    return false;
+  }
+}

@@ -1,5 +1,7 @@
 import { AnalyzerController } from './domainAnalysisUI';
 import { ResultsManager } from '../managers/resultsManager';
+import { UIHelpers, customAlert } from '../utils/uiHelpers';
+import { PopupUIManager } from './popupUI';
 
 export const SinglePageAnalysisUI = {
   pollInterval: null as any,
@@ -30,7 +32,7 @@ export const SinglePageAnalysisUI = {
       return;
     }
 
-    const currentDomain = new URL(tab.url as string).hostname;
+    const currentDomain = new URL(tab.url as string).hostname.replace('www.', '');
     const isNewDomain = !analyzer.analyzedDomains.includes(currentDomain);
 
     if (!analyzer.isPremium && isNewDomain && analyzer.usageCount >= 3) {
@@ -243,7 +245,9 @@ export const SinglePageAnalysisUI = {
 
       // Get current domain for usage tracking
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const currentDomain = tabs[0] ? new URL(tabs[0].url as string).hostname : '';
+      const currentDomain = tabs[0]
+        ? new URL(tabs[0].url as string).hostname.replace('www.', '')
+        : '';
       const isNewDomain = currentDomain && !analyzer.analyzedDomains.includes(currentDomain);
 
       // We need to merge results into analyzer's accumulatedResults
@@ -271,7 +275,7 @@ export const SinglePageAnalysisUI = {
         analyzer.analyzedDomains.push(currentDomain);
         analyzer.usageCount = analyzer.usageCount + 1;
         await analyzer.saveUserData();
-        analyzer.updateUI();
+        PopupUIManager.updateUI(analyzer, () => analyzer.displayResults());
       }
 
       analyzer.showSuccess(

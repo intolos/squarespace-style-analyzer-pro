@@ -1,6 +1,7 @@
 import { DomainAnalysisManager } from '../managers/domainAnalysis';
 import { PageSelectionUI } from './pageSelectionUI';
 import { UIHelpers, customAlert, customConfirm } from '../utils/uiHelpers';
+import { PopupUIManager } from './popupUI';
 
 export interface AnalyzerController {
   isDomainAnalyzing: boolean;
@@ -15,7 +16,7 @@ export interface AnalyzerController {
   hideMessages: () => void;
   saveAccumulatedResults: () => Promise<void>;
   displayResults: () => void;
-  updateUI: () => void;
+
   saveUserData: () => Promise<void>;
   trackUsage: (event: string) => void;
   groupedUrls?: any;
@@ -533,7 +534,7 @@ export const DomainAnalysisUI = {
             analyzer.analyzedDomains.push(currentDomain);
             analyzer.usageCount = analyzer.usageCount + 1;
             await analyzer.saveUserData();
-            analyzer.updateUI();
+            PopupUIManager.updateUI(analyzer, () => analyzer.displayResults());
           }
 
           const mobileIssues = data.mobileIssues?.issues || [];
@@ -593,7 +594,7 @@ export const DomainAnalysisUI = {
       if (resultsSection) resultsSection.style.setProperty('display', 'block', 'important');
       if (pagesAnalyzedInfo) pagesAnalyzedInfo.style.setProperty('display', 'block', 'important');
 
-      analyzer.updateUI();
+      PopupUIManager.updateUI(analyzer, () => analyzer.displayResults());
       analyzer.trackUsage('domain_analysis_completed');
       await analyzer.checkAndShowReviewModal('domain');
     }
