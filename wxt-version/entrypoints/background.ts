@@ -304,49 +304,41 @@ export default defineBackground(() => {
           pageUrl
         );
 
-        // Construct simplified result
-        // TODO: Populate with full empty structure if needed, but for now partial is ok
-        const mobileOnlyData: any = {
-          themeStyles: {},
-          siteStyles: {},
-          buttons: {
-            primary: { locations: [] },
-            secondary: { locations: [] },
-            tertiary: { locations: [] },
-            other: { locations: [] },
-          },
-          links: { 'in-content': { locations: [] } },
-          images: [],
-          colorPalette: { backgrounds: [], text: [], borders: [], all: [] },
-          colorData: { colors: {}, contrastPairs: [] },
-          headings: {
-            'heading-1': { locations: [] },
-            'heading-2': { locations: [] },
-            'heading-3': { locations: [] },
-            'heading-4': { locations: [] },
-          },
-          paragraphs: {
-            'paragraph-1': { locations: [] },
-            'paragraph-2': { locations: [] },
-            'paragraph-3': { locations: [] },
-          },
-          qualityChecks: {
-            missingH1: [],
-            multipleH1: [],
-            brokenHeadingHierarchy: [],
-            fontSizeInconsistency: [],
-            missingAltText: [],
-          },
-          mobileIssues: {
-            viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
-            issues: mobileIssues,
-          },
+        // Get page title for the report
+        let pageTitle = 'Mobile Analysis';
+        try {
+          const tab = await chrome.tabs.get(clonedTabId);
+          if (tab.title) pageTitle = tab.title;
+        } catch (e) {
+          console.warn('Failed to get tab title:', e);
+        }
+
+        const pathname = new URL(pageUrl).pathname || '/';
+        const timestamp = new Date().toISOString();
+
+        // 5. Create report-ready results object
+        const mobileOnlyData: ReportData = {
           metadata: {
             url: pageUrl,
             domain: new URL(pageUrl).hostname.replace('www.', ''),
-            pathname: new URL(pageUrl).pathname,
-            title: 'Mobile Analysis',
-            timestamp: Date.now(),
+            pathname: pathname,
+            title: pageTitle,
+            timestamp: timestamp,
+            mobileAnalysisPerformed: true,
+            pagesAnalyzed: [pathname],
+          },
+          headings: {},
+          paragraphs: {},
+          buttons: {},
+          links: { 'in-content': { locations: [] } },
+          siteStyles: {},
+          colorPalette: { backgrounds: [], text: [], borders: [], all: [] },
+          colorData: { colors: {}, contrastPairs: [] } as any,
+          images: [],
+          qualityChecks: {},
+          mobileIssues: {
+            viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
+            issues: mobileIssues,
           },
           squarespaceThemeStyles: {},
         };
@@ -425,6 +417,14 @@ export default defineBackground(() => {
             viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
             issues: mobileIssues,
           };
+
+          const pathname = new URL(targetUrl).pathname || '/';
+          const timestamp = new Date().toISOString();
+
+          designResponse.data.metadata.pathname = pathname;
+          designResponse.data.metadata.timestamp = timestamp;
+          designResponse.data.metadata.mobileAnalysisPerformed = true;
+          designResponse.data.metadata.pagesAnalyzed = [pathname];
 
           await chrome.storage.local.set({
             singlePageAnalysisStatus: 'complete',

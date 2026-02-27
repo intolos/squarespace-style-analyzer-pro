@@ -48,6 +48,38 @@ export const ResultsManager = {
       accumulatedResults.metadata.pagesAnalyzed &&
       accumulatedResults.metadata.pagesAnalyzed.includes(normalizedNewPath)
     ) {
+      // IMPORTANT: Even if page is already analyzed, we must propagate global flags
+      // like mobileAnalysisPerformed and merge mobile issues if they were missing.
+      if (newResults.metadata?.mobileAnalysisPerformed) {
+        accumulatedResults.metadata.mobileAnalysisPerformed = true;
+      }
+
+      // Ensure pagesAnalyzed exists and include current if missing (safety)
+      if (!accumulatedResults.metadata.pagesAnalyzed) {
+        accumulatedResults.metadata.pagesAnalyzed = [normalizedNewPath];
+      } else if (!accumulatedResults.metadata.pagesAnalyzed.includes(normalizedNewPath)) {
+        accumulatedResults.metadata.pagesAnalyzed.push(normalizedNewPath);
+      }
+
+      if (newResults.mobileIssues) {
+        if (!accumulatedResults.mobileIssues) {
+          accumulatedResults.mobileIssues = {
+            viewportMeta: { exists: false, content: null, isProper: false },
+            issues: [],
+          };
+        }
+        if (newResults.mobileIssues.issues && newResults.mobileIssues.issues.length > 0) {
+          accumulatedResults.mobileIssues.issues = (
+            accumulatedResults.mobileIssues.issues || []
+          ).concat(newResults.mobileIssues.issues);
+        }
+        if (newResults.mobileIssues.viewportMeta && newResults.mobileIssues.viewportMeta.exists) {
+          accumulatedResults.mobileIssues.viewportMeta = {
+            ...newResults.mobileIssues.viewportMeta,
+          };
+        }
+      }
+
       return {
         merged: accumulatedResults,
         alreadyAnalyzed: true,
@@ -121,24 +153,6 @@ export const ResultsManager = {
       accumulatedResults.links['in-content'].locations = accumulatedResults.links[
         'in-content'
       ].locations.concat(newResults.links['in-content'].locations);
-    }
-
-    // Merge mobile issues
-    if (!accumulatedResults.mobileIssues) {
-      accumulatedResults.mobileIssues = {
-        viewportMeta: { exists: false, content: null, isProper: false },
-        issues: [],
-      };
-    }
-    if (newResults.mobileIssues) {
-      if (newResults.mobileIssues?.viewportMeta && newResults.mobileIssues.viewportMeta.exists) {
-        accumulatedResults.mobileIssues.viewportMeta = newResults.mobileIssues.viewportMeta;
-      }
-      if (newResults.mobileIssues?.issues) {
-        accumulatedResults.mobileIssues.issues = accumulatedResults.mobileIssues.issues?.concat(
-          newResults.mobileIssues.issues
-        );
-      }
     }
 
     // Merge images
@@ -293,7 +307,6 @@ export const ResultsManager = {
           accumulatedResults.mobileIssues.issues || []
         ).concat(newResults.mobileIssues.issues);
       }
-      // Use the latest viewport meta if the new result has a valid ones
       if (newResults.mobileIssues.viewportMeta && newResults.mobileIssues.viewportMeta.exists) {
         accumulatedResults.mobileIssues.viewportMeta = { ...newResults.mobileIssues.viewportMeta };
       }
@@ -304,13 +317,20 @@ export const ResultsManager = {
       accumulatedResults.metadata.mobileAnalysisPerformed = true;
     }
 
-    // Add page to analyzed list
+    // Merge and deduplicate pagesAnalyzed
     if (!accumulatedResults.metadata.pagesAnalyzed) {
       accumulatedResults.metadata.pagesAnalyzed = [];
     }
-    accumulatedResults.metadata.pagesAnalyzed.push(
-      this.normalizePath(newResults.metadata.pathname || '')
-    );
+
+    const newPages = newResults.metadata.pagesAnalyzed || [
+      this.normalizePath(newResults.metadata.pathname || ''),
+    ];
+
+    for (const page of newPages) {
+      if (!accumulatedResults.metadata.pagesAnalyzed.includes(page)) {
+        accumulatedResults.metadata.pagesAnalyzed.push(page);
+      }
+    }
 
     return { merged: accumulatedResults, alreadyAnalyzed: false };
   },

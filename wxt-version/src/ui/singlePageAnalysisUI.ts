@@ -232,6 +232,7 @@ export const SinglePageAnalysisUI = {
   async handleCompletion(analyzer: AnalyzerController, results: any): Promise<void> {
     if (this.isHandlingCompletion) return;
     this.isHandlingCompletion = true;
+    this.stopPolling();
 
     try {
       const loadingEl = document.getElementById('loading');
@@ -250,23 +251,9 @@ export const SinglePageAnalysisUI = {
         : '';
       const isNewDomain = currentDomain && !analyzer.analyzedDomains.includes(currentDomain);
 
-      // We need to merge results into analyzer's accumulatedResults
-      // The AnalyzerController interface defines accumulatedResults, but relies on updateUI to show it?
-      // Actually `AnalyzerController` has distinct methods.
-
+      // Merge and save
       const mergeResult = ResultsManager.mergeResults(analyzer.accumulatedResults, results);
-
-      if (mergeResult.alreadyAnalyzed) {
-        // Handle already analyzed case?
-        // Original code: shows alert, returns false.
-        // But here we are in a 'success' callback flow usually.
-        // If it's already analyzed, we might still want to show it, or just notify.
-        // But let's follow the standard pattern:
-        // AnalyzerController should probably expose a "mergeResults" method if it needs specific UI logic,
-        // but here we can just update the data.
-      }
-
-      analyzer.accumulatedResults = mergeResult.merged || mergeResult;
+      analyzer.accumulatedResults = mergeResult.merged;
       await analyzer.saveAccumulatedResults();
 
       analyzer.displayResults();
@@ -285,7 +272,8 @@ export const SinglePageAnalysisUI = {
       analyzer.trackUsage('analysis_completed');
       await analyzer.checkAndShowReviewModal('page');
 
-      chrome.storage.local.remove([
+      // Cleanup storage after successful processing
+      await chrome.storage.local.remove([
         'singlePageAnalysisStatus',
         'singlePageProgressText',
         'singlePageAnalysisResults',

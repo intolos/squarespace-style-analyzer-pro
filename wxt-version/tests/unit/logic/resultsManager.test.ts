@@ -33,8 +33,13 @@ describe('ResultsManager', () => {
   });
 
   describe('mergeResults', () => {
-    const baseResults: any = {
-      metadata: { domain: 'example.com', pathname: '/home', pagesAnalyzed: ['/home'] },
+    const getBaseResults = (): any => ({
+      metadata: { 
+        domain: 'example.com', 
+        pathname: '/home', 
+        pagesAnalyzed: ['/home'],
+        mobileAnalysisPerformed: false 
+      },
       headings: { 'h1': { locations: [{ url: '/home', styleDefinition: 'font-size: 24px;' }] } },
       paragraphs: {},
       buttons: {},
@@ -42,44 +47,56 @@ describe('ResultsManager', () => {
       colorPalette: { all: ['#000000'], backgrounds: [], text: [], borders: [] },
       images: [],
       qualityChecks: {},
-    };
+    });
 
     it('should initialize with new results if accumulated is null', () => {
-      const newResults: any = { ...baseResults, metadata: { ...baseResults.metadata, pathname: '/about' } as any };
+      const newResults: any = { ...getBaseResults(), metadata: { ...getBaseResults().metadata, pathname: '/about' } as any };
       const { merged, alreadyAnalyzed } = ResultsManager.mergeResults(null, newResults);
       
       expect(alreadyAnalyzed).toBe(false);
       expect(merged.metadata.pagesAnalyzed).toContain('/about');
     });
 
-    it('should detect already analyzed pages', () => {
-      const acc = { ...baseResults, metadata: { ...baseResults.metadata, pagesAnalyzed: ['/home'] } as any };
-      const { merged, alreadyAnalyzed } = ResultsManager.mergeResults(acc, baseResults);
+    it('should detect already analyzed pages and still update flags', () => {
+      const acc = getBaseResults();
+      acc.metadata.mobileAnalysisPerformed = false;
+      
+      const newR = getBaseResults();
+      newR.metadata.mobileAnalysisPerformed = true;
+      newR.mobileIssues = { issues: [{ type: 'tap-target' }] };
+
+      const { merged, alreadyAnalyzed } = ResultsManager.mergeResults(acc, newR);
       expect(alreadyAnalyzed).toBe(true);
-      expect(merged).toBe(acc);
+      expect(merged.metadata.mobileAnalysisPerformed).toBe(true);
+      expect(merged.mobileIssues?.issues?.length).toBe(1);
     });
 
-    it('should merge headings across pages', () => {
-      const newResults: any = {
-        ...baseResults,
-        metadata: { ...baseResults.metadata, pathname: '/about' } as any,
+    it('should merge headings across pages and deduplicate paths', () => {
+      const acc = getBaseResults();
+      const newResultsBase = getBaseResults();
+      const newR: any = {
+        ...newResultsBase,
+        metadata: { 
+          ...newResultsBase.metadata, 
+          pathname: '/about',
+          pagesAnalyzed: ['/about'] 
+        } as any,
         headings: { 'h1': { locations: [{ url: '/about', styleDefinition: 'font-size: 24px;' }] } },
       };
 
-      const { merged } = ResultsManager.mergeResults(baseResults, newResults);
+      const { merged } = ResultsManager.mergeResults(acc, newR);
       expect(merged.headings['h1'].locations.length).toBe(2);
       expect(merged.metadata.pagesAnalyzed).toContain('/about');
+      expect(merged.metadata.pagesAnalyzed).toContain('/home');
+      // Deduplication check
+      expect(merged.metadata.pagesAnalyzed.filter((p: string) => p === '/home').length).toBe(1);
     });
 
     it('should merge color palettes uniquely', () => {
-      const acc = { 
-        ...baseResults, 
-        metadata: { ...baseResults.metadata, pagesAnalyzed: ['/home'] } as any,
-        colorPalette: { all: ['#000000'], backgrounds: [], text: [], borders: [] } 
-      };
+      const acc = getBaseResults();
       const newR = { 
-        ...baseResults, 
-        metadata: { ...baseResults.metadata, pathname: '/about' } as any,
+        ...getBaseResults(), 
+        metadata: { ...getBaseResults().metadata, pathname: '/about' } as any,
         colorPalette: { all: ['#000000', '#FFFFFF', '#FF0000'], backgrounds: [], text: [], borders: [] } 
       };
       
@@ -89,10 +106,10 @@ describe('ResultsManager', () => {
     });
 
     it('should merge mobile issues correctly', () => {
-      const acc: any = { ...baseResults, metadata: { ...baseResults.metadata, pagesAnalyzed: ['/home'] } };
+      const acc = getBaseResults();
       const newR: any = {
-        ...baseResults,
-        metadata: { ...baseResults.metadata, pathname: '/about' },
+        ...getBaseResults(),
+        metadata: { ...getBaseResults().metadata, pathname: '/about' },
         mobileIssues: {
           viewportMeta: { exists: true, content: 'width=device-width', isProper: true },
           issues: [{ type: 'tap-target', element: 'button' }]
@@ -102,6 +119,18 @@ describe('ResultsManager', () => {
       const { merged } = ResultsManager.mergeResults(acc as any, newR);
       expect(merged.mobileIssues?.viewportMeta?.exists).toBe(true);
       expect(merged.mobileIssues?.issues?.length).toBe(1);
+    });
+
+    it('should propagate mobileAnalysisPerformed flag', () => {
+      const acc = getBaseResults();
+      acc.metadata.mobileAnalysisPerformed = false;
+      const newR: any = {
+        ...getBaseResults(),
+        metadata: { ...getBaseResults().metadata, pathname: '/about', mobileAnalysisPerformed: true }
+      };
+
+      const { merged } = ResultsManager.mergeResults(acc as any, newR);
+      expect(merged.metadata.mobileAnalysisPerformed).toBe(true);
     });
   });
 

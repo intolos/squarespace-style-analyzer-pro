@@ -70,3 +70,13 @@ To support "Zero-Intrusion" analysis (running in the background without stealing
   - **Mechanic:** `attach` -> `Page.captureScreenshot` -> `detach`.
   - **Benefit:** Captures the full viewport of a background tab without needing to make it active or visible to the user.
   - **Trade-off:** Shows a mandatory Chrome "Debugging started" global banner.
+
+### 6. Reporting Flags & Normalization
+
+For the HTML report to correctly display mobile analysis results (and avoid showing the "Not Analyzed" yellow banner), the metadata must be normalized and "report-ready" before reaching the UI:
+
+- **Normalization:** `entrypoints/background.ts` initializes every result with:
+  - `metadata.mobileAnalysisPerformed: true`
+  - `metadata.pagesAnalyzed: [pathname]`
+- **Robust Merging:** `ResultsManager.ts` propagates these flags and merges/deduplicates the `pagesAnalyzed` array.
+- **Why:** This ensures that even in complex re-analysis scenarios (e.g., Desktop then Mobile), the report accurately reflects the total pages analyzed and the mobile audit status.

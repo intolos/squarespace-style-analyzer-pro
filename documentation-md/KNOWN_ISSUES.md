@@ -323,3 +323,14 @@ This file documents critical implementation details, regression traps, and "anti
 - **Root Cause**: `rgbToHex` regex discards the alpha channel and returns the RGB components as an opaque hex.
 - **Correct Logic**: `rgbToHex` must return `null` (or handle alpha) if the alpha value is near zero (e.g., `<= 0.05`).
 - **Date Fixed**: 2026-02-27 (Comprehensive fix)
+
+## 26. Mobile Reporting "Not Analyzed" Trap
+
+- **Symptom**: Single-page mobile analysis completes successfully (issues are found), but the HTML report shows "0 pages analyzed" and a yellow "Mobile Usability Not Analyzed" banner.
+- **Root Cause**: The report generator requires two critical metadata fields: `pagesAnalyzed: string[]` and `mobileAnalysisPerformed: boolean`.
+  1.  **Missing Initialization**: In the `handleMobileAnalysis` path in `background.ts`, these fields were either missing or incorrectly typed (e.g., using a timestamp for a boolean).
+  2.  **Early Return**: `ResultsManager.mergeResults` had an early return for "already analyzed" pages that skipped propagating global flags, causing the mobile flag to be lost on re-analysis.
+- **Correct Logic**:
+  - **DO**: Initialize results as "Report-Ready" in `background.ts` with `pagesAnalyzed: [pathname]` and `mobileAnalysisPerformed: true`.
+  - **DO**: Harden `ResultsManager.ts` to propagate flags and merge/deduplicate `pagesAnalyzed` even if the page structure is already present.
+- **Date Fixed**: 2026-02-27 (Comprehensive v2 fix)
