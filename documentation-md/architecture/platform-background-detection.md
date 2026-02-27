@@ -696,7 +696,7 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
 5. CSS class rules
 6. Pseudo-elements
 7. DOM walk fallback
-8. Indeterminate
+8. Indeterminate (link to Color Checker Tool)
 
 **IMPORTANT (2026-02-27)**: The detector now correctly identifies `rgba(0,0,0,0)` using the `isTransparentColor()` utility instead of raw string comparison. This allows transparent text containers to fall through to the section-level CSS variable detection.
 
