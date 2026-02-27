@@ -4,6 +4,7 @@
 **Purpose**: Platform-aware background color detection for accurate contrast analysis  
 **Status**: Implemented and Production-Ready  
 **Related Documents**:
+
 - [Redmean Fuzzy Color Matching](./redmean-fuzzy-color-matching.md) - Color merging system
 - [Color System Integration](./color-system-integration.md) - How systems work together
 - [Multi-Platform Architecture](./multi-platform-architecture.md) - Platform detection overview
@@ -19,16 +20,19 @@
 Different Content Management Systems (CMS) render backgrounds using fundamentally different approaches:
 
 **WordPress (LaunchPad theme)**:
+
 - Backgrounds rendered on `::before` pseudo-elements
 - CSS classes control appearance
 - Computed style often returns "transparent"
 
 **Squarespace**:
+
 - Backgrounds on actual elements
 - Standard CSS properties
 - Computed style is reliable
 
 **Generic Sites**:
+
 - Mix of approaches
 - Unpredictable DOM structures
 
@@ -95,40 +99,40 @@ wxt-version/src/analyzers/backgroundDetectors/
  * Contains everything needed to determine background color.
  */
 export interface DetectionContext {
-  element: Element;                    // Target element to analyze
-  screenshot: string | null;          // Base64 screenshot for canvas sampling
-  initialBackgroundColor: string | null;  // Pre-computed background-color value
+  element: Element; // Target element to analyze
+  screenshot: string | null; // Base64 screenshot for canvas sampling
+  initialBackgroundColor: string | null; // Pre-computed background-color value
 }
 
 /**
  * Detection result returned by all detectors.
  */
 export interface DetectionResult {
-  color: string | null;               // RGB/RGBA color string, or null if failed
-  details: string;                    // Human-readable explanation
-  method: string;                     // Which detection method succeeded
+  color: string | null; // RGB/RGBA color string, or null if failed
+  details: string; // Human-readable explanation
+  method: string; // Which detection method succeeded
 }
 
 /**
  * Detector configuration.
  */
 export interface DetectorConfig {
-  name: string;                       // Human-readable detector name
-  platform: string;                   // Platform identifier
+  name: string; // Human-readable detector name
+  platform: string; // Platform identifier
 }
 
 /**
  * Detection method types.
  * Ordered from least to most computationally expensive.
  */
-export type DetectionMethod = 
-  | 'pseudo-before'      // Check ::before pseudo-element
-  | 'pseudo-after'       // Check ::after pseudo-element
-  | 'css-classes'        // Analyze CSS class rules
-  | 'computed-style'     // Read computed CSS style
-  | 'dom-walk'          // Walk up DOM tree
-  | 'canvas'            // Sample screenshot canvas
-  | 'indeterminate';    // Could not determine
+export type DetectionMethod =
+  | 'pseudo-before' // Check ::before pseudo-element
+  | 'pseudo-after' // Check ::after pseudo-element
+  | 'css-classes' // Analyze CSS class rules
+  | 'computed-style' // Read computed CSS style
+  | 'dom-walk' // Walk up DOM tree
+  | 'canvas' // Sample screenshot canvas
+  | 'indeterminate'; // Could not determine
 
 /**
  * Abstract base class for all background detectors.
@@ -146,7 +150,7 @@ export abstract class BackgroundDetector {
    * Order matters: faster/more reliable methods first.
    */
   abstract getDetectionOrder(): DetectionMethod[];
-  
+
   /**
    * Main detection entry point.
    * Implementations should try methods in order until one succeeds.
@@ -176,12 +180,12 @@ The base class provides shared detection methods following DRY principles.
 ```typescript
 /**
  * Check pseudo-element for background color.
- * 
+ *
  * WORDPRESS CONTEXT:
  * LaunchPad theme renders many backgrounds on ::before elements.
  * This catches the actual visible background even when computed
  * style reports "transparent".
- * 
+ *
  * @param element - Element to check
  * @param pseudo - '::before' or '::after'
  * @returns Detection result or null if no background found
@@ -214,18 +218,28 @@ protected checkPseudoElement(
 ```typescript
 /**
  * Check computed style on element.
- * 
+ *
  * SQUARESPACE CONTEXT:
  * This is the primary method for Squarespace sites.
 * Backgrounds are applied directly to elements, so computed
 * style is reliable.
- * 
+ *
  * @param element - Element to check
  * @returns Detection result or null if transparent
  */
 protected checkComputedStyle(element: Element): DetectionResult | null {
   try {
     const style = window.getComputedStyle(element);
+
+    // Ignore elements that are invisible (opacity: 0, etc.)
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      (style.opacity !== '' && parseFloat(style.opacity) < 0.01)
+    ) {
+      return null;
+    }
+
     if (style.backgroundColor && !isTransparentColor(style.backgroundColor)) {
       return {
         color: style.backgroundColor,
@@ -245,13 +259,13 @@ protected checkComputedStyle(element: Element): DetectionResult | null {
 ```typescript
 /**
  * Check CSS rules for background classes.
- * 
+ *
  * RATIONALE:
  * Some themes use classes like .bg-primary, .background-dark to
  * control backgrounds. We search stylesheets for these patterns
  * to find the "intended" background before falling back to
 * computed values.
- * 
+ *
  * @param element - Element with background classes
  * @returns Detection result or null if no matching rules
  */
@@ -309,17 +323,17 @@ protected checkCssRules(element: Element): DetectionResult | null {
 ```typescript
 /**
  * Walk up DOM tree to find background.
- * 
+ *
  * USE CASE:
  * Child elements often inherit transparent backgrounds.
  * We walk up to find the nearest ancestor with a solid background.
- * 
+ *
  * @param startElement - Element to start from
  * @param maxDepth - Maximum levels to walk (default: 15)
  * @returns Detection result or null if no background found
  */
 protected walkDomForBackground(
-  startElement: Element, 
+  startElement: Element,
   maxDepth = 15
 ): DetectionResult | null {
   let el: Element | null = startElement;
@@ -344,16 +358,16 @@ protected walkDomForBackground(
 ```typescript
 /**
  * Sample canvas for background color.
- * 
+ *
  * CRITICAL VALIDATION:
  * Includes element overlap detection to prevent "identity crisis"
  * where overlapping elements cause incorrect color sampling.
- * 
+ *
  * IMPROVEMENTS:
  * 1. Checks document.elementFromPoint() to verify target element is visible
  * 2. Uses median instead of mean to reduce border/edge impact
  * 3. Returns null if another element is blocking the sample point
- * 
+ *
  * @param element - Element to sample
  * @param screenshot - Base64 screenshot
  * @returns Detection result or null
@@ -371,9 +385,9 @@ protected async sampleCanvas(
     // VALIDATION: Check if target element is actually visible at center point
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    
+
     const elementAtPoint = document.elementFromPoint(centerX, centerY);
-    
+
     // If something else is on top, canvas sampling may be unreliable
     if (elementAtPoint && !element.contains(elementAtPoint) && elementAtPoint !== element) {
       console.warn('[SSA] Canvas sampling skipped: Element overlap detected', {
@@ -431,7 +445,7 @@ protected async sampleCanvas(
     const sortedG = colors.map(c => c.g).sort((a, b) => a - b);
     const sortedB = colors.map(c => c.b).sort((a, b) => a - b);
     const sortedA = colors.map(c => c.a).sort((a, b) => a - b);
-    
+
     const mid = Math.floor(colors.length / 2);
     const rgba = `rgba(${sortedR[mid]}, ${sortedG[mid]}, ${sortedB[mid]}, ${sortedA[mid]})`;
 
@@ -453,7 +467,7 @@ protected async sampleCanvas(
 /**
  * Check if element is button-like.
  * Used to decide whether to use canvas verification.
- * 
+ *
  * @param element - Element to check
  * @returns true if element is a button, link with button class, or has button role
  */
@@ -477,6 +491,7 @@ protected isButtonLike(element: Element): boolean {
 **Detection Order**:
 
 **For Text Elements** (`<p>`, `<span>`, `<a>`, etc.):
+
 1. CSS class rules
 2. DOM walking ← **PRIORITY**
 3. Computed style
@@ -484,6 +499,7 @@ protected isButtonLike(element: Element): boolean {
 5. Indeterminate
 
 **For Non-Text Elements** (buttons, sections, divs):
+
 1. `::before` pseudo-element (validated)
 2. `::after` pseudo-element (validated)
 3. CSS class rules
@@ -495,17 +511,17 @@ protected isButtonLike(element: Element): boolean {
 ```typescript
 /**
  * WordPress background detector
- * 
+ *
  * PLATFORM CHARACTERISTICS:
  * - LaunchPad theme renders backgrounds on pseudo-elements
  * - CSS classes control appearance (.bg-*, .background-*)
  * - Computed style often returns "transparent" even with visible background
- * 
+ *
  * DETECTION STRATEGY:
- * 
- * IMPORTANT FIX (2026-02-13): Text elements (p, span, etc.) skip pseudo-element 
+ *
+ * IMPORTANT FIX (2026-02-13): Text elements (p, span, etc.) skip pseudo-element
  * checks to avoid decorative overlays being mistaken for readable backgrounds.
- * 
+ *
  * 1. Text elements: DOM walking prioritized to find section/container background
  * 2. Non-text elements: Pseudo-elements checked first with suspicious color validation
  * 3. Black (#000000) and white (#FFFFFF) pseudo-element results are rejected
@@ -515,14 +531,10 @@ protected isButtonLike(element: Element): boolean {
 const DEBUG = true;
 
 // Text elements that should skip pseudo-element detection
-const TEXT_ELEMENTS = new Set([
-  'p', 'span', 'a', 'strong', 'em', 'b', 'i', 'label', 'small'
-]);
+const TEXT_ELEMENTS = new Set(['p', 'span', 'a', 'strong', 'em', 'b', 'i', 'label', 'small']);
 
 // Suspicious colors that are likely decorative overlays
-const SUSPICIOUS_COLORS = new Set([
-  '#000000', '#FFFFFF', '#000', '#FFF', '#00000000'
-]);
+const SUSPICIOUS_COLORS = new Set(['#000000', '#FFFFFF', '#000', '#FFF', '#00000000']);
 
 export class WordPressBackgroundDetector extends BaseBackgroundDetector {
   constructor() {
@@ -553,7 +565,7 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
     if (DEBUG) {
       console.log(`[WP-Detector] Analyzing <${tagName}>`, {
         isTextElement,
-        initialBackgroundColor
+        initialBackgroundColor,
       });
     }
 
@@ -625,7 +637,8 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
   private getIndeterminateResult(): DetectionResult {
     return {
       color: null,
-      details: 'Indeterminate: Complex background layers. <a href="javascript:void(0)" onclick="showContrastChecker(); return false;">Open Color Checker Tool</a> to verify manually.',
+      details:
+        'Indeterminate: Complex background layers. <a href="javascript:void(0)" onclick="showContrastChecker(); return false;">Open Color Checker Tool</a> to verify manually.',
       method: 'indeterminate',
     };
   }
@@ -660,10 +673,12 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
    ```
 
 **Suspicious Color Filtering:**
+
 - Black (#000000) and white (#FFFFFF) pseudo-elements are often decorative
 - Real section backgrounds are typically colored
 - This prevents false positives while preserving LaunchPad button detection
-```
+
+````
 
 ### 5.2 Squarespace Detector
 
@@ -673,58 +688,28 @@ export class WordPressBackgroundDetector extends BaseBackgroundDetector {
 - [Squarespace-Specific Background Detection](./platform-background-detection-squarespace-specific.md) - Complete guide to CSS variable detection
 - [Detailed Troubleshooting Walkthrough](../walkthroughs/platform-background-detection-squarespace-specific-details.md) - 15 failed approaches before success
 
-**Detection Order** (Updated 2026-02-15):
-1. Clicked element (skip if body has white)
-2. DOM walk from parent (excludes body)
-3. **Section CSS variable** (`--siteBackgroundColor`) ← KEY: Works for both manual and automated detection
-4. CSS class rules
-5. `::before` pseudo-element
-6. `::after` pseudo-element
+**Detection Order** (Updated 2026-02-27):
+1. Initial Background (skip if transparent)
+2. Clicked element (hand-picker case)
+3. DOM walk from parent
+4. **Section CSS variable** (`--siteBackgroundColor`) ← KEY
+5. CSS class rules
+6. Pseudo-elements
 7. DOM walk fallback
-8. Indeterminate (link to Color Checker Tool)
+8. Indeterminate
 
-**IMPORTANT (2026-02-15)**: The Squarespace detector has been enhanced to handle dynamic theme colors via CSS variables. The `--siteBackgroundColor` CSS variable is now detected for both:
-- Manual click detection (uses click coordinates + elementFromPoint)
-- Automated scanning (uses element position to find containing section)
+**IMPORTANT (2026-02-27)**: The detector now correctly identifies `rgba(0,0,0,0)` using the `isTransparentColor()` utility instead of raw string comparison. This allows transparent text containers to fall through to the section-level CSS variable detection.
 
 ```typescript
 /**
  * Squarespace background detector
- * 
- * PLATFORM CHARACTERISTICS:
- * - Standard CSS architecture
- * - Backgrounds on actual elements (not pseudo-elements)
- * - Computed style is reliable
- * - Flat, predictable DOM structure
- * 
- * DETECTION STRATEGY:
- * Use computed style FIRST, then DOM walking.
- * Pseudo-elements are decorative (icons, underlines) and checked last.
  */
 export class SquarespaceBackgroundDetector extends BaseBackgroundDetector {
-  constructor() {
-    super({
-      name: 'Squarespace Background Detector',
-      platform: 'squarespace',
-    });
-  }
-
-  getDetectionOrder(): DetectionMethod[] {
-    return [
-      'computed-style',
-      'dom-walk',
-      'pseudo-before',
-      'pseudo-after',
-      'canvas',
-      'indeterminate',
-    ];
-  }
-
   async detect(context: DetectionContext): Promise<DetectionResult> {
-    const { element, screenshot, initialBackgroundColor } = context;
+    const { element, screenshot, initialBackgroundColor, clickCoordinates } = context;
 
-    // 1. Computed style is reliable for Squarespace
-    if (initialBackgroundColor && initialBackgroundColor !== 'transparent') {
+    // 1. Initial background (if valid and not transparent)
+    if (initialBackgroundColor && !isTransparentColor(initialBackgroundColor)) {
       return {
         color: initialBackgroundColor,
         details: `Initial background: ${initialBackgroundColor}`,
@@ -732,69 +717,30 @@ export class SquarespaceBackgroundDetector extends BaseBackgroundDetector {
       };
     }
 
-    const computedResult = this.checkComputedStyle(element);
-    if (computedResult) return computedResult;
+    // 2. Click detection (hand-picker)
+    const clickedElementResult = this.checkClickedElement(element);
+    if (clickedElementResult) return clickedElementResult;
 
-    // 2. Walk up DOM tree for nested containers
-    const domResult = this.walkDomForBackground(element);
-    if (domResult) return domResult;
+    // 3. Parent walk (immediate containers)
+    const domWalkParentResult = this.walkDomFromParent(element);
+    if (domWalkParentResult) return domWalkParentResult;
 
-    // 3-4. Check pseudo-elements (decorative only in Squarespace)
-    const beforeResult = this.checkPseudoElement(element, '::before');
-    if (beforeResult) return beforeResult;
+    // 4. Section CSS Variable (Squarespace 7.1)
+    const sectionResult = await this.detectFromSectionCssVariable(element, clickCoordinates);
+    if (sectionResult) return sectionResult;
 
-    const afterResult = this.checkPseudoElement(element, '::after');
-    if (afterResult) return afterResult;
-
-    // 5. Canvas verification for buttons
-    if (this.isButtonLike(element) && screenshot) {
-      try {
-        const canvasResult = await this.sampleCanvas(element, screenshot);
-        if (canvasResult) {
-          // Compare with DOM result for discrepancy detection
-          const domBg = await this.getDomBackground(element);
-          if (domBg) {
-            const domHex = this.rgbToHex(domBg);
-            const canvasHex = this.rgbToHex(canvasResult.color);
-            if (domHex && canvasHex && domHex !== canvasHex) {
-              return {
-                color: canvasResult.color,
-                details: `Canvas: ${canvasResult.color} (DOM: ${domBg})`,
-                method: 'canvas',
-              };
-            }
-          }
-          return canvasResult;
-        }
-      } catch (e) {
-        // Canvas failed, continue to fallback
-      }
-    }
-
-    // 6. Squarespace-specific: fallback to indeterminate (don't make up a color)
+    // ... fallbacks ...
     return this.getIndeterminateResult();
   }
-
-  private async getDomBackground(element: Element): Promise<string | null> {
-    let el: Element | null = element;
-    while (el) {
-      const style = window.getComputedStyle(el);
-      const bg = style.backgroundColor;
-      if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
-        return bg;
-      }
-      el = el.parentElement;
-    }
-    return null;
-  }
 }
-```
+````
 
 ### 5.3 Generic Detector
 
 **File**: `wxt-version/src/analyzers/backgroundDetectors/genericDetector.ts`
 
 **Detection Order**:
+
 1. Computed style
 2. CSS class rules
 3. `::before` pseudo-element
@@ -806,11 +752,11 @@ export class SquarespaceBackgroundDetector extends BaseBackgroundDetector {
 ```typescript
 /**
  * Generic background detector
- * 
+ *
  * USE CASE:
  * Fallback for unknown platforms or custom sites.
  * Conservative approach that doesn't make platform assumptions.
- * 
+ *
  * FALLBACK BEHAVIOR:
  * Returns "indeterminate" instead of assuming white,
  * prompting users to verify manually.
@@ -898,12 +844,12 @@ const detectors: Map<string, BackgroundDetector> = new Map();
 /**
  * Get the appropriate detector for a platform.
  * Uses singleton pattern to avoid creating new instances repeatedly.
- * 
+ *
  * PERFORMANCE:
  * Detectors are cached and reused across multiple calls.
  * This matters because detection may be called thousands of times
  * during a full-page analysis.
- * 
+ *
  * @param platform - Platform type
  * @returns BackgroundDetector instance for that platform
  */
@@ -943,11 +889,11 @@ export function getBackgroundDetector(platform: Platform): BackgroundDetector {
 /**
  * Convenience function to detect background with platform routing.
  * This is the main entry point for background detection.
- * 
+ *
  * USAGE:
  * const result = await detectBackground(platform, element, bgColor, screenshot);
  * const effectiveBg = result.color;
- * 
+ *
  * @param platform - Platform type
  * @param element - Element to analyze
  * @param initialBackgroundColor - Pre-computed background color
@@ -997,13 +943,13 @@ import { detectBackground } from './backgroundDetectors';
 
 /**
  * Get effective background color using platform-specific detection.
- * 
+ *
  * IMPORTANT: This function uses platform-specific detection strategies to handle
  * different CMS platforms' rendering approaches:
  * - WordPress often renders backgrounds on pseudo-elements (::before)
  * - Squarespace uses standard CSS on actual elements
  * - Generic uses conservative multi-method approach
- * 
+ *
  * @param element - Element to check
  * @param initialBackgroundColor - Initial background color from computed style
  * @param screenshot - Screenshot for canvas verification
@@ -1016,12 +962,7 @@ export async function getEffectiveBackgroundColor(
   screenshot: string | null,
   platform: Platform = 'generic'
 ): Promise<string | null> {
-  const result = await detectBackground(
-    platform,
-    element,
-    initialBackgroundColor,
-    screenshot
-  );
+  const result = await detectBackground(platform, element, initialBackgroundColor, screenshot);
 
   return result.color;
 }
@@ -1031,21 +972,23 @@ export async function getEffectiveBackgroundColor(
 
 ## 8. Detection Strategy Comparison
 
-| Platform | Element Type | Primary Method | Why This Order | Fallback |
-|----------|-------------|---------------|----------------|----------|
-| **WordPress** | **Text** (p, span, a) | DOM Walking | Find section/container background | CSS → Computed → Canvas |
-| **WordPress** | **Non-text** (div, button) | `::before` pseudo-element (validated) | LaunchPad renders backgrounds here | CSS → Computed → DOM → Canvas |
-| **Squarespace** | All | Computed style | Standard CSS, reliable | DOM walk → Pseudo-elements → Canvas |
-| **Generic** | All | Computed style | Works for most sites | CSS → Pseudo → DOM → Canvas → Indeterminate |
+| Platform        | Element Type               | Primary Method                        | Why This Order                     | Fallback                                    |
+| --------------- | -------------------------- | ------------------------------------- | ---------------------------------- | ------------------------------------------- |
+| **WordPress**   | **Text** (p, span, a)      | DOM Walking                           | Find section/container background  | CSS → Computed → Canvas                     |
+| **WordPress**   | **Non-text** (div, button) | `::before` pseudo-element (validated) | LaunchPad renders backgrounds here | CSS → Computed → DOM → Canvas               |
+| **Squarespace** | All                        | Computed style                        | Standard CSS, reliable             | DOM walk → Pseudo-elements → Canvas         |
+| **Generic**     | All                        | Computed style                        | Works for most sites               | CSS → Pseudo → DOM → Canvas → Indeterminate |
 
 ### Validation Rules
 
 **Suspicious Color Filtering (WordPress):**
+
 - Black (#000000) and white (#FFFFFF) pseudo-element results are rejected
 - These are typically decorative overlays, not readable backgrounds
 - Prevents false positives on paragraphs with decorative `::before` elements
 
 **Text Element Special Handling:**
+
 - Paragraphs, spans, and inline elements skip pseudo-element checks
 - DOM walking finds the actual section background
 - Example: `<p>` on light blue section won't return black `::before` overlay
@@ -1063,11 +1006,11 @@ import { WordPressBackgroundDetector } from '../src/analyzers/backgroundDetector
 describe('WordPress Background Detector', () => {
   it('should detect ::before background', async () => {
     const detector = new WordPressBackgroundDetector();
-    
+
     // Mock element with ::before background
     const mockElement = document.createElement('div');
     mockElement.className = 'wp-block-button';
-    
+
     // Mock getComputedStyle to return background on ::before
     const originalGetComputedStyle = window.getComputedStyle;
     window.getComputedStyle = vi.fn((el, pseudo) => {
@@ -1076,16 +1019,16 @@ describe('WordPress Background Detector', () => {
       }
       return { backgroundColor: 'transparent' };
     });
-    
+
     const result = await detector.detect({
       element: mockElement,
       screenshot: null,
       initialBackgroundColor: 'transparent',
     });
-    
+
     expect(result.color).toBe('rgb(0, 123, 255)');
     expect(result.method).toBe('pseudo-before');
-    
+
     window.getComputedStyle = originalGetComputedStyle;
   });
 });
@@ -1094,18 +1037,21 @@ describe('WordPress Background Detector', () => {
 ### 9.2 Manual Verification Checklist
 
 **WordPress Sites:**
+
 - [ ] LaunchPad theme buttons show correct background color
 - [ ] Elementor buttons detected correctly
 - [ ] Backgrounds on ::before elements captured
 - [ ] No false "transparent" backgrounds on visible elements
 
 **Squarespace Sites:**
+
 - [ ] Standard buttons use computed style
 - [ ] Section backgrounds detected correctly
 - [ ] No regression from previous implementation
 - [ ] Gradient backgrounds handled properly
 
 **Generic Sites:**
+
 - [ ] Custom sites work without platform assumptions
 - [ ] Indeterminate message shown when uncertain
 - [ ] Canvas sampling used appropriately
@@ -1124,11 +1070,13 @@ const DEBUG = true;
 ```
 
 **To enable/disable logging:**
+
 1. Open `wordpressDetector.ts`
 2. Change `const DEBUG = true;` to `const DEBUG = false;`
 3. Rebuild the extension
 
 **What gets logged:**
+
 ```
 [WP-Detector] Analyzing <p> {isTextElement: true, initialBackgroundColor: "transparent"}
 [WP-Detector] Skipping pseudo-elements for text element <p>
@@ -1138,6 +1086,7 @@ const DEBUG = true;
 ```
 
 **When to use:**
+
 - ✅ Debugging background detection issues
 - ✅ Verifying correct detection method is used
 - ✅ Testing new WordPress themes
@@ -1149,13 +1098,13 @@ const DEBUG = true;
 
 ### 11.1 Complexity Analysis
 
-| Method | Time | Notes |
-|--------|------|-------|
-| Computed Style | O(1) | Single API call |
-| Pseudo-element | O(1) | Two API calls (::before, ::after) |
-| CSS Rules | O(n) | n = number of stylesheets/rules |
-| DOM Walking | O(d) | d = DOM depth (max 15) |
-| Canvas | O(p) | p = pixels sampled (25 in 5x5 grid) |
+| Method         | Time | Notes                               |
+| -------------- | ---- | ----------------------------------- |
+| Computed Style | O(1) | Single API call                     |
+| Pseudo-element | O(1) | Two API calls (::before, ::after)   |
+| CSS Rules      | O(n) | n = number of stylesheets/rules     |
+| DOM Walking    | O(d) | d = DOM depth (max 15)              |
+| Canvas         | O(p) | p = pixels sampled (25 in 5x5 grid) |
 
 ### 11.2 Caching Strategy
 
@@ -1190,6 +1139,7 @@ const DEBUG = true;
 ## 13. Change Log
 
 ### 2026-02-13 - Text Element Fix
+
 - **Issue**: WordPress paragraphs returning #000000 instead of actual background (#E9F0F5)
 - **Root Cause**: Decorative `::before` pseudo-elements being mistaken for backgrounds
 - **Fix**: Text elements now skip pseudo-element checks and prioritize DOM walking

@@ -308,3 +308,18 @@ This file documents critical implementation details, regression traps, and "anti
   - **DO**: Propagate this flag using "OR" logic during domain result merging in `ResultsManager.ts`.
   - **DO NOT**: Infer analysis status based on data structure presence or array lengths.
 - **Date Fixed**: 2026-02-24 (Basic flag) / 2026-02-27 (Merging logic refined)
+
+## 25. Background Detection Traps
+
+### The "Invisible Overlay" Trap
+
+- **Symptom**: Dark text on a light background is reported as "Text on Black Background" (#000000), even when the theme background is light.
+- **Root Cause**: The detector walks the DOM and finds a structural overlay (like `.sqs-video-overlay`) that has `background-color: #000` but `opacity: 0`. Without an explicit opacity/visibility check, the detector thinks it found the background.
+- **Correct Logic**: In `checkComputedStyle`, always verify that `opacity > 0.01` and `visibility !== 'hidden'`.
+
+### The "Alpha Stripping" Trap
+
+- **Symptom**: `rgba(0, 0, 0, 0.05)` is incorrectly converted to `#000000`.
+- **Root Cause**: `rgbToHex` regex discards the alpha channel and returns the RGB components as an opaque hex.
+- **Correct Logic**: `rgbToHex` must return `null` (or handle alpha) if the alpha value is near zero (e.g., `<= 0.05`).
+- **Date Fixed**: 2026-02-27 (Comprehensive fix)
