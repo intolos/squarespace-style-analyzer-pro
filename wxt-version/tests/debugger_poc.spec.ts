@@ -42,8 +42,8 @@ test.describe('Debugger API Screenshot POC', () => {
     
     console.log("Test Result:", JSON.stringify(result, null, 2));
     
-    expect(result.success).toBe(true);
-    expect(result.size).toBeGreaterThan(0);
+    expect((result as any).success).toBe(true);
+    expect((result as any).size).toBeGreaterThan(0);
     
     await context.close();
   });

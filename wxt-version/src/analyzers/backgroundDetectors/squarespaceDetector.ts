@@ -36,7 +36,7 @@ export class SquarespaceBackgroundDetector extends BaseBackgroundDetector {
   async detect(context: DetectionContext): Promise<DetectionResult> {
     const { element, screenshot, initialBackgroundColor, clickCoordinates } = context;
 
-    if (initialBackgroundColor && initialBackgroundColor !== 'transparent') {
+    if (initialBackgroundColor && !isTransparentColor(initialBackgroundColor)) {
       return {
         color: initialBackgroundColor,
         details: `Initial background: ${initialBackgroundColor}`,
@@ -181,8 +181,10 @@ export class SquarespaceBackgroundDetector extends BaseBackgroundDetector {
         const sec = allSections[i];
         const rect = sec.getBoundingClientRect();
         const isInRect =
-          elementCenterY >= rect.top && elementCenterY <= rect.bottom &&
-          elementCenterX >= rect.left && elementCenterX <= rect.right;
+          elementCenterY >= rect.top &&
+          elementCenterY <= rect.bottom &&
+          elementCenterX >= rect.left &&
+          elementCenterX <= rect.right;
 
         if (isInRect) {
           section = sec;

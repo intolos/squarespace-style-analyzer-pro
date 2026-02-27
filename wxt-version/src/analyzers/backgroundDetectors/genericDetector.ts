@@ -6,6 +6,7 @@
 
 import { BaseBackgroundDetector } from './baseDetector';
 import { DetectionContext, DetectionResult, DetectionMethod } from './types';
+import { isTransparentColor } from '../../utils/colorUtils';
 
 export class GenericBackgroundDetector extends BaseBackgroundDetector {
   constructor() {
@@ -31,7 +32,7 @@ export class GenericBackgroundDetector extends BaseBackgroundDetector {
     const { element, screenshot, initialBackgroundColor } = context;
 
     // Standard approach: computed style first
-    if (initialBackgroundColor && initialBackgroundColor !== 'transparent') {
+    if (initialBackgroundColor && !isTransparentColor(initialBackgroundColor)) {
       return {
         color: initialBackgroundColor,
         details: `Initial background: ${initialBackgroundColor}`,

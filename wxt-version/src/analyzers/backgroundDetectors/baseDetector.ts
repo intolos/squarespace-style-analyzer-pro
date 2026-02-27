@@ -50,6 +50,17 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
   protected checkComputedStyle(element: Element): DetectionResult | null {
     try {
       const style = window.getComputedStyle(element);
+
+      // CRITICAL FIX: Ignore elements that are invisible (e.g. opacity: 0 wrappers)
+      // Otherwise, transparent black overlays will incorrectly register as solid black
+      if (
+        style.display === 'none' ||
+        style.visibility === 'hidden' ||
+        (style.opacity !== '' && parseFloat(style.opacity) < 0.01)
+      ) {
+        return null;
+      }
+
       if (style.backgroundColor && !isTransparentColor(style.backgroundColor)) {
         return {
           color: style.backgroundColor,
@@ -96,9 +107,7 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
     // Find matching background classes (excluding .is-style-*)
     const matchingClasses = classList.filter(cls => {
       if (cls.startsWith('is-style-')) return false;
-      return backgroundPatterns.some(pattern =>
-        cls.toLowerCase().includes(pattern.toLowerCase())
-      );
+      return backgroundPatterns.some(pattern => cls.toLowerCase().includes(pattern.toLowerCase()));
     });
 
     if (matchingClasses.length === 0) return null;
@@ -140,7 +149,7 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
   /**
    * Sample canvas for background color
    * Used for button verification and complex backgrounds
-   * 
+   *
    * IMPORTANT: Includes validation to prevent "identity crisis" where overlapping
    * elements or borders cause incorrect color sampling. Uses elementFromPoint
    * to verify the sampled area belongs to the target element.
@@ -159,15 +168,15 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
       // This prevents sampling errors when elements overlap or have borders
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      
+
       // Check what's actually at the center point
       const elementAtPoint = document.elementFromPoint(centerX, centerY);
-      
+
       // If something else is on top, canvas sampling may be unreliable
       if (elementAtPoint && !element.contains(elementAtPoint) && elementAtPoint !== element) {
         console.warn('[SSA] Canvas sampling skipped: Element overlap detected at center point', {
           target: element.tagName,
-          blocking: elementAtPoint.tagName
+          blocking: elementAtPoint.tagName,
         });
         return null;
       }
@@ -221,7 +230,7 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
       const sortedG = colors.map(c => c.g).sort((a, b) => a - b);
       const sortedB = colors.map(c => c.b).sort((a, b) => a - b);
       const sortedA = colors.map(c => c.a).sort((a, b) => a - b);
-      
+
       const mid = Math.floor(colors.length / 2);
       const medianR = sortedR[mid];
       const medianG = sortedG[mid];
@@ -247,7 +256,8 @@ export abstract class BaseBackgroundDetector extends BackgroundDetector {
   protected getIndeterminateResult(): DetectionResult {
     return {
       color: null,
-      details: 'Indeterminate: Complex background layers. <a href="javascript:void(0)" onclick="showContrastChecker(); return false;">Open Color Checker Tool</a> to verify manually.',
+      details:
+        'Indeterminate: Complex background layers. <a href="javascript:void(0)" onclick="showContrastChecker(); return false;">Open Color Checker Tool</a> to verify manually.',
       method: 'indeterminate',
     };
   }

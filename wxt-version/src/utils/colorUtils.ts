@@ -56,8 +56,11 @@ export function rgbToHex(rgb: string | null): string | null {
   if (rgb.startsWith('#')) return rgb.toUpperCase();
 
   // Handle RGB/RGBA
-  const rgbMatch = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/);
+  const rgbMatch = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
   if (rgbMatch) {
+    const alpha = rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1;
+    // CRITICAL FIX: If alpha is basically invisible, don't convert it to a solid hex color
+    if (alpha <= 0.05) return null;
     const r = parseInt(rgbMatch[1], 10);
     const g = parseInt(rgbMatch[2], 10);
     const b = parseInt(rgbMatch[3], 10);
@@ -65,38 +68,42 @@ export function rgbToHex(rgb: string | null): string | null {
   }
 
   // Handle HSL/HSLA
-  const hslMatch = rgb.match(/^hsla?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%(?:,\s*[\d.]+)?\)$/);
+  const hslMatch = rgb.match(
+    /^hsla?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%(?:,\s*[\d.]+)?\)$/
+  );
   if (hslMatch) {
     const h = parseFloat(hslMatch[1]) / 360;
     const s = parseFloat(hslMatch[2]) / 100;
     const l = parseFloat(hslMatch[3]) / 100;
-    
+
     let r: number, g: number, b: number;
-    
+
     if (s === 0) {
       r = g = b = l;
     } else {
       const hue2rgb = (p: number, q: number, t: number) => {
         if (t < 0) t += 1;
         if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
         return p;
       };
-      
+
       const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
+      r = hue2rgb(p, q, h + 1 / 3);
       g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
+      b = hue2rgb(p, q, h - 1 / 3);
     }
-    
+
     const rInt = Math.round(r * 255);
     const gInt = Math.round(g * 255);
     const bInt = Math.round(b * 255);
-    
-    return '#' + ((1 << 24) + (rInt << 16) + (gInt << 8) + bInt).toString(16).slice(1).toUpperCase();
+
+    return (
+      '#' + ((1 << 24) + (rInt << 16) + (gInt << 8) + bInt).toString(16).slice(1).toUpperCase()
+    );
   }
 
   return null;
@@ -189,7 +196,22 @@ export function getWCAGLevel(ratio: number, isLargeText: boolean): 'AAA' | 'AA' 
 export function isTransparentColor(colorValue: string | null | undefined): boolean {
   if (!colorValue) return true;
   const val = colorValue.toLowerCase().trim();
-  return (
-    val === 'transparent' || val === 'rgba(0, 0, 0, 0)' || val === 'inherit' || val === 'initial'
-  );
+
+  if (
+    val === 'transparent' ||
+    val === 'rgba(0, 0, 0, 0)' ||
+    val === 'inherit' ||
+    val === 'initial'
+  ) {
+    return true;
+  }
+
+  // Catch other fully or near-fully transparent variations like rgba(255, 255, 255, 0)
+  const rgbaMatch = val.match(/^rgba?\(\d+,\s*\d+,\s*\d+(?:,\s*([\d.]+))?\)$/);
+  if (rgbaMatch && rgbaMatch[1] !== undefined) {
+    const alpha = parseFloat(rgbaMatch[1]);
+    if (alpha <= 0.05) return true;
+  }
+
+  return false;
 }
