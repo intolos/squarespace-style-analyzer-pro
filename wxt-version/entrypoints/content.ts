@@ -278,6 +278,15 @@ export default defineContentScript({
               continue;
             }
 
+            // TRUTH CHECK: If this is a DIV, ensure it actually contains text before tracking color.
+            // If it's a structural DIV with no text, tracking 'color' just creates inherited noise.
+            const hasText = element.textContent && element.textContent.trim().length > 0;
+            const hasSemanticChild = element.querySelector('h1, h2, h3, h4, h5, h6, p, button, a');
+            if (element.tagName === 'DIV' && !hasText && !hasSemanticChild) {
+              // It's a structural box, likely a background. Tracking text-color here is misleading.
+              continue;
+            }
+
             // Screenshots
             let elementThumbnail: string | null = null;
             let elementContext: string | null = null;
@@ -454,7 +463,14 @@ export default defineContentScript({
         selectors.paragraphs,
         platformInfo.platform
       );
-      await analyzeLinks(results, navigationName, colorTracker, results.colorData, selectors, platformInfo.platform);
+      await analyzeLinks(
+        results,
+        navigationName,
+        colorTracker,
+        results.colorData,
+        selectors,
+        platformInfo.platform
+      );
       await analyzeImages(results, navigationName, selectors.images);
 
       // 9. Scan remaining page colors

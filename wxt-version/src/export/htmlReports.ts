@@ -146,7 +146,7 @@ function generateQualityScorecard(score: number, checks: QualityCheckResult['che
       ${generateWebsiteAnalysisNote()}
       <div style="background: #667EEA; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: white; text-align: left;">
         <div class="note-text note-truncated" style="font-size: 0.9rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">
-          💡 NOTE: To properly use the Locate link, you must let the page load until you see a red outline around the item to be identified. After it appears, it will disappear as soon as you click or scroll the page. If you perform any action on the page before you see it, it will cancel the process to show it.
+          💡 NOTE: To properly use the Locate link, you must let the page load until you see a red outline around the item to be identified. After it appears, it may disappear as soon as you click or scroll the page. If you perform any action on the page before you see it, it will cancel the process to show it.
         </div>
         <button class="note-toggle" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; cursor: pointer; font-weight: 600;">Read More</button>
       </div>

@@ -89,6 +89,7 @@ export class DomainAnalyzer {
           );
           if (pageResult) {
             results.push(pageResult);
+            await this.persistPartialResults(results, urlsToAnalyze, i);
           }
         } catch (error: any) {
           if (
@@ -189,6 +190,7 @@ export class DomainAnalyzer {
           );
           if (pageResult) {
             results.push(pageResult);
+            await this.persistPartialResults(results, urls, i);
           }
         } catch (error: any) {
           if (
@@ -284,6 +286,15 @@ export class DomainAnalyzer {
     }
 
     return accumulated;
+  }
+
+  private async persistPartialResults(
+    results: ReportData[],
+    urls: string[],
+    currentIndex: number
+  ): Promise<void> {
+    const partial = this.handleCancellation(results, urls, currentIndex);
+    await chrome.storage.local.set({ domainAnalysisResults: partial });
   }
 
   private notifyProgress(): void {

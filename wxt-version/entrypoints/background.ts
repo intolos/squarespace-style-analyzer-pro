@@ -172,29 +172,38 @@ export default defineBackground(() => {
 
     // Test harness storage handlers
     if (request.action === 'testHarnessLoad') {
-      chrome.storage.local.get('colorDetectionTestResults').then(result => {
-        sendResponse({ data: result.colorDetectionTestResults || [] });
-      }).catch(error => {
-        sendResponse({ error: error.message });
-      });
+      chrome.storage.local
+        .get('colorDetectionTestResults')
+        .then(result => {
+          sendResponse({ data: result.colorDetectionTestResults || [] });
+        })
+        .catch(error => {
+          sendResponse({ error: error.message });
+        });
       return true;
     }
 
     if (request.action === 'testHarnessSave') {
-      chrome.storage.local.set({ colorDetectionTestResults: request.data }).then(() => {
-        sendResponse({ success: true });
-      }).catch(error => {
-        sendResponse({ error: error.message });
-      });
+      chrome.storage.local
+        .set({ colorDetectionTestResults: request.data })
+        .then(() => {
+          sendResponse({ success: true });
+        })
+        .catch(error => {
+          sendResponse({ error: error.message });
+        });
       return true;
     }
 
     if (request.action === 'testHarnessClear') {
-      chrome.storage.local.remove('colorDetectionTestResults').then(() => {
-        sendResponse({ success: true });
-      }).catch(error => {
-        sendResponse({ error: error.message });
-      });
+      chrome.storage.local
+        .remove('colorDetectionTestResults')
+        .then(() => {
+          sendResponse({ success: true });
+        })
+        .catch(error => {
+          sendResponse({ error: error.message });
+        });
       return true;
     }
 
@@ -202,18 +211,21 @@ export default defineBackground(() => {
       try {
         const blob = new Blob([request.csvData], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-        
-        chrome.downloads.download({
-          url: url,
-          filename: request.filename,
-          saveAs: false
-        }).then(downloadId => {
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-          sendResponse({ success: true, downloadId });
-        }).catch(error => {
-          URL.revokeObjectURL(url);
-          sendResponse({ success: false, error: error.message });
-        });
+
+        chrome.downloads
+          .download({
+            url: url,
+            filename: request.filename,
+            saveAs: false,
+          })
+          .then(downloadId => {
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            sendResponse({ success: true, downloadId });
+          })
+          .catch(error => {
+            URL.revokeObjectURL(url);
+            sendResponse({ success: false, error: error.message });
+          });
       } catch (error: any) {
         sendResponse({ success: false, error: error.message });
       }
@@ -534,6 +546,8 @@ export default defineBackground(() => {
         timeout: data.timeout,
         delayBetweenPages: data.delayBetweenPages,
         isPremium: data.isPremium,
+        useMobileViewport: data.useMobileViewport,
+        mobileOnly: data.mobileOnly,
       });
 
       await chrome.storage.local.set({
@@ -567,7 +581,8 @@ export default defineBackground(() => {
         timeout: data.timeout,
         delayBetweenPages: data.delayBetweenPages,
         isPremium: data.isPremium,
-        // ... mobile options need to be passed down if Analyzer supports them
+        useMobileViewport: data.useMobileViewport,
+        mobileOnly: data.mobileOnly,
       });
 
       await chrome.storage.local.set({

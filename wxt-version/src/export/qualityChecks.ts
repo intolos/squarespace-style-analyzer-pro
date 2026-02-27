@@ -432,7 +432,7 @@ export function calculateQualityChecks(
     totalChecks = 8;
     checks.push({
       passed: true,
-      message: 'Mobile Usability was not analyzed',
+      message: 'Mobile Usability was not analyzed per user request',
       details: [],
     });
   } else {

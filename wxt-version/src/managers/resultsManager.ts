@@ -280,6 +280,30 @@ export const ResultsManager = {
       }
     }
 
+    // Merge mobile issues
+    if (newResults.mobileIssues) {
+      if (!accumulatedResults.mobileIssues) {
+        accumulatedResults.mobileIssues = {
+          viewportMeta: { exists: false, content: null, isProper: false },
+          issues: [],
+        };
+      }
+      if (newResults.mobileIssues.issues && newResults.mobileIssues.issues.length > 0) {
+        accumulatedResults.mobileIssues.issues = (
+          accumulatedResults.mobileIssues.issues || []
+        ).concat(newResults.mobileIssues.issues);
+      }
+      // Use the latest viewport meta if the new result has a valid ones
+      if (newResults.mobileIssues.viewportMeta && newResults.mobileIssues.viewportMeta.exists) {
+        accumulatedResults.mobileIssues.viewportMeta = { ...newResults.mobileIssues.viewportMeta };
+      }
+    }
+
+    // Propagate mobileAnalysisPerformed flag
+    if (newResults.metadata?.mobileAnalysisPerformed) {
+      accumulatedResults.metadata.mobileAnalysisPerformed = true;
+    }
+
     // Add page to analyzed list
     if (!accumulatedResults.metadata.pagesAnalyzed) {
       accumulatedResults.metadata.pagesAnalyzed = [];

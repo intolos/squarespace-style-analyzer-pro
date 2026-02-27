@@ -112,12 +112,8 @@ export class ExportManager {
     }
 
     // Check if mobile analysis was performed
-    if (!this.hasMobileData(analyzer)) {
-      alert(
-        'No mobile analysis data to export. This analysis was performed without mobile analysis. Please run an analysis with mobile analysis enabled.'
-      );
-      return;
-    }
+    // NOTE: We allow export even if data is missing, so the report can show the "Not Analyzed" status.
+    // The alert guard is removed to satisfy the "not analyzed" report requirement.
 
     const mobileIssues = analyzer.accumulatedResults.mobileIssues?.issues || [];
     const domain = analyzer.accumulatedResults.metadata?.domain || 'website';
@@ -156,9 +152,19 @@ export class ExportManager {
    * Check if mobile data exists
    */
   private static hasMobileData(analyzer: any): boolean {
-    return !!(
-      analyzer.accumulatedResults.mobileIssues && analyzer.accumulatedResults.mobileIssues.issues
-    );
+    if (!analyzer.accumulatedResults?.mobileIssues) return false;
+
+    // Check if there are issues
+    if (analyzer.accumulatedResults.mobileIssues.issues?.length > 0) return true;
+
+    // Check if viewport meta was analyzed
+    const viewportMeta = analyzer.accumulatedResults.mobileIssues.viewportMeta;
+    if (viewportMeta && (viewportMeta.exists === true || viewportMeta.isProper === true))
+      return true;
+    if (viewportMeta && viewportMeta.content !== null && viewportMeta.content !== undefined)
+      return true;
+
+    return false;
   }
 }
 

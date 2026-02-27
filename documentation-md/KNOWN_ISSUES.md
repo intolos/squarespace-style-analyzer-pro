@@ -285,3 +285,26 @@ This file documents critical implementation details, regression traps, and "anti
   - **DO**: Identify the baseline margin before applying the fix.
   - **DO**: To achieve a visual change, set a value that is the **Baseline + Requested Padding** (e.g., 24px total) OR use `padding-bottom` in addition to the margin.
 - **Date Fixed**: 2026-02-23
+
+---
+
+## 23. Mobile Domain Analysis "Invalid URL" Trap
+
+- **Symptom**: "Analyze Domain Mobile Only" succeeds on the first page but fails on all subsequent pages with the error `Failed to construct 'URL': Invalid URL`.
+- **Root Cause**: A variable typo in `pageAnalyzer.ts` was passing the page's **title** (e.g., "Shopify Plus") instead of its **URL** to the mobile issues converter.
+- **Correct Logic**:
+  - Always pass the full URL (e.g., `data.metadata.url || url`) to any utility that performs pathname extraction or URL construction.
+  - Page titles are not valid inputs for `new URL()`.
+- **Date Fixed**: 2026-02-27
+
+---
+
+## 24. Mobile Reporting "False Pass" Logic
+
+- **Symptom**: When selecting "Analyze Without Mobile", the report shows a green checkmark "✅ No Mobile Usability Issues Found" instead of "not analyzed".
+- **Root Cause**: The report generator inferred the status by checking if the `issues` array was empty. An empty array can mean either "No issues found" or "Analysis was never performed".
+- **Correct Logic**:
+  - **DO**: Use an explicit boolean flag `metadata.mobileAnalysisPerformed` in the data object.
+  - **DO**: Propagate this flag using "OR" logic during domain result merging in `ResultsManager.ts`.
+  - **DO NOT**: Infer analysis status based on data structure presence or array lengths.
+- **Date Fixed**: 2026-02-24 (Basic flag) / 2026-02-27 (Merging logic refined)

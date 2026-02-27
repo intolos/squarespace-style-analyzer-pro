@@ -210,65 +210,28 @@ export class PageAnalyzer {
     const lighthouseResults = await MobileLighthouseAnalyzer.analyzePage(tabId, url);
     if (signal?.aborted) throw new Error('Analysis cancelled by user');
 
-    if (options.mobileOnly) {
-      // Mobile Only - Construct partial result
-      const pageUrl = lighthouseResults.url || url;
-      const domain = new URL(pageUrl).hostname.replace('www.', '');
-      const pathname = new URL(pageUrl).pathname;
-      const mobileIssues = MobileResultsConverter.convertToMobileIssues(lighthouseResults, pageUrl);
+    // Full Analysis (Mobile Viewport or Mobile Only)
+    await this.waitForContentScript(tabId);
+    if (signal?.aborted) throw new Error('Analysis cancelled by user');
 
-      return {
-        metadata: {
-          url: pageUrl,
-          domain: domain,
-          pathname: pathname,
-          title: 'Mobile Analysis',
-        },
-        mobileIssues: {
-          viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
-          issues: mobileIssues,
-        },
-        // Empty stubs for required ReportData fields
-        colorData: {
-          colors: {},
-          contrastPairs: [],
-          _processedContrastElements: new Set(),
-          backgroundColors: new Set(),
-          textColors: new Set(),
-          fillColors: new Set(),
-          borderColors: new Set(),
-          allColors: new Set(),
-        },
-        themeStyles: {},
-        squarespaceThemeStyles: {},
-        headings: {},
-        paragraphs: {},
-        buttons: {},
-      } as ReportData;
-    } else {
-      // Full Analysis with Mobile
-      await this.waitForContentScript(tabId);
-      if (signal?.aborted) throw new Error('Analysis cancelled by user');
-
-      const response = await chrome.tabs.sendMessage(tabId, { action: 'analyzeStyles' });
-      if (!response || !response.success) {
-        throw new Error('Design analysis failed');
-      }
-
-      const data = response.data as ReportData;
-      const pageUrl = data.metadata.domain; // Note: metadata might need adjustments
-      const mobileIssues = MobileResultsConverter.convertToMobileIssues(
-        lighthouseResults,
-        data.metadata.title || url // Fallback
-      );
-
-      data.mobileIssues = {
-        viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
-        issues: mobileIssues,
-      };
-
-      return data;
+    const response = await chrome.tabs.sendMessage(tabId, { action: 'analyzeStyles' });
+    if (!response || !response.success) {
+      throw new Error('Design analysis failed');
     }
+
+    const data = response.data as ReportData;
+    const pageUrl = data.metadata.url || url;
+    const mobileIssues = MobileResultsConverter.convertToMobileIssues(lighthouseResults, pageUrl);
+
+    data.mobileIssues = {
+      viewportMeta: MobileResultsConverter.convertViewportMeta(lighthouseResults.viewport),
+      issues: mobileIssues,
+    };
+
+    if (!data.metadata) data.metadata = {} as any;
+    data.metadata.mobileAnalysisPerformed = true;
+
+    return data;
   }
 
   private async performDesktopAnalysis(tabId: number, signal?: AbortSignal): Promise<ReportData> {

@@ -63,6 +63,9 @@ export function exportMobileReport(
   escapeHtmlFn: (text: string) => string,
   downloadFileFn: (content: string, filename: string, mimeType: string) => void
 ): void {
+  // IMPORTANT: Check if mobile analysis was explicitly performed (metadata flag)
+  const mobileAnalysisSkipped = !data.metadata?.mobileAnalysisPerformed;
+
   // Get pages analyzed
   const pagesAnalyzed = data.metadata?.pagesAnalyzed || [];
 
@@ -94,7 +97,11 @@ export function exportMobileReport(
     let passLabel = '✓ Pass, No Issues Found';
     let labelStyle = 'color: #22c55e; font-weight: bold; margin-left: 8px;';
 
-    if (!hasIssues && hasViewportMissing && viewportTypes.includes(checkType.type)) {
+    if (mobileAnalysisSkipped) {
+      // IMPORTANT: Exactly as requested - show "not analyzed"
+      passLabel = 'not analyzed';
+      labelStyle = 'color: #718096; font-style: italic; margin-left: 8px;';
+    } else if (!hasIssues && hasViewportMissing && viewportTypes.includes(checkType.type)) {
       passLabel = 'N/A (Missing Mobile Setup)';
       labelStyle = 'color: #718096; font-style: italic; margin-left: 8px;';
     }
@@ -189,14 +196,23 @@ export function exportMobileReport(
         <div class="summary-label">Warnings</div>
       </div>
       <div class="summary-card pages">
-        <div class="summary-number">${pagesAnalyzed.length}</div>
+        <div class="summary-number">${mobileAnalysisSkipped ? 0 : pagesAnalyzed.length}</div>
         <div class="summary-label">Pages Analyzed</div>
       </div>
     </div>
     
     ${
-      issues.length === 0
+      mobileAnalysisSkipped
         ? `
+    <div id="no-issues" style="background: #fff7ed; border: 2px solid #ed8936; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center;">
+      <h2 style="color: #7c2d12; margin: 0 0 15px 0;">⚠️ Mobile Usability Not Analyzed per User Request</h2>
+      <p style="color: #92400e; font-size: 1.1rem; margin: 0;">
+        Mobile usability analysis was skipped for this run per your request. To generate mobile usability results, re-run the domain analysis and choose an option that includes mobile analysis.
+      </p>
+    </div>
+    `
+        : issues.length === 0
+          ? `
     <div id="no-issues" style="background: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center;">
       <h2 style="color: #155724; margin: 0 0 15px 0;">✅ No Mobile Usability Issues Found</h2>
       <p style="color: #155724; font-size: 1.1rem; margin: 0 0 20px 0;">
@@ -220,7 +236,7 @@ export function exportMobileReport(
       </div>
     </div>
     `
-        : ''
+          : ''
     }
     
     <div class="toc" id="mobile-toc">

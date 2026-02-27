@@ -8,6 +8,7 @@ export interface AccumulatedResults {
     pathname?: string;
     pagesAnalyzed?: string[];
     url?: string;
+    mobileAnalysisPerformed?: boolean;
   };
   siteStyles?: Record<string, { locations: any[] }>;
   colorPalette?: {

@@ -331,6 +331,7 @@ export const DomainAnalysisUI = {
       'domainAnalysisProgress',
       'domainAnalysisMobileOnly',
       'domainAnalysisUseMobileViewport',
+      'accumulatedResults', // Added for thorough cleanup
     ]);
 
     chrome.storage.local.set({
@@ -502,20 +503,12 @@ export const DomainAnalysisUI = {
                 viewportMeta: { exists: true, content: 'Analysis cancelled', isProper: false },
                 issues: [],
               }
-            : { issues: [] },
+            : null,
         squarespaceThemeStyles: {},
       };
 
       if (mobileOnly || useMobileViewport) {
         if (!data.mobileIssues) data.mobileIssues = { issues: [] };
-        if (!data.mobileIssues.viewportMeta) data.mobileIssues.viewportMeta = {};
-        if (
-          data.mobileIssues.viewportMeta.content === null ||
-          data.mobileIssues.viewportMeta.content === undefined
-        ) {
-          data.mobileIssues.viewportMeta.content = 'Requested (incomplete)';
-          data.mobileIssues.viewportMeta.exists = true;
-        }
       }
 
       analyzer.accumulatedResults = data;
@@ -551,6 +544,13 @@ export const DomainAnalysisUI = {
           }
         } else {
           const pagesAnalyzed = result.stats ? result.stats.successfulPages : 0;
+
+          const resultsSection = document.getElementById('resultsSection');
+          const pagesAnalyzedInfo = document.getElementById('pagesAnalyzedInfo');
+          if (resultsSection) resultsSection.style.display = 'block';
+          if (pagesAnalyzedInfo) pagesAnalyzedInfo.style.display = 'block';
+
+          analyzer.displayResults();
           analyzer.showSuccess(
             `Analysis cancelled. ${pagesAnalyzed} page${
               pagesAnalyzed === 1 ? '' : 's'
