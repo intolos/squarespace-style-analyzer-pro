@@ -31,7 +31,11 @@ export function generateSectionHeader(
 /**
  * Generate table of contents
  */
-export function generateTableOfContents(analysis: ColorAnalysis, totalColors: number): string {
+export function generateTableOfContents(
+  analysis: ColorAnalysis,
+  totalColors: number,
+  gradientCount: number = 0
+): string {
   const tocItems: Array<{ id: string; label: string }> = [];
 
   if (analysis.issues.length > 0) {
@@ -56,6 +60,10 @@ export function generateTableOfContents(analysis: ColorAnalysis, totalColors: nu
       id: 'neutrals-section',
       label: `⚪ Neutral Colors (${analysis.grays.length})`,
     });
+  }
+
+  if (gradientCount > 0) {
+    tocItems.push({ id: 'gradients-section', label: `🌈 Gradients (${gradientCount})` });
   }
 
   if (analysis.outliers.length > 0) {
@@ -409,4 +417,122 @@ export function generateBackToTop(): string {
       <a href="#toc" style="color: #667eea; text-decoration: none; font-size: 2rem; display: inline-block;">⬆️</a>
     </div>
   `;
+}
+
+/**
+ * Generate a single instance card for a Gradient.
+ */
+export function generateGradientInstanceCard(inst: any): string {
+  const tag = inst.element || 'Unknown';
+  const section = inst.section || 'N/A';
+  const block = inst.block || 'N/A';
+  const context = inst.context || 'None';
+
+  const selectorBtn = inst.selector
+    ? `<button class="selector-link" data-selector="${inst.selector.replace(/"/g, '&quot;')}" onclick="showSelectorPopup(event, this)">📋 Selector</button>`
+    : `<button class="selector-link" disabled style="opacity: 0.5; cursor: default;">📋 Selector</button>`;
+
+  const locateBtn = inst.selector
+    ? `<a class="locate-btn" href="${inst.page}#ssa-inspect-selector=${encodeURIComponent(inst.selector)}" target="_blank">🔍 Locate</a>`
+    : `<span class="locate-btn" style="opacity: 0.5; cursor: default; background: #cbd5e0;">🔍 Locate</span>`;
+
+  const sectionLabel = section ? `Section: ${section}` : 'Section:';
+
+  return `
+    <div class="instance-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <span class="instance-card-tag">${tag}</span>
+      </div>
+      
+      <div class="instance-card-meta" style="border-top: none; padding-top: 0; margin-top: 2px;">
+        <div style="font-weight: 600; color: #667eea;">Gradient</div>
+        <div style="font-size: 0.8rem; word-break: break-all; margin-top: 4px; color: #4a5568;">
+          ${inst.rawString}
+        </div>
+      </div>
+      
+      <div class="instance-card-context" style="margin-top: 4px;">Context: "${context}"</div>
+      <div class="instance-card-location" style="margin-top: 4px; margin-bottom: 0;">${sectionLabel} / Block: ${block}</div>
+      
+      <div class="instance-card-actions" style="margin-top: 8px;">
+        ${selectorBtn}
+        ${locateBtn}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Generate the full instance drawer HTML for gradients.
+ */
+export function generateGradientInstanceDrawer(instances: any[], drawerId: string): string {
+  if (!instances || instances.length === 0) return '';
+
+  const pageGroups = new Map<string, { title: string; instances: any[] }>();
+  instances.forEach(inst => {
+    const key = inst.page || 'Unknown';
+    if (!pageGroups.has(key)) {
+      pageGroups.set(key, { title: inst.pageTitle || 'Unknown Page', instances: [] });
+    }
+    pageGroups.get(key)!.instances.push(inst);
+  });
+
+  let groupsHtml = '';
+  pageGroups.forEach((group, pageUrl) => {
+    const cardsHtml = group.instances.map(inst => generateGradientInstanceCard(inst)).join('');
+    groupsHtml += `
+      <div class="instance-page-group">
+        <div class="instance-page-header">
+          ${group.title}
+          <a href="${pageUrl}" target="_blank">${pageUrl}</a>
+        </div>
+        <div class="instance-grid">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  return `<div class="instance-drawer" id="${drawerId}">${groupsHtml}</div>`;
+}
+
+/**
+ * Generate gradient swatch table.
+ */
+export function generateGradientSwatchTable(gradients: Record<string, any>): string {
+  if (!gradients || Object.keys(gradients).length === 0) return '';
+
+  let html = `
+    <div class="color-category-section">
+      <h3 style="font-size: 1.3rem; margin: 25px 0 15px 0; color: #2d3748;">🌈 Gradients (${Object.keys(gradients).length})</h3>
+      <p style="font-size: 0.9rem; color: #718096; margin-bottom: 15px;">Gradient backgrounds detected across the site</p>
+      <div class="color-swatch-grid">
+  `;
+
+  let drawerCounter = 0;
+
+  Object.values(gradients).forEach(gradInfo => {
+    const drawerId = `drawer-gradient-${drawerCounter++}`;
+
+    const drawerHtml = generateGradientInstanceDrawer(gradInfo.instances, drawerId);
+
+    // Create a split swatch using linear-gradient (half start, half end)
+    const gradientStyle = `background: linear-gradient(135deg, ${gradInfo.startColor} 50%, ${gradInfo.endColor} 50%);`;
+
+    html += `
+          <div class="color-swatch" data-drawer-id="${drawerId}" onclick="toggleInstanceDrawer(this, '${drawerId}')">
+            <div class="swatch" style="${gradientStyle}"></div>
+            <div class="swatch-label" style="font-size: 0.75rem; word-break: break-all;" title="${gradInfo.rawString.replace(/"/g, '&quot;')}">Gradient</div>
+            <div class="swatch-count">${gradInfo.count} use${gradInfo.count > 1 ? 's' : ''}</div>
+          </div>
+          ${drawerHtml}
+        `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  return html;
 }

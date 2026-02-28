@@ -2,7 +2,7 @@
   "name": "style-analyzer-pro",
   "description": "Professional Design Audit tool for Visual Consistency for websites",
   "private": true,
-  "version": "4.5.6",
+  "version": "4.5.7",
   "type": "module",
   "scripts": {
     "dev:sqs": "wxt --mode sqs",

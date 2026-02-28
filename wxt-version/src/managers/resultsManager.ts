@@ -190,6 +190,7 @@ export const ResultsManager = {
       if (!accumulatedResults.colorData) {
         accumulatedResults.colorData = {
           colors: {},
+          gradients: {},
           contrastPairs: [],
           _processedContrastElements: new Set(),
           backgroundColors: new Set(),
@@ -232,6 +233,34 @@ export const ResultsManager = {
       if (newResults.colorData.contrastPairs && newResults.colorData.contrastPairs.length > 0) {
         accumulatedResults.colorData.contrastPairs =
           accumulatedResults.colorData.contrastPairs.concat(newResults.colorData.contrastPairs);
+      }
+
+      // Merge gradients
+      if (newResults.colorData.gradients) {
+        if (!accumulatedResults.colorData.gradients) {
+          accumulatedResults.colorData.gradients = {};
+        }
+
+        for (const gradientRaw in newResults.colorData.gradients) {
+          const gradInfo = newResults.colorData.gradients[gradientRaw];
+          if (!accumulatedResults.colorData.gradients[gradientRaw]) {
+            accumulatedResults.colorData.gradients[gradientRaw] = {
+              count: gradInfo.count,
+              rawString: gradInfo.rawString,
+              startColor: gradInfo.startColor,
+              endColor: gradInfo.endColor,
+              instances: [...(gradInfo.instances || [])],
+            };
+          } else {
+            accumulatedResults.colorData.gradients[gradientRaw].count += gradInfo.count;
+            if (gradInfo.instances) {
+              accumulatedResults.colorData.gradients[gradientRaw].instances =
+                accumulatedResults.colorData.gradients[gradientRaw].instances.concat(
+                  gradInfo.instances
+                );
+            }
+          }
+        }
       }
     }
 

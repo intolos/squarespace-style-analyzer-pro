@@ -1,7 +1,7 @@
 // analyzers/colorScanner.ts
 // Comprehensive color scanner for the entire page
 
-import { type ColorData, trackColor, shouldTrackBorder } from './colors';
+import { type ColorData, trackColor, shouldTrackBorder, trackGradient } from './colors';
 import { isTransparentColor } from '../utils/colorUtils';
 import { isIconOrSocialElement, getSectionInfo, getBlockInfo } from '../utils/domHelpers';
 
@@ -47,6 +47,20 @@ export async function scanAllPageColors(colorData: ColorData): Promise<void> {
       // Element is considered visible if it has dimensions and basic visibility
       let isElementVisible = hasVisibleDimensions && isDisplayed && isVisible && hasOpacity;
 
+      // --- Whitelist Background Layers (One Chance Fix) ---
+      // Squarespace 7.1 uses .section-background for gradients. These might be
+      // clipped or transformed in ways that confuse simple dimension checks.
+      const className = element.className || '';
+      const classLower = (typeof className === 'string' ? className : '').toLowerCase();
+      const isBackgroundLayer =
+        classLower.includes('section-background') ||
+        classLower.includes('section-border') ||
+        classLower.includes('banner-thumbnail-wrapper');
+
+      if (isBackgroundLayer && isDisplayed && isVisible) {
+        isElementVisible = true;
+      }
+
       // Special handling for footer elements - be more lenient with visibility checks
       let isInFooter = false;
       let parent: Element | null = element;
@@ -76,8 +90,46 @@ export async function scanAllPageColors(colorData: ColorData): Promise<void> {
         continue;
       }
 
+      const bgImage = computed.backgroundImage;
+      const bgShorthand = computed.background;
+
+      // --- CRITICAL FIX: Variable Detection Gap ---
+      // Resolve CSS variables before checking for the "gradient" keyword.
+      // SQS often uses background: var(--siteBackgroundColor)
+      const resolveVars = (val: string): string => {
+        if (!val || !val.includes('var(')) return val;
+        try {
+          return val.replace(/var\((--[^,)]+)\)/g, (match, varName) => {
+            const resolved = computed.getPropertyValue(varName.trim()).trim();
+            return resolved || match;
+          });
+        } catch (e) {
+          return val;
+        }
+      };
+
+      // Helper to process a potential gradient string from any source (main, before, after)
+      const processPotentialGradient = async (str: string | null) => {
+        if (!str) return;
+        const resolved = resolveVars(str);
+        if (resolved && (resolved.includes('gradient') || resolved.includes('-webkit-'))) {
+          await trackGradient(resolved, element, colorData, getSectionInfo, getBlockInfo);
+        }
+      };
+
+      // 1. Track gradient background (Check this BEFORE skipping processed elements)
+      // Check main element, background shorthand, and pseudo-elements
+      await processPotentialGradient(bgImage);
+      await processPotentialGradient(bgShorthand);
+
+      const before = window.getComputedStyle(element, '::before');
+      if (before) await processPotentialGradient(before.backgroundImage);
+
+      const after = window.getComputedStyle(element, '::after');
+      if (after) await processPotentialGradient(after.backgroundImage);
+
       // Skip elements already processed by specific analyzers to avoid duplicate tracking
-      if (colorData._processedElements && colorData._processedElements.has(element)) {
+      if (colorData._processedElements && colorData._processedElements.has(element as any)) {
         continue;
       }
 

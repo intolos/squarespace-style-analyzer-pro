@@ -8,6 +8,7 @@ import {
   generateHeader,
   generateTableOfContents,
   generateColorSwatchTable,
+  generateGradientSwatchTable,
   generateSectionHeader,
   generateBackToTop,
 } from './templates/components';
@@ -54,6 +55,13 @@ export function exportStyleGuideColorsReport(
     sectionOrder.push('all-colors-section');
     if (analysis.colorGroups.length > 0) sectionOrder.push('families-section');
     if (analysis.grays.length > 0) sectionOrder.push('neutrals-section');
+    const gradientCount = data.colorData.gradients
+      ? Object.keys(data.colorData.gradients).length
+      : 0;
+
+    if (gradientCount > 0) {
+      sectionOrder.push('gradients-section');
+    }
     if (analysis.outliers.length > 0) sectionOrder.push('outliers-section');
     sectionOrder.push('accessibility-section');
     sectionOrder.push('distribution-section');
@@ -70,12 +78,13 @@ export function exportStyleGuideColorsReport(
     // Build all sections
     const sections = [
       buildScoreSection(analysis),
-      generateTableOfContents(analysis, allColors.length),
+      generateTableOfContents(analysis, allColors.length, gradientCount),
       buildIssuesSection(analysis, getNextSection),
       buildWarningsSection(analysis, getNextSection),
       buildAllColorsSection(allColors, colors, data, getNextSection),
       buildColorFamiliesSection(analysis, colors, getNextSection),
       buildNeutralsSection(analysis, colors, getNextSection),
+      buildGradientsSection(data.colorData.gradients, getNextSection),
       buildOutliersSection(analysis, colors, getNextSection),
       buildAccessibilitySection(analysis, getNextSection),
       buildDistributionSection(data),
@@ -302,6 +311,22 @@ function buildAllColorsSection(
     ${generateSectionHeader('all-colors-section', `All Colors Used (${allColors.length} total)`, '🎨', getNextSection('all-colors-section'))}
     <div class="section">
       ${generateColorSwatchTable(colors, data.devToolsColorSummary!)}
+    </div>
+  `;
+}
+
+/**
+ * Build the "Gradients" section if gradients exist
+ */
+function buildGradientsSection(
+  gradients: Record<string, any> | undefined,
+  getNextSection: (id: string) => string | null
+): string | null {
+  if (!gradients || Object.keys(gradients).length === 0) return null;
+  return `
+    ${generateSectionHeader('gradients-section', 'Gradients (' + Object.keys(gradients).length + ' total)', '🌈', getNextSection('gradients-section'))}
+    <div class="section">
+      ${generateGradientSwatchTable(gradients)}
     </div>
   `;
 }

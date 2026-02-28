@@ -65,6 +65,25 @@ export interface ColorInstance {
   backgroundImage?: string;
 }
 
+export interface GradientInstance {
+  page: string;
+  pageTitle: string;
+  element: string;
+  section: string;
+  block: string;
+  context: string;
+  selector: string;
+  rawString: string;
+}
+
+export interface GradientDataObj {
+  count: number;
+  rawString: string;
+  startColor: string;
+  endColor: string;
+  instances: GradientInstance[];
+}
+
 export interface ColorData {
   colors: Record<
     string,
@@ -76,6 +95,7 @@ export interface ColorData {
       mergedColors?: Set<string> | string[];
     }
   >;
+  gradients?: Record<string, GradientDataObj>;
   contrastPairs: ContrastIssue[];
   _processedContrastElements: Set<string>;
   backgroundColors: Set<string>;
@@ -503,11 +523,11 @@ import { detectBackground } from './backgroundDetectors';
 
 /**
  * Get effective background color using platform-specific detection
- * 
+ *
  * IMPORTANT: This function now uses platform-specific detection strategies to handle
  * different CMS platforms' rendering approaches. WordPress often renders backgrounds
  * on pseudo-elements, while Squarespace uses standard CSS.
- * 
+ *
  * @param element - Element to check
  * @param initialBackgroundColor - Initial background color from computed style
  * @param screenshot - Screenshot for canvas verification
@@ -521,12 +541,7 @@ export async function getEffectiveBackgroundColor(
   platform: Platform = 'generic'
 ): Promise<string | null> {
   // Use platform-specific background detector
-  const result = await detectBackground(
-    platform,
-    element,
-    initialBackgroundColor,
-    screenshot
-  );
+  const result = await detectBackground(platform, element, initialBackgroundColor, screenshot);
 
   return result.color;
 }
@@ -575,7 +590,12 @@ export async function trackContrastPair(
   if (!textHex) return;
 
   // Use platform-specific background detection for accurate contrast calculation
-  const effectiveBg = await getEffectiveBackgroundColor(element, backgroundColor, screenshot, platform);
+  const effectiveBg = await getEffectiveBackgroundColor(
+    element,
+    backgroundColor,
+    screenshot,
+    platform
+  );
   const bgHex = rgbToHex(effectiveBg);
 
   if (!bgHex) return;
@@ -656,6 +676,7 @@ export async function trackContrastPair(
 export function initializeColorData(): ColorData {
   return {
     colors: {},
+    gradients: {},
     contrastPairs: [],
     _processedContrastElements: new Set(),
     backgroundColors: new Set(),
@@ -665,6 +686,90 @@ export function initializeColorData(): ColorData {
     allColors: new Set(),
     _processedElements: new Set(),
   };
+}
+
+export async function trackGradient(
+  rawGradient: string,
+  element: Element,
+  colorData: ColorData,
+  getSectionInfo: (el: Element) => string,
+  getBlockInfo: (el: Element) => string
+): Promise<void> {
+  if (!rawGradient || !rawGradient.includes('gradient')) return;
+
+  const key = rawGradient.trim();
+
+  // Defensive initialization
+  if (!colorData.gradients) {
+    colorData.gradients = {};
+  }
+
+  // Avoid duplicate tracking for the exact same gradient on the exact same element during one scan pass
+  const elementSelector = generateSelector(element);
+  const existing = colorData.gradients[key]?.instances.find(
+    inst => inst.selector === elementSelector
+  );
+  if (existing) return;
+
+  // Resolve CSS variables if present (basic attempt)
+  let processedGradient = key;
+  if (key.includes('var(')) {
+    const computed = window.getComputedStyle(element);
+    processedGradient = key.replace(/var\((--[^,)]+)\)/g, (match, varName) => {
+      const val = computed.getPropertyValue(varName.trim()).trim();
+      return val || match;
+    });
+  }
+
+  // Extract color values
+  // Support: rgb, rgba, hsl, hsla, oklch, hex, and basic named colors
+  const colorMatches = processedGradient.match(
+    /(rgba?\([^)]+\)|hsla?\([^)]+\)|oklch\([^)]+\)|#[0-9a-f]{3,8}|transparent|white|black|red|blue|green|yellow|orange|purple|pink|brown|gray|grey)/gi
+  );
+
+  let startColor = '#667eea'; // Branded fallback
+  let endColor = '#764ba2'; // Branded fallback
+
+  if (colorMatches && colorMatches.length >= 1) {
+    const startVal = colorMatches[0];
+    const startHex = startVal.startsWith('rgb') ? rgbToHex(startVal) : null;
+    startColor = startHex || startVal;
+
+    const lastVal = colorMatches[colorMatches.length - 1];
+    const endHex = lastVal.startsWith('rgb') ? rgbToHex(lastVal) : null;
+    endColor = endHex || lastVal;
+  }
+
+  if (!colorData.gradients[key]) {
+    colorData.gradients[key] = {
+      count: 0,
+      rawString: key,
+      startColor,
+      endColor,
+      instances: [],
+    };
+  }
+
+  colorData.gradients[key].count++;
+
+  let displayTag = element.tagName;
+  if (displayTag === 'DIV') {
+    const semanticChild = element.querySelector('h1, h2, h3, h4, h5, h6, p, button, a');
+    if (semanticChild) {
+      displayTag = `DIV (${semanticChild.tagName})`;
+    }
+  }
+
+  colorData.gradients[key].instances.push({
+    page: window.location.href,
+    pageTitle: document.title || 'Unknown',
+    element: displayTag,
+    section: getSectionInfo(element),
+    block: getBlockInfo(element),
+    context: getElementContext(element),
+    selector: elementSelector,
+    rawString: key,
+  });
 }
 
 /**
@@ -709,6 +814,8 @@ export function finalizeColorData(colorData: ColorData): any {
       : [],
     // Don't serialize the elements set
     _processedElements: [],
+    // IMPORTANT: Explicitly preserve gradients object
+    gradients: colorData.gradients ? { ...colorData.gradients } : {},
   };
 
   // Convert mergedColors Set to Array for each color AND ensure all instances carry it

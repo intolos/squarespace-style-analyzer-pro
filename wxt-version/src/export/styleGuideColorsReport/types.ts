@@ -102,6 +102,7 @@ export interface ReportData {
   };
   colorData: {
     colors: Record<string, ColorData>;
+    gradients?: Record<string, any>;
     contrastPairs: ContrastFailure[];
   };
   devToolsColorSummary?: DevToolsColorSummary;
