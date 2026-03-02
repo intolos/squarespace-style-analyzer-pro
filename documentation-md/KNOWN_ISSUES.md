@@ -334,3 +334,15 @@ This file documents critical implementation details, regression traps, and "anti
   - **DO**: Initialize results as "Report-Ready" in `background.ts` with `pagesAnalyzed: [pathname]` and `mobileAnalysisPerformed: true`.
   - **DO**: Harden `ResultsManager.ts` to propagate flags and merge/deduplicate `pagesAnalyzed` even if the page structure is already present.
 - **Date Fixed**: 2026-02-27 (Comprehensive v2 fix)
+
+---
+
+## 27. The "WordPress extension_type Binary Ternary" Trap
+
+- **Symptom**: Stripe customer metadata shows `original_purchase_extension: 'generic'` for WordPress purchases instead of `'wordpress'`.
+- **Root Cause**: `licenseManager.ts` used a binary ternary — `isSqs ? 'squarespace' : 'generic'` — for the `extension_type` field sent to the Cloudflare Worker. This silently falls through to `'generic'` for any non-SQS build, including WP.
+- **Correct Logic**:
+  - **DO**: Use a **three-way ternary**: `isSqs ? 'squarespace' : isWp ? 'wordpress' : 'generic'`
+  - **DO**: Import `isWp` from `platform.ts` in `licenseManager.ts`.
+  - **DO NOT**: Use binary `isSqs ? X : Y` patterns in files that must distinguish three extension modes.
+- **Date Fixed**: 2026-03-02

@@ -68,6 +68,25 @@ WordPress sales are tracked via separate Stripe Product/Price IDs configured in 
 - Yearly: `prod_TuTaoNTEb2k7In` / `price_1Swed3Aoq9jsK93OpEe9tvGf`
 - Lifetime: `prod_TuTcR3mQDYs0qO` / `price_1SweetAoq9jsK93OIL0eoMzw`
 
+### Stripe Customer Metadata Stamping
+
+All three extension versions stamp the following metadata on every purchase via the Cloudflare Worker webhook (`worker.js`):
+
+| Field                         | Value                 | Notes                                                                                  |
+| ----------------------------- | --------------------- | -------------------------------------------------------------------------------------- |
+| `original_purchase_extension` | `'wordpress'`         | Set only on first purchase. Sourced from `extension_type` sent by `licenseManager.ts`. |
+| `access_squarespace`          | `'true'`              | Always set — cross-product access                                                      |
+| `access_website`              | `'true'`              | Always set — cross-product access                                                      |
+| `access_wp`                   | `'true'`              | Always set — cross-product access                                                      |
+| `is_lifetime`                 | `'true'` or `'false'` | Reflects current purchase type                                                         |
+| `is_yearly`                   | `'true'` or `'false'` | Reflects current purchase type                                                         |
+
+> [!IMPORTANT]
+> `licenseManager.ts` sends `extension_type` to the worker using a **three-way ternary**:
+> `isSqs ? 'squarespace' : isWp ? 'wordpress' : 'generic'`
+> A binary ternary (`isSqs ? 'squarespace' : 'generic'`) would cause WP purchases to stamp `'generic'`.
+> Fixed 2026-03-02.
+
 ## Build Commands
 
 ```bash

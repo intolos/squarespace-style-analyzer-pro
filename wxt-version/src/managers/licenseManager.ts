@@ -14,7 +14,7 @@ export interface CheckoutSessionResult {
   error?: string | any;
 }
 
-import { platformStrings, isSqs } from '../utils/platform';
+import { platformStrings, isSqs, isWp } from '../utils/platform';
 
 export const LicenseManager = {
   // Configuration from platform settings
@@ -92,7 +92,9 @@ export const LicenseManager = {
         mode: mode,
         // IMPORTANT: Pass extension_type directly so worker can stamp Customer metadata
         // without needing Product ID environment variables. Fixed 2026-01-23.
-        extension_type: isSqs ? 'squarespace' : 'generic',
+        // IMPORTANT: Must be a three-way ternary — binary (isSqs ? 'squarespace' : 'generic')
+        // would cause WordPress builds to incorrectly stamp 'generic'. Fixed 2026-03-02.
+        extension_type: isSqs ? 'squarespace' : isWp ? 'wordpress' : 'generic',
         purchase_type: isLifetime ? 'lifetime' : 'yearly',
       };
 
