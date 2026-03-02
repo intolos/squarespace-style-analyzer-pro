@@ -9,13 +9,7 @@ export default {
 
     // simple health-check
     if (request.method === 'GET' && (pathname === '' || pathname === '/')) {
-      return new Response(
-        'Multi-Product License Worker Active - v4.4.6.3 (Flexible Billing Support)',
-        {
-          status: 200,
-          headers: { 'Content-Type': 'text/plain' },
-        }
-      );
+      return new Response('OK', { status: 200 });
     }
 
     try {
@@ -661,10 +655,7 @@ function jsonResponse(data) {
 }
 
 async function handleVerify(request, env) {
-  // verify token (placeholder - not used by default flow)
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response('Not Implemented', { status: 501 });
 }
 
 async function handleWebhook(request, env) {
@@ -747,9 +738,12 @@ async function handleWebhook(request, env) {
           updateParams.append('metadata[original_purchase_type]', purchaseType);
         }
 
-        // Cross-product access flags (buy one extension, get access to both)
+        // Cross-product access flags (buy one extension, get access to all three)
+        // IMPORTANT: All three must be stamped on every purchase so any extension version
+        // can confirm access regardless of which version was used to purchase. Fixed 2026-03-02.
         updateParams.append('metadata[access_squarespace]', 'true');
         updateParams.append('metadata[access_website]', 'true');
+        updateParams.append('metadata[access_wp]', 'true');
 
         // Customer name and business name
         if (fullName) updateParams.append('name', fullName);

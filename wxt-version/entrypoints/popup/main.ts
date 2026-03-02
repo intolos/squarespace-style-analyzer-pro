@@ -335,39 +335,41 @@ class SquarespaceAnalyzer implements AnalyzerController {
       this.handleUpgradeFlow(true);
     });
 
-    // Test buttons
-    (window as any).enableYearlyTest = async () => {
-      console.log('Enabling Yearly Premium Test Mode...');
-      this.isPremium = true;
-      this.licenseData = {
-        valid: true,
-        record: { expires_at: Math.floor(Date.now() / 1000) + 31536000 },
+    // Test buttons - Only exposed in development builds
+    if (import.meta.env.DEV) {
+      (window as any).enableYearlyTest = async () => {
+        console.log('Enabling Yearly Premium Test Mode...');
+        this.isPremium = true;
+        this.licenseData = {
+          valid: true,
+          record: { expires_at: Math.floor(Date.now() / 1000) + 31536000 },
+        };
+        await this.saveUserData();
+        PopupUIManager.updateUI(this, () => this.displayResults());
+        console.log('✅ Yearly Test Mode Active');
       };
-      await this.saveUserData();
-      PopupUIManager.updateUI(this, () => this.displayResults());
-      console.log('✅ Yearly Test Mode Active');
-    };
 
-    (window as any).enableLifetimeTest = async () => {
-      console.log('Enabling Lifetime Premium Test Mode...');
-      this.isPremium = true;
-      this.licenseData = {
-        valid: true,
-        record: { expires_at: null },
+      (window as any).enableLifetimeTest = async () => {
+        console.log('Enabling Lifetime Premium Test Mode...');
+        this.isPremium = true;
+        this.licenseData = {
+          valid: true,
+          record: { expires_at: null },
+        };
+        await this.saveUserData();
+        PopupUIManager.updateUI(this, () => this.displayResults());
+        console.log('✅ Lifetime Test Mode Active');
       };
-      await this.saveUserData();
-      PopupUIManager.updateUI(this, () => this.displayResults());
-      console.log('✅ Lifetime Test Mode Active');
-    };
 
-    (window as any).disablePremiumTest = async () => {
-      console.log('Disabling Premium Test Mode...');
-      this.isPremium = false;
-      this.licenseData = null;
-      await this.saveUserData();
-      PopupUIManager.updateUI(this, () => this.displayResults());
-      console.log('✅ Test Mode Disabled');
-    };
+      (window as any).disablePremiumTest = async () => {
+        console.log('Disabling Premium Test Mode...');
+        this.isPremium = false;
+        this.licenseData = null;
+        await this.saveUserData();
+        PopupUIManager.updateUI(this, () => this.displayResults());
+        console.log('✅ Test Mode Disabled');
+      };
+    }
   }
 
   bindDomainAnalysisEvents() {

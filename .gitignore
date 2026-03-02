@@ -23,6 +23,8 @@ npm-debug.log*
 
 # Environment variables
 .env
+.env.*
+!.env.example
 .env.local
 
 # Build outputs (if you have any)
