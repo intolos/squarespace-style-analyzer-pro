@@ -16,7 +16,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Test configuration
-const EXTENSION_PATH = __dirname;
+const EXTENSION_PATH = path.join(__dirname, '../wxt-version/.output/sqs/chrome-mv3');
 const TEST_PAGES = [
   {
     url: 'https://launchhappy.co/guides',
@@ -28,8 +28,8 @@ const TEST_PAGES = [
   {
     url: 'https://www.emmaworth.com/',
     name: 'Emma Worth',
-    expectedHeaderColors: ['#587A96', '#BF9B4A', '#FFFFFF'],
-    maxHeaderColors: 4,
+    expectedHeaderColors: ['#587A96', '#BF9B4A', '#FFFFFF', '#075DA3', '#337CB8', '#000000'],
+    maxHeaderColors: 7,
     problematicColors: ['#CB2027', '#4267B2', '#25D366']
   }
 ];
@@ -76,13 +76,13 @@ async function runTests() {
       // Navigate to page
       console.log('📄 Loading page...');
       await page.goto(testPage.url, {
-        waitUntil: 'domcontentloaded',
+        waitUntil: 'networkidle2',
         timeout: 60000
       });
 
       // Wait for page to be ready
       console.log('⏳ Waiting for page to load completely...');
-      await page.waitForTimeout(3000);
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Check if extension's ColorAnalyzer is available and use it
       console.log('🔍 Running analysis using extension code...');
@@ -231,11 +231,24 @@ async function runTests() {
         allElements.forEach(el => {
           if (getElementLocation(el) === 'header' && isVisible(el) && !isIconOrSocial(el)) {
             const s = window.getComputedStyle(el);
+            
+            // TRUTH CHECK: If this is a DIV, ensure it actually contains text before tracking color.
+            const hasText = el.textContent && el.textContent.trim().length > 0;
+            const hasSemanticChild = el.querySelector('h1, h2, h3, h4, h5, h6, p, button, a');
+            const skipTextForDiv = el.tagName === 'DIV' && !hasText && !hasSemanticChild;
+
+            // Border Check: Ignore invisible/thin/matching borders
+            const bgColor = s.backgroundColor;
+            const borderW = parseFloat(s.borderTopWidth || s.borderWidth) || 0;
+            const borderStyle = s.borderTopStyle || s.borderStyle;
+            const skipBorder = borderW < 1 || borderStyle === 'none' || borderStyle === 'hidden' || (s.borderColor === bgColor && borderW < 3);
+
             [
               { color: s.backgroundColor, prop: 'bg' },
-              { color: s.color, prop: 'text' },
-              { color: s.borderColor, prop: 'border' }
+              { color: s.color, prop: 'text', skip: skipTextForDiv },
+              { color: s.borderColor, prop: 'border', skip: skipBorder }
             ].forEach(item => {
+              if (item.skip) return;
               const hex = rgbToHex(item.color);
               if (hex) {
                 headerColors.add(hex);

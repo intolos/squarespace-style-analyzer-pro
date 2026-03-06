@@ -3,6 +3,7 @@ import { DomainAnalyzer } from '../src/analyzers/domain';
 import { MobileLighthouseAnalyzer } from '../src/analyzers/mobileLighthouse';
 import { MobileResultsConverter } from '../src/analyzers/mobileConverter';
 import { platformStrings } from '../src/utils/platform';
+import type { AnalysisResult } from '../src/types';
 
 export default defineBackground(() => {
   console.log(`${platformStrings.productNameShort} background service worker loaded`);
@@ -169,68 +170,6 @@ export default defineBackground(() => {
       sendResponse({ success: true });
       return true;
     }
-
-    // Test harness storage handlers
-    if (request.action === 'testHarnessLoad') {
-      chrome.storage.local
-        .get('colorDetectionTestResults')
-        .then(result => {
-          sendResponse({ data: result.colorDetectionTestResults || [] });
-        })
-        .catch(error => {
-          sendResponse({ error: error.message });
-        });
-      return true;
-    }
-
-    if (request.action === 'testHarnessSave') {
-      chrome.storage.local
-        .set({ colorDetectionTestResults: request.data })
-        .then(() => {
-          sendResponse({ success: true });
-        })
-        .catch(error => {
-          sendResponse({ error: error.message });
-        });
-      return true;
-    }
-
-    if (request.action === 'testHarnessClear') {
-      chrome.storage.local
-        .remove('colorDetectionTestResults')
-        .then(() => {
-          sendResponse({ success: true });
-        })
-        .catch(error => {
-          sendResponse({ error: error.message });
-        });
-      return true;
-    }
-
-    if (request.action === 'testHarnessDownload') {
-      try {
-        const blob = new Blob([request.csvData], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-
-        chrome.downloads
-          .download({
-            url: url,
-            filename: request.filename,
-            saveAs: false,
-          })
-          .then(downloadId => {
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            sendResponse({ success: true, downloadId });
-          })
-          .catch(error => {
-            URL.revokeObjectURL(url);
-            sendResponse({ success: false, error: error.message });
-          });
-      } catch (error: any) {
-        sendResponse({ success: false, error: error.message });
-      }
-      return true;
-    }
   });
 
   // --- Handlers ---
@@ -317,7 +256,7 @@ export default defineBackground(() => {
         const timestamp = new Date().toISOString();
 
         // 5. Create report-ready results object
-        const mobileOnlyData: ReportData = {
+        const mobileOnlyData: any = {
           metadata: {
             url: pageUrl,
             domain: new URL(pageUrl).hostname.replace('www.', ''),
