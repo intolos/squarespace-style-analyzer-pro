@@ -6,6 +6,6 @@
     "test": "node test-color-tracking.js"
   },
   "dependencies": {
-    "puppeteer": "^21.0.0"
+    "puppeteer": "^24.38.0"
   }
 }
