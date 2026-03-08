@@ -4,26 +4,24 @@ description: Create zip files for squarespace, generic, and wp for chrome, edge,
 
 # Zip All Extensions Workflow
 
-This workflow automatically builds and zips all extensions (Squarespace, Generic, WordPress) for all supported browsers (Chrome, Firefox, Edge). It relies on the optimized `./build-and-zip.sh` script.
+This workflow builds and zips all extensions (Squarespace, Generic, WordPress) for all supported browsers (Chrome, Firefox, Edge). Zips are placed by WXT directly into `.output/<mode>/`.
 
 ## How it works
 
-- Cleans only the `.output/<mode>` build directory and the specific target zip before each individual build
-- This preserves all previously generated zip files for other versions/browsers in `dist-zips/`
-- Prevents Out-Of-Memory errors caused by exponential zip file nesting from WXT accumulating prior zip artifacts
+- Before each build, only the specific target zip file is deleted (e.g. `.output/sqs/style-analyzer-pro-<version>-chrome.zip`)
+- The rest of `.output/<mode>/` is left intact so builds for other browsers are preserved
+- This prevents the "zip-inception" OOM crash caused by WXT trying to zip previously created zip files
 
 ## Usage
 
-1. Give the script execution permissions if needed.
 // turbo-all
-2. Execute the script from the wxt-version directory:
 ```bash
 cd wxt-version
 chmod +x build-and-zip.sh
 ./build-and-zip.sh
 ```
 
-All output zips will be placed in `wxt-version/dist-zips/` named:
-- `squarespace-<version>-<browser>.zip`
-- `website-<version>-<browser>.zip`
-- `wp-<version>-<browser>.zip`
+Zips will be in:
+- `.output/sqs/style-analyzer-pro-<version>-<browser>.zip`
+- `.output/generic/style-analyzer-pro-<version>-<browser>.zip`
+- `.output/wp/style-analyzer-pro-<version>-<browser>.zip`
