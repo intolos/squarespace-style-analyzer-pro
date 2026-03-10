@@ -1,0 +1,10 @@
+- [x] Read `package.json` to get current version
+- [x] Build Squarespace for Chrome
+- [x] Zip Squarespace for Chrome
+- [x] Rename Chrome zip in `.output` to `squarespace-[version]-chrome.zip`
+- [x] Build Squarespace for Firefox
+- [x] Zip Squarespace for Firefox
+- [x] Rename Firefox zip in `.output` to `squarespace-[version]-firefox.zip`
+- [x] Build Squarespace for Edge
+- [x] Zip Squarespace for Edge
+- [x] Rename Edge zip in `.output` to `squarespace-[version]-edge.zip`
